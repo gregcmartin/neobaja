@@ -1,0 +1,9 @@
+.DS_Store
+/build/
+/evidence/
+/nvram/
+/cfg/
+/snap/
+*.log
+__pycache__/
+*.pyc
