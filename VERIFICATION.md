@@ -11,13 +11,15 @@ and MAME 0.289.
 - `make production-check`: PASS — pinned raw and converted art hashes,
   developer splash, font provenance, and deterministic conversion.
 - `make verify`: PASS — cartridge members and budgets; 2,428 sprite tiles.
+- `make controls-check`: PASS — Enter, arrow keys, literal keyboard A for
+  confirm/throttle, and literal keyboard B for brake.
 - `make mame-smoke`: PASS — 16 native 320x224 AES/MVS captures covering boot,
   input-gated menus, countdown/rest, acceleration, steering, coast, rival,
   contact, off-road response, and the MVS coin/start path.
 
 ROM: `build/rom/bajanew.zip`
 
-SHA-256: `b95c33bf8126a8fd5e4df12636011e4d17af494f947024a265ab05652f1aed75`
+SHA-256: `29023d714d8d522414cecc8c0de0b8ca93e86de4ceb0c76f227c619423f2350f`
 
 68000 ELF footprint: 12,512 bytes text, 108 data, 631 BSS.
 

@@ -33,7 +33,7 @@ VROM := $(ROMDIR)/$(GAME)-v1.v1
 CART := $(ROMDIR)/$(GAME).zip
 MAME_HASH := $(ROMDIR)/neogeo.xml
 
-.PHONY: all assets test rom verify production-check mame-smoke mame-play clean
+.PHONY: all assets test rom verify production-check controls-check mame-smoke mame-play clean
 
 all: test rom verify
 
@@ -106,11 +106,16 @@ verify: production-check rom
 	$(PYTHON) tools/verify_build.py
 
 MAME_BIOS_DIR ?= /Users/gregmartin/Desktop/goneo
+controls-check: verify
+	$(PYTHON) tools/verify_mame_controls.py --mame mame --bios-dir "$(MAME_BIOS_DIR)"
+
 mame-smoke: verify
 	$(PYTHON) tools/run_mame_smoke.py --mame mame --bios-dir "$(MAME_BIOS_DIR)"
 
-mame-play: verify
+mame-play: controls-check
 	mame -window -resolution 960x672 -skip_gameinfo -noautosave \
+		-keyboardprovider sdl -ctrlrpath "$(CURDIR)/mame/ctrlr" -ctrlr bajanew_keyboard \
+		-cfg_directory "$(CURDIR)/build/mame-cfg" \
 		-hash "$(ROMDIR)" -rp "$(ROMDIR);$(NGSHARE);$(MAME_BIOS_DIR)" \
 		aes -cart $(GAME)
 
