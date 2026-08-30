@@ -4,6 +4,19 @@ BAJANEW is a documentation-and-reference handoff for restarting BAJA Outrun.
 It is not a game build and does not contain a ROM, engine, source code, build
 system, converted shipping art, or emulator BIOS.
 
+## Current reset state
+
+Greg also rejected the 2026-08-30 BAJANEW implementation after live play: its
+art was good, but its implementation and playability were unacceptable. That
+implementation has been deleted. Its documentation-only rejection record is
+under `04_REJECTED_BAJANEW_ATTEMPT/`.
+
+The original raw artwork under `art/` is explicitly approved to carry forward.
+Nothing else from the rejected BAJANEW implementation may carry forward:
+source, engine behavior, constants, architecture, tests, tools, build files,
+ROMs, converted assets, emulator configuration, runtime evidence, measurements,
+and automated scores are all excluded.
+
 The previous implementation was rejected in live play. Its automated checks
 proved that code paths and telemetry changed, but they did not prove that the
 game felt playable or that the road looked like a moving race course. That
@@ -21,6 +34,8 @@ release verdict is invalid.
    used for.
 5. `03_REJECTED_IMPLEMENTATION/WHAT_FAILED.md` — lessons from the rejected
    build, not a design foundation.
+6. `04_REJECTED_BAJANEW_ATTEMPT/WHAT_FAILED.md` — Greg's newest live verdict
+   and the clean-room boundary for the deleted BAJANEW attempt.
 
 ## Authority order
 
@@ -47,6 +62,10 @@ gameplay behavior, and documented failure lessons. It must not carry forward
 the rejected source code, engine adaptation, constants, art raws, converted
 assets, ROMs, test harness, telemetry driver, or automated score.
 
+For the deleted BAJANEW attempt specifically, the only implementation-era
+material approved to carry forward is the original artwork under `art/` and
+the written failure lesson. Do not recover its game code from Git history.
+
 The safest restart is one playable Ensenada vertical slice first: title and
 selection that wait for the player, a genuinely moving projected road, one
 responsive RZR, one independently moving rival, collision/off-road feedback,
@@ -58,7 +77,9 @@ Greg approves that slice.
 - `01_GAME_VISION/`: current design intent and acceptance gates.
 - `02_REFERENCE_LIBRARY/`: unchanged inspection references and provenance.
 - `03_REJECTED_IMPLEMENTATION/`: quarantined screenshots and failure records.
+- `04_REJECTED_BAJANEW_ATTEMPT/`: documentation-only record of the deleted
+  BAJANEW implementation and Greg's live rejection.
+- `art/`: approved original artwork, prompts, provenance, and hashes.
 - `90_SOURCE_DOCUMENTATION_ARCHIVE/`: exact documentation archive from the
   rejected project, excluding build output and NVRAM.
 - `99_MANIFESTS/`: hashes, inventory, and explicit extraction exclusions.
-

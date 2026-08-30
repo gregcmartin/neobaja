@@ -1,12 +1,12 @@
-# BAJANEW next gates
+# Fresh clean-room rebuild gates
 
-- Greg: complete the five-minute unscripted MAME play gate and record the live
-  verdict for Ensenada.
-- Tune handling, road readability, collision weight, and rival behavior from
-  that human result; automation cannot close these items.
-- Add original audio direction only after the core drive is approved.
-- Resolve public naming/licensing for Polaris, Can-Am, SCORE, and OutRun before
-  any public release. The vertical slice uses fictional vehicle art.
-- Build San Felipe, Valle de Trinidad, and Bahia de los Angeles only after the
-  Ensenada vertical slice is approved.
-- Test physical AES/MVS hardware separately; MAME does not verify a real cart.
+- Read `START_HERE.md`, `AGENTS.md`, `01_GAME_VISION/`, and
+  `02_REFERENCE_LIBRARY/README.md`.
+- Choose a new implementation approach without inspecting or recovering code,
+  constants, tests, tooling, ROMs, or build configuration from the rejected
+  BAJANEW tag or excluded sibling projects.
+- Reuse only the explicitly approved original artwork under `art/`.
+- Build one Ensenada vertical slice focused first on readable road motion,
+  responsive human controls, collision/off-road feel, and rival behavior.
+- Run Greg's five-minute unscripted MAME play gate before expanding scope.
+- Do not produce the remaining stages until Greg approves the vertical slice.

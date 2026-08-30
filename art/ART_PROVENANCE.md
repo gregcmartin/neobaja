@@ -1,5 +1,14 @@
 # Vertical-slice art provenance
 
+## Clean-room reset status
+
+Greg approved this artwork while rejecting the game implementation and
+playability. The raw images, prompts, and hashes below are intentionally
+preserved. The converter, generated cartridge assets, palette/tile layout,
+runtime dimensions, build tooling, and ROM were part of the rejected
+implementation and were deleted. A future rebuild must create a new conversion
+and integration pipeline rather than recovering the old one.
+
 All shipping illustrative raster sources in this vertical slice are new outputs
 from the built-in OpenAI `image_gen` provider. The tool did not expose a model
 identifier, so none is invented here. No reference image was supplied to the

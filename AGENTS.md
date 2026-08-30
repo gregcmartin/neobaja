@@ -17,6 +17,13 @@ repaint, or use their pixels as an implementation asset. The eight BAJA: Edge
 of Control HD screenshots are secondary copyrighted references and are also
 inspection-only.
 
+Greg rejected the 2026-08-30 BAJANEW game implementation after live play. Do
+not recover, inspect, import, adapt, or benchmark its source, engine behavior,
+constants, architecture, tests, build configuration, tools, ROMs, converted
+assets, emulator state, runtime evidence, or automated scores from Git tag
+`rejected-bajanew-playability-v1` or commit `c24d1fe`. The original artwork
+under `art/` is the sole implementation-era exception and is approved for reuse.
+
 The pinned GPL-3.0 OutRun repository is a behavior-observation oracle only.
 Carry forward relational behavior such as throttle versus brake/coast,
 steering and recentering, road consequences, rival independence, collision,
@@ -36,4 +43,3 @@ any future attract mode must be visibly labeled and isolated from normal play.
 Build one stage as a vertical slice and obtain human approval before producing
 the remaining stages or a full art inventory. Preserve source files and create
 a rollback before any broad change.
-
