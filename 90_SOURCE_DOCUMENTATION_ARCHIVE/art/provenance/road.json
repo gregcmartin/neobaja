@@ -1,0 +1,48 @@
+{
+  "format": 1,
+  "asset": "road",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/road.png",
+  "source_sha256": "46636fa5e81639de76d19489d928a3a09b7cc01bf10fb0b03f55bd5f364dd8ff",
+  "prompt": "art/prompts/road.md",
+  "prompt_sha256": "b7076c8718e32709d9409311971ee45f80cad953289e62d977c9626877066e8c",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/road_ruts_canonical.jpg",
+      "sha256": "52ef8d3d085b0abd267aaf7dd5b2787e3ab305c8ba1ec01fd6575eb856504b8a"
+    },
+    {
+      "path": "art/raw/stage_sanfelipe_canonical.jpg",
+      "sha256": "349a539d3e3247f8efaa56505a8978f1a5b5e4403a967eeb2f56eaf2621d4725"
+    },
+    {
+      "path": "art/raw/stage_valle_canonical.jpg",
+      "sha256": "bf1cbcbe6edc9ea3d9ca57f5a36f9335d55619c9cda1f66ea3c36c66c5cca50f"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

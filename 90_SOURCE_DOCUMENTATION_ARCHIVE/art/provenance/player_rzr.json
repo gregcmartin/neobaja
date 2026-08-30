@@ -1,0 +1,65 @@
+{
+  "format": 1,
+  "asset": "player_rzr",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/player_rzr.png",
+  "source_sha256": "cfb843ac8cb9ecccb494ffc9d002fe300af77a0304037f52f15b19c780e3d888",
+  "prompt": "art/prompts/player_rzr.md",
+  "prompt_sha256": "67cb83e72b5cc8f930125f04f711571957b133ac9f9621d57d3ca35f346f1377",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/player_rzr_canonical.jpg",
+      "sha256": "288a18a30db636b34154867730fd1b697eb27302bb8c599e7ab4b5567b53b4fc"
+    },
+    {
+      "path": "art/raw/player_rzr_rear.jpg",
+      "sha256": "8a35f2697023bc92ae5abe3924be9c4ac8502ce70df93eb85c5d46d1e0ec0471"
+    },
+    {
+      "path": "art/raw/player_rzr_left.jpg",
+      "sha256": "5ef12057f06042d4ba3b970670f1074d60276209bbca056bbdfcac51096b960e"
+    },
+    {
+      "path": "art/raw/player_rzr_right.jpg",
+      "sha256": "4b4669b30132d2b8fc81aed05cd7b45ae0fd3eb2536e21f8ae6c61e1b3d42207"
+    },
+    {
+      "path": "art/raw/player_rzr_compression.jpg",
+      "sha256": "ee766c4135136234a018fda90dc1bd4e31b944b9a6d433f31e815af342dd8b9b"
+    },
+    {
+      "path": "art/raw/player_rzr_airborne.jpg",
+      "sha256": "0c73e4c12d0ad40dbe9c22cdc30c247b43e140d623b2eb731b86eb4cd3ef2c6d"
+    },
+    {
+      "path": "art/raw/player_rzr_contact.jpg",
+      "sha256": "3d7c657994913f72416748d404977414d6ce1e0bbd9e1d4b07f717e2971ea532"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "identity",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

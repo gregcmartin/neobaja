@@ -1,0 +1,307 @@
+[
+  {
+    "tool": "image_edit",
+    "arguments": {
+      "prompt": "Keep this exact blond chibi racer: same hair, face, blue jersey with white 8, black shorts, red boots. Remove the checkered flag, the decorative border, and all caption text. Isolated mascot only on a flat solid magenta background.",
+      "image": [
+        "/Users/gregmartin/Desktop/BAJA Outrun/art/raw/max_canonical.jpg"
+      ],
+      "aspect_ratio": "2:3"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_edit",
+    "arguments": {
+      "prompt": "Keep this exact chibi racer: same brown hair, tan skin, orange jersey with a large white 6, black shorts, white gloves, black boots. Remove the headband lettering and any extra jersey letters besides the 6. Isolated mascot only on flat magenta, no captions.",
+      "image": [
+        "/Users/gregmartin/Desktop/BAJA Outrun/art/raw/cruz_canonical.jpg"
+      ],
+      "aspect_ratio": "2:3"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_edit",
+    "arguments": {
+      "prompt": "Keep this exact cobalt-blue Polaris RZR Pro R: same body panels, black roll cage, spare tire, yellow shocks, red harnesses, roof light bar, and white number 8. Rotate to a low dead-rear chase camera so the tail, spare tire, and both rear tires face the viewer, as if we are following it down a dirt road. Vehicle upright, planted on the ground, same Neo Geo pixel-art style, isolated on flat magenta.",
+      "image": [
+        "/Users/gregmartin/Desktop/BAJA Outrun/art/raw/player_rzr_canonical.jpg"
+      ],
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_edit",
+    "arguments": {
+      "prompt": "Keep this exact rear-chase blue RZR Pro R. Change only a contact/impact pose: chassis tilts a few degrees, one tire kicking a few brown dirt specks, yellow shocks uneven. Same magenta background, same pixel-art style.",
+      "image": [
+        "/Users/gregmartin/Desktop/BAJA Outrun/art/raw/player_rzr_rear.jpg"
+      ],
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_edit",
+    "arguments": {
+      "prompt": "Keep this exact rear-chase blue RZR Pro R. Change only a left steer: the whole chassis leans slightly left, rear wheels turn a bit left, suspension still planted. Same magenta background, same pixel-art style.",
+      "image": [
+        "/Users/gregmartin/Desktop/BAJA Outrun/art/raw/player_rzr_rear.jpg"
+      ],
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_edit",
+    "arguments": {
+      "prompt": "Keep this exact rear-chase blue RZR Pro R. Change only a right steer: the whole chassis leans slightly right, rear wheels turn a bit right, suspension still planted. Same magenta background, same pixel-art style.",
+      "image": [
+        "/Users/gregmartin/Desktop/BAJA Outrun/art/raw/player_rzr_rear.jpg"
+      ],
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_edit",
+    "arguments": {
+      "prompt": "Keep this exact rear-chase blue RZR Pro R. Change only airborne rebound: lift the whole vehicle so magenta shows under both tires, yellow shocks extended, wheels hanging. Same pixel-art style, flat magenta background.",
+      "image": [
+        "/Users/gregmartin/Desktop/BAJA Outrun/art/raw/player_rzr_rear.jpg"
+      ],
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_edit",
+    "arguments": {
+      "prompt": "Keep this exact rear-chase blue RZR Pro R. Change only an airborne rebound: the vehicle lifts, a gap of magenta under the tires, yellow shocks extended, wheels hanging. Same magenta background, same pixel-art style.",
+      "image": [
+        "/Users/gregmartin/Desktop/BAJA Outrun/art/raw/player_rzr_rear.jpg"
+      ],
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_edit",
+    "arguments": {
+      "prompt": "Keep this exact rear-chase blue RZR Pro R. Change only suspension compression: body squats lower on the magenta field, yellow shocks visibly shortened, tires still on the same ground line. Same pixel-art style, flat magenta background.",
+      "image": [
+        "/Users/gregmartin/Desktop/BAJA Outrun/art/raw/player_rzr_rear.jpg"
+      ],
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_edit",
+    "arguments": {
+      "prompt": "Keep this exact rear-chase blue RZR Pro R. Change only suspension compression: the body squats lower, yellow shocks shortened, tires pressed into the ground. Same magenta background, same pixel-art style.",
+      "image": [
+        "/Users/gregmartin/Desktop/BAJA Outrun/art/raw/player_rzr_rear.jpg"
+      ],
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_edit",
+    "arguments": {
+      "prompt": "Keep this exact yellow-and-charcoal Maverick UTV. Rotate to a low dead-rear chase camera so the tail and both rear tires face the viewer. Enclosed sport roof still visible. Isolated on flat magenta, same pixel-art style.",
+      "image": [
+        "/Users/gregmartin/Desktop/BAJA Outrun/art/raw/ai_maverick_utv.jpg"
+      ],
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Chibi Neo Geo arcade mascot sprite of a young blond racer named as a fictional game character: short spiky blond hair, light skin, blue racing jersey with a white numeral 8, black shorts, racing boots, confident stance, oversized head, small body. 1990s SNK-style 2D pixel art, hard pixels, selective outline, isolated on flat magenta background, no photorealism.",
+      "aspect_ratio": "2:3"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Chibi Neo Geo arcade mascot sprite of a young brown-haired racer, slightly shorter than a typical chibi partner: short brown hair, slightly darker tan skin, orange-red racing jersey with a white numeral 6, black shorts, racing boots, determined stance, oversized head, small body. 1990s SNK-style 2D pixel art, hard pixels, selective outline, isolated on flat magenta background, no photorealism.",
+      "aspect_ratio": "2:3"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Empty rear-chase Neo Geo pixel-art race vista of Bahia de los Angeles at night: deep navy-cobalt sky, huge silver moon, forked lightning over dark mountains, wet dirt road funneling to a glowing checkpoint banner in the distance, saguaro silhouettes, warm amber pools of light on the ruts, sparse spectators, cool shadows. 1990s arcade background painting, hard pixels, dense but readable, no vehicles, no brand logos, no HUD.",
+      "aspect_ratio": "16:9"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Empty rear-chase Neo Geo pixel-art race vista of Ensenada Pacific cliff road: high-key blue daylight, turquoise ocean on the left far below, pale clouds, ochre cliff dirt road funnel, palms and agave, a small distant helicopter, cheering crowd on the right hillside, bright rutted dirt. 1990s arcade background, hard pixels, no vehicles, no HUD, no corporate logos.",
+      "aspect_ratio": "16:9"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Empty rear-chase Neo Geo pixel-art race vista of Ensenada Pacific cliff road: high-key blue daylight, turquoise ocean on the left, pale clouds, ochre cliff road, palms and agave, a distant helicopter, cheering crowd on the right hillside, bright rutted dirt. 1990s arcade background, hard pixels, no vehicles, no HUD, no corporate logos.",
+      "aspect_ratio": "16:9"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Empty rear-chase Neo Geo pixel-art race vista of San Felipe Mexico: hot open desert, high late-gold sun, distant pink-gold mountain landmark, long rutted dirt straight receding to a vanishing point, cactus and scrub, a few spectators and a generic wooden race sign, warm sand, 1990s arcade background, hard pixels, no vehicles, no HUD, no corporate logos.",
+      "aspect_ratio": "16:9"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Empty rear-chase Neo Geo pixel-art race vista of San Felipe: hot open desert, high late-gold sun, distant pink-gold mountain, long rutted dirt straight, cactus and scrub, spectators and original racing signage without real brands, expansive sky, warm sand. 1990s arcade background, hard pixels, no vehicles, no HUD, no corporate logos.",
+      "aspect_ratio": "16:9"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Empty rear-chase Neo Geo pixel-art race vista of Valle de Trinidad at blazing orange sunset: layered canyon mesas in multiple value tiers, a visible dirt crest and jump ahead, long shadows, amber dust haze, red-and-white chevron markers, rock ledges, rutted orange dirt road funneling to the sun. 1990s arcade background, hard pixels, no vehicles, no brand logos, no HUD.",
+      "aspect_ratio": "16:9"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Neo Geo pixel-art analog tachometer gauge graphic only: circular chrome-and-black speed dial with red warning arc, empty needle area, no numerals, no letters, isolated on flat magenta background, hard pixels, high contrast.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Neo Geo pixel-art analog tachometer gauge only: circular black-and-chrome dial with a red warning arc and a white needle, no numerals and no letters, isolated on flat magenta, hard pixels, high contrast.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Neo Geo pixel-art dust puff effect sprite, warm ochre and cream dirt cloud, soft billow made of hard pixels, isolated on flat magenta background, four density stages implied in one burst, no outlines of objects besides dust.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Neo Geo pixel-art dust puff sprite, warm ochre and cream dirt cloud made of hard pixels, isolated on flat magenta, no other objects.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Original BAJA Outrun title emblem illustration without lettering: cobalt desert mountain, checkered racing flag slash, cactus silhouette, gold speed streaks, 1990s arcade logo mark, isolated on flat magenta, hard pixels, no text of any kind.",
+      "aspect_ratio": "16:9"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Original BAJA desert racing emblem illustration with no letters: cobalt mountain, checkered flag slash, cactus silhouette, gold speed lines, isolated on flat magenta, 1990s arcade logo mark, hard pixels.",
+      "aspect_ratio": "16:9"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Rear-chase Neo Geo pixel-art sprite of a Can-Am Maverick sport UTV, enclosed sport roof and windshield frame, mustard-yellow and charcoal body, angular split taillights, no spare tire on the tail, lower sleeker roofline than an open RZR cage, fat knobby tires. Isolated on flat magenta, hard pixels, selective outlines.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Rear-chase arcade sprite of a 2022 Polaris RZR Pro R side-by-side UTV, not a pickup. Bright cobalt-blue body, exposed black tubular roll cage, two black bucket seats with harnesses, short cargo bed with a centered spare knobby tire, four huge knobby off-road tires, long-travel dual shocks, roof LED light bar, white circle with numeral 8 on the tail, simple cream-and-red accent stripes. Late-1990s Neo Geo pixel-art sprite, hard pixel clusters, selective dark outlines, readable mechanical detail, three-quarter-from-behind low chase camera, isolated on flat magenta background.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Rear-chase arcade sprite of a rival Can-Am Maverick side-by-side: more enclosed sport-roof canopy, angular taillights, mustard-yellow and charcoal body, no spare on the tailgate, lower sleeker roofline than an open RZR cage. Late-1990s Neo Geo pixel-art sprite, hard pixels, selective outlines, isolated on flat magenta background.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Rear-chase arcade sprite of a rival Polaris RZR UTV in crimson-and-cream livery, exposed cage, spare tire, knobby tires, long-travel shocks, white numeral 7 on the tail. Silhouette is a side-by-side UTV, not a trophy truck. Late-1990s Neo Geo pixel-art sprite, hard pixels, selective outlines, isolated on flat magenta background.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Seamless Neo Geo arcade pixel-art dirt road texture, top-down, two deep parallel tire ruts in ochre and rust sand, loose stones and pebble scatter, hard pixel clusters, limited 16-color ramp, even lighting, the grooves continue off every edge so it tiles, no vehicles, no text.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a053aa-5791-7423-8e2f-e87a59fcb96c"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Small Neo Geo pixel-art desert boulder prop, ochre and rust rock with hard highlight plane and dark contact underside, isolated on flat magenta background, hard pixels, selective outline, no ground shadow.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Small Neo Geo pixel-art roadside spectator cluster: a handful of cheering people in colorful shirts on a dirt berm, compact 1990s arcade prop sprite, hard pixels, isolated on flat magenta background, no readable text, no brand logos.",
+      "aspect_ratio": "4:3"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Small Neo Geo pixel-art saguaro cactus prop sprite, two arms, sunlit green with cream highlights and dark under-planes, isolated on flat magenta background, hard pixels, selective outline, no ground shadow.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  },
+  {
+    "tool": "image_gen",
+    "arguments": {
+      "prompt": "Small Neo Geo pixel-art saguaro cactus prop, two arms, sunlit green with cream highlights, isolated on flat magenta, hard pixels, selective outline, no ground plane.",
+      "aspect_ratio": "1:1"
+    },
+    "observed_in_session": "01a05371-ecfe-75c3-9686-b374741dc1da"
+  }
+]

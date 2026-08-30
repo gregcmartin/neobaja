@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "asset": "hud_tach",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/hud_tach.png",
+  "source_sha256": "fa0e5daa303caee1caa4c93568e13dd13d81017aa5ce8e764adbbe260a89322d",
+  "prompt": "art/prompts/hud_tach.md",
+  "prompt_sha256": "f6bd7628c5bfd06b4d3107bef49892ad40dfd5a6c5d400a6dc1b704a91856f44",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/hud_tach_canonical.jpg",
+      "sha256": "74fe7b8ec139319744d95eabf5cd4f4337b222a9f91c648170ec24f24c2d6000"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "identity",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

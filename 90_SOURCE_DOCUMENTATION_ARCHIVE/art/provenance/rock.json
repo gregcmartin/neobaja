@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "asset": "rock",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/rock.png",
+  "source_sha256": "23c1bada9b3c59247498b99589402db4623b27c3c5da045bb31b4df58ec1e4c0",
+  "prompt": "art/prompts/rock.md",
+  "prompt_sha256": "6e85b27962d649a32db07973769616973736a37a59bef7bfff64c84b38ff7d01",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/stage_valle_canonical.jpg",
+      "sha256": "bf1cbcbe6edc9ea3d9ca57f5a36f9335d55619c9cda1f66ea3c36c66c5cca50f"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

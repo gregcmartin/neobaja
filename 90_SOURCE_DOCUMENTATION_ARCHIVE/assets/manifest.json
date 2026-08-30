@@ -1,0 +1,779 @@
+{
+  "format": 2,
+  "art_policy": {
+    "mode": "grok_build_ai_first",
+    "production_requires_grok_provenance": true,
+    "model": "grok-4.6",
+    "minimum_cli_version": "1.0.5",
+    "native_resolution": "320x224",
+    "resampling": "nearest_neighbor_only"
+  },
+  "c_rom_bytes_per_chip": 1048576,
+  "s_rom_bytes": 131072,
+  "fix_source": "source/font.png",
+  "fix_provenance": "../art/provenance/font.json",
+  "fix_palette": [
+    "#F8F0D8",
+    "#3AD4F0",
+    "#F8B030",
+    "#101018",
+    "#F03030",
+    "#58F070",
+    "#FFFFFF"
+  ],
+  "animation_events": {
+    "pulse": 1,
+    "footstep": 2,
+    "impact": 4
+  },
+  "sprites": [
+    {
+      "name": "splash",
+      "source": "source/splash.png",
+      "provenance": "../art/provenance/splash.json",
+      "frame_width": 320,
+      "frame_height": 224,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 1,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "logo",
+      "source": "source/logo.png",
+      "provenance": "../art/provenance/logo.json",
+      "frame_width": 160,
+      "frame_height": 64,
+      "origin": [
+        80,
+        32
+      ],
+      "palette": 2,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "horizon",
+      "source": "source/horizon.png",
+      "provenance": "../art/provenance/horizon.json",
+      "frame_width": 320,
+      "frame_height": 96,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 3,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "desert",
+      "source": "source/desert.png",
+      "provenance": "../art/provenance/desert.json",
+      "frame_width": 320,
+      "frame_height": 128,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 4,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "horizon_ensenada",
+      "source": "source/horizon_ensenada.png",
+      "provenance": "../art/provenance/horizon_ensenada.json",
+      "frame_width": 320,
+      "frame_height": 96,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 5,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "desert_ensenada",
+      "source": "source/desert_ensenada.png",
+      "provenance": "../art/provenance/desert_ensenada.json",
+      "frame_width": 320,
+      "frame_height": 128,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 6,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "horizon_san_felipe",
+      "source": "source/horizon_san_felipe.png",
+      "provenance": "../art/provenance/horizon_san_felipe.json",
+      "frame_width": 320,
+      "frame_height": 96,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 7,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "desert_san_felipe",
+      "source": "source/desert_san_felipe.png",
+      "provenance": "../art/provenance/desert_san_felipe.json",
+      "frame_width": 320,
+      "frame_height": 128,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 8,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "horizon_valle",
+      "source": "source/horizon_valle.png",
+      "provenance": "../art/provenance/horizon_valle.json",
+      "frame_width": 320,
+      "frame_height": 96,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 9,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "desert_valle",
+      "source": "source/desert_valle.png",
+      "provenance": "../art/provenance/desert_valle.json",
+      "frame_width": 320,
+      "frame_height": 128,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 10,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "horizon_bahia",
+      "source": "source/horizon_bahia.png",
+      "provenance": "../art/provenance/horizon_bahia.json",
+      "frame_width": 320,
+      "frame_height": 96,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 11,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "desert_bahia",
+      "source": "source/desert_bahia.png",
+      "provenance": "../art/provenance/desert_bahia.json",
+      "frame_width": 320,
+      "frame_height": 128,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 12,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "road",
+      "source": "source/road.png",
+      "provenance": "../art/provenance/road.json",
+      "frame_width": 32,
+      "frame_height": 32,
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 13,
+      "clips": [
+        {
+          "name": "scroll",
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "durations": [
+            3,
+            3,
+            3,
+            3
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "player_rzr",
+      "source": "source/player_rzr.png",
+      "provenance": "../art/provenance/player_rzr.json",
+      "frame_width": 112,
+      "frame_height": 96,
+      "origin": [
+        56,
+        94
+      ],
+      "palette": 14,
+      "clips": [
+        {
+          "name": "drive",
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "durations": [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          "loop": true
+        }
+      ],
+      "default_boxes": [
+        {
+          "kind": "push",
+          "x": -28,
+          "y": -48,
+          "width": 56,
+          "height": 48,
+          "tag": 0
+        }
+      ]
+    },
+    {
+      "name": "ai_rzr",
+      "source": "source/ai_rzr.png",
+      "provenance": "../art/provenance/ai_rzr.json",
+      "frame_width": 64,
+      "frame_height": 48,
+      "origin": [
+        32,
+        46
+      ],
+      "palette": 15,
+      "clips": [
+        {
+          "name": "idle",
+          "frames": [
+            0,
+            1
+          ],
+          "durations": [
+            5,
+            5
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "ai_maverick",
+      "source": "source/ai_maverick.png",
+      "provenance": "../art/provenance/ai_maverick.json",
+      "frame_width": 64,
+      "frame_height": 48,
+      "origin": [
+        32,
+        46
+      ],
+      "palette": 16,
+      "clips": [
+        {
+          "name": "idle",
+          "frames": [
+            0,
+            1
+          ],
+          "durations": [
+            5,
+            5
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "max",
+      "source": "source/max.png",
+      "provenance": "../art/provenance/max.json",
+      "frame_width": 48,
+      "frame_height": 64,
+      "origin": [
+        24,
+        62
+      ],
+      "palette": 17,
+      "clips": [
+        {
+          "name": "idle",
+          "frames": [
+            0,
+            1
+          ],
+          "durations": [
+            8,
+            8
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "cruz",
+      "source": "source/cruz.png",
+      "provenance": "../art/provenance/cruz.json",
+      "frame_width": 48,
+      "frame_height": 64,
+      "origin": [
+        24,
+        62
+      ],
+      "palette": 18,
+      "clips": [
+        {
+          "name": "idle",
+          "frames": [
+            0,
+            1
+          ],
+          "durations": [
+            8,
+            8
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "cactus",
+      "source": "source/cactus.png",
+      "provenance": "../art/provenance/cactus.json",
+      "frame_width": 32,
+      "frame_height": 48,
+      "origin": [
+        16,
+        46
+      ],
+      "palette": 19,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "dust",
+      "source": "source/dust.png",
+      "provenance": "../art/provenance/dust.json",
+      "frame_width": 16,
+      "frame_height": 16,
+      "origin": [
+        8,
+        12
+      ],
+      "palette": 20,
+      "clips": [
+        {
+          "name": "puff",
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "durations": [
+            3,
+            3,
+            3,
+            3
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "crowd",
+      "source": "source/crowd.png",
+      "provenance": "../art/provenance/crowd.json",
+      "frame_width": 48,
+      "frame_height": 32,
+      "origin": [
+        24,
+        30
+      ],
+      "palette": 21,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "rock",
+      "source": "source/rock.png",
+      "provenance": "../art/provenance/rock.json",
+      "frame_width": 32,
+      "frame_height": 16,
+      "origin": [
+        16,
+        15
+      ],
+      "palette": 22,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "palm",
+      "source": "source/palm.png",
+      "provenance": "../art/provenance/palm.json",
+      "frame_width": 32,
+      "frame_height": 48,
+      "origin": [
+        16,
+        46
+      ],
+      "palette": 23,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "helicopter",
+      "source": "source/helicopter.png",
+      "provenance": "../art/provenance/helicopter.json",
+      "frame_width": 48,
+      "frame_height": 16,
+      "origin": [
+        24,
+        8
+      ],
+      "palette": 24,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "chevron",
+      "source": "source/chevron.png",
+      "provenance": "../art/provenance/chevron.json",
+      "frame_width": 16,
+      "frame_height": 32,
+      "origin": [
+        8,
+        30
+      ],
+      "palette": 25,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "sign",
+      "source": "source/sign.png",
+      "provenance": "../art/provenance/sign.json",
+      "frame_width": 32,
+      "frame_height": 32,
+      "origin": [
+        16,
+        30
+      ],
+      "palette": 26,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "hud_tach",
+      "source": "source/hud_tach.png",
+      "provenance": "../art/provenance/hud_tach.json",
+      "frame_width": 48,
+      "frame_height": 48,
+      "origin": [
+        24,
+        44
+      ],
+      "palette": 27,
+      "clips": [
+        {
+          "name": "still",
+          "frames": [
+            0
+          ],
+          "durations": [
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "hud_minimap",
+      "source": "source/hud_minimap.png",
+      "provenance": "../art/provenance/hud_minimap.json",
+      "frame_width": 64,
+      "frame_height": 48,
+      "origin": [
+        32,
+        46
+      ],
+      "palette": 28,
+      "clips": [
+        {
+          "name": "stages",
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "durations": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "loop": true
+        }
+      ]
+    },
+    {
+      "name": "skid",
+      "source": "source/skid.png",
+      "provenance": "../art/provenance/skid.json",
+      "frame_width": 16,
+      "frame_height": 16,
+      "origin": [
+        8,
+        12
+      ],
+      "palette": 29,
+      "clips": [
+        {
+          "name": "puff",
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "durations": [
+            3,
+            3,
+            3,
+            3
+          ],
+          "loop": true
+        }
+      ]
+    }
+  ]
+}

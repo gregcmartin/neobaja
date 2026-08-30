@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "asset": "splash",
+  "origin": "user_provided",
+  "production_eligible": true,
+  "source": "assets/source/splash.png",
+  "source_sha256": "3b729acb7bc7a8f334402846413ad97772edd0341f182e7a54723146de00f493",
+  "prompt": "art/prompts/splash.md",
+  "prompt_sha256": "4761b34b1bb4f2ca566907e90ab2cdb65adbc8486a0e0e7b02a0afc2139ee576",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "identity",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "fit": "aspect_preserved_letterbox",
+    "canvas": [
+      320,
+      224
+    ]
+  },
+  "source_jpeg": "devsplashlogo.jpg",
+  "source_jpeg_sha256": "6e01d4f3fdb9daaa6feb90b52ab0497e3f26b5191c6ac205b0efeed1ed6eeba1"
+}

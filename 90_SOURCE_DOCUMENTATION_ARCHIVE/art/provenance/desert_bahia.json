@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "asset": "desert_bahia",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/desert_bahia.png",
+  "source_sha256": "fa21235fe7f27fa11a5adea3518f7f14aafc51589995bfd31d0cbd78ef230911",
+  "prompt": "art/prompts/desert_bahia.md",
+  "prompt_sha256": "73ddacfd74ad1d1067ad1413fc04f3e49313db1d0ab14f9595e580cecffe94d2",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/stage_bahia_canonical.jpg",
+      "sha256": "ffffa249658d74a2e1c74c92b48d1692109d300a96db04fdfbcb9a6889eb8ef8"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "native_1x",
+      "scanline_budget"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

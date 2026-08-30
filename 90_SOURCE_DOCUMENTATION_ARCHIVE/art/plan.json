@@ -1,0 +1,842 @@
+{
+  "format": 1,
+  "project": "BAJA Outrun",
+  "generator": {
+    "tool": "grok-build",
+    "minimum_version": "1.0.5",
+    "model": "grok-4.6"
+  },
+  "policy": {
+    "mode": "ai_first",
+    "clean_room": true,
+    "native_resolution": [
+      320,
+      224
+    ],
+    "transparent_index": 0,
+    "opaque_colors_per_palette": 15,
+    "resampling": "nearest_neighbor_only",
+    "production_requires_in_game_review": true
+  },
+  "jobs": [
+    {
+      "id": "font",
+      "kind": "fix_font",
+      "generation_mode": "bitmap_typography",
+      "output": "assets/source/font.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/font.md",
+      "provenance": "art/provenance/font.json",
+      "required_skills": [
+        "game-ui-icons"
+      ],
+      "canvas": [
+        128,
+        128
+      ],
+      "cell": [
+        8,
+        8
+      ],
+      "required_reviews": [
+        "discrete_accuracy",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "splash",
+      "kind": "ui",
+      "generation_mode": "user_provided",
+      "output": "assets/source/splash.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/splash.md",
+      "provenance": "art/provenance/splash.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-ui-icons"
+      ],
+      "canvas": [
+        320,
+        224
+      ],
+      "cell": [
+        320,
+        224
+      ],
+      "required_reviews": [
+        "identity",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "logo",
+      "kind": "ui",
+      "generation_mode": "grok_image",
+      "output": "assets/source/logo.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/logo.md",
+      "provenance": "art/provenance/logo.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-ui-icons"
+      ],
+      "canvas": [
+        160,
+        64
+      ],
+      "cell": [
+        160,
+        64
+      ],
+      "required_reviews": [
+        "identity",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "horizon",
+      "kind": "environment",
+      "generation_mode": "grok_image",
+      "output": "assets/source/horizon.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/horizon.md",
+      "provenance": "art/provenance/horizon.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-tilesets"
+      ],
+      "canvas": [
+        320,
+        96
+      ],
+      "cell": [
+        320,
+        96
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "scanline_budget",
+        "in_game"
+      ]
+    },
+    {
+      "id": "desert",
+      "kind": "environment",
+      "generation_mode": "grok_image",
+      "output": "assets/source/desert.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/desert.md",
+      "provenance": "art/provenance/desert.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-tilesets"
+      ],
+      "canvas": [
+        320,
+        128
+      ],
+      "cell": [
+        320,
+        128
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "scanline_budget",
+        "in_game"
+      ]
+    },
+    {
+      "id": "horizon_ensenada",
+      "kind": "environment",
+      "generation_mode": "grok_image",
+      "output": "assets/source/horizon_ensenada.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/horizon_ensenada.md",
+      "provenance": "art/provenance/horizon_ensenada.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-tilesets"
+      ],
+      "canvas": [
+        320,
+        96
+      ],
+      "cell": [
+        320,
+        96
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "scanline_budget",
+        "in_game"
+      ]
+    },
+    {
+      "id": "desert_ensenada",
+      "kind": "environment",
+      "generation_mode": "grok_image",
+      "output": "assets/source/desert_ensenada.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/desert_ensenada.md",
+      "provenance": "art/provenance/desert_ensenada.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-tilesets"
+      ],
+      "canvas": [
+        320,
+        128
+      ],
+      "cell": [
+        320,
+        128
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "scanline_budget",
+        "in_game"
+      ]
+    },
+    {
+      "id": "horizon_san_felipe",
+      "kind": "environment",
+      "generation_mode": "grok_image",
+      "output": "assets/source/horizon_san_felipe.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/horizon_san_felipe.md",
+      "provenance": "art/provenance/horizon_san_felipe.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-tilesets"
+      ],
+      "canvas": [
+        320,
+        96
+      ],
+      "cell": [
+        320,
+        96
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "scanline_budget",
+        "in_game"
+      ]
+    },
+    {
+      "id": "desert_san_felipe",
+      "kind": "environment",
+      "generation_mode": "grok_image",
+      "output": "assets/source/desert_san_felipe.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/desert_san_felipe.md",
+      "provenance": "art/provenance/desert_san_felipe.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-tilesets"
+      ],
+      "canvas": [
+        320,
+        128
+      ],
+      "cell": [
+        320,
+        128
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "scanline_budget",
+        "in_game"
+      ]
+    },
+    {
+      "id": "horizon_valle",
+      "kind": "environment",
+      "generation_mode": "grok_image",
+      "output": "assets/source/horizon_valle.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/horizon_valle.md",
+      "provenance": "art/provenance/horizon_valle.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-tilesets"
+      ],
+      "canvas": [
+        320,
+        96
+      ],
+      "cell": [
+        320,
+        96
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "scanline_budget",
+        "in_game"
+      ]
+    },
+    {
+      "id": "desert_valle",
+      "kind": "environment",
+      "generation_mode": "grok_image",
+      "output": "assets/source/desert_valle.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/desert_valle.md",
+      "provenance": "art/provenance/desert_valle.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-tilesets"
+      ],
+      "canvas": [
+        320,
+        128
+      ],
+      "cell": [
+        320,
+        128
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "scanline_budget",
+        "in_game"
+      ]
+    },
+    {
+      "id": "horizon_bahia",
+      "kind": "environment",
+      "generation_mode": "grok_image",
+      "output": "assets/source/horizon_bahia.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/horizon_bahia.md",
+      "provenance": "art/provenance/horizon_bahia.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-tilesets"
+      ],
+      "canvas": [
+        320,
+        96
+      ],
+      "cell": [
+        320,
+        96
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "scanline_budget",
+        "in_game"
+      ]
+    },
+    {
+      "id": "desert_bahia",
+      "kind": "environment",
+      "generation_mode": "grok_image",
+      "output": "assets/source/desert_bahia.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/desert_bahia.md",
+      "provenance": "art/provenance/desert_bahia.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-tilesets"
+      ],
+      "canvas": [
+        320,
+        128
+      ],
+      "cell": [
+        320,
+        128
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "scanline_budget",
+        "in_game"
+      ]
+    },
+    {
+      "id": "road",
+      "kind": "environment",
+      "generation_mode": "grok_image",
+      "output": "assets/source/road.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/road.md",
+      "provenance": "art/provenance/road.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-tilesets"
+      ],
+      "canvas": [
+        128,
+        32
+      ],
+      "cell": [
+        32,
+        32
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "player_rzr",
+      "kind": "vehicle_animation",
+      "generation_mode": "grok_image",
+      "output": "assets/source/player_rzr.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/player_rzr.md",
+      "provenance": "art/provenance/player_rzr.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-character-consistency",
+        "game-animation-frames"
+      ],
+      "canvas": [
+        672,
+        96
+      ],
+      "cell": [
+        112,
+        96
+      ],
+      "required_reviews": [
+        "identity",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "ai_rzr",
+      "kind": "vehicle_animation",
+      "generation_mode": "grok_image",
+      "output": "assets/source/ai_rzr.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/ai_rzr.md",
+      "provenance": "art/provenance/ai_rzr.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core"
+      ],
+      "canvas": [
+        128,
+        48
+      ],
+      "cell": [
+        64,
+        48
+      ],
+      "required_reviews": [
+        "identity",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "ai_maverick",
+      "kind": "vehicle_animation",
+      "generation_mode": "grok_image",
+      "output": "assets/source/ai_maverick.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/ai_maverick.md",
+      "provenance": "art/provenance/ai_maverick.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core"
+      ],
+      "canvas": [
+        128,
+        48
+      ],
+      "cell": [
+        64,
+        48
+      ],
+      "required_reviews": [
+        "identity",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "max",
+      "kind": "character_animation",
+      "generation_mode": "grok_image",
+      "output": "assets/source/max.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/max.md",
+      "provenance": "art/provenance/max.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-character-consistency"
+      ],
+      "canvas": [
+        96,
+        64
+      ],
+      "cell": [
+        48,
+        64
+      ],
+      "required_reviews": [
+        "identity",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "cruz",
+      "kind": "character_animation",
+      "generation_mode": "grok_image",
+      "output": "assets/source/cruz.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/cruz.md",
+      "provenance": "art/provenance/cruz.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-character-consistency"
+      ],
+      "canvas": [
+        96,
+        64
+      ],
+      "cell": [
+        48,
+        64
+      ],
+      "required_reviews": [
+        "identity",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "cactus",
+      "kind": "prop",
+      "generation_mode": "grok_image",
+      "output": "assets/source/cactus.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/cactus.md",
+      "provenance": "art/provenance/cactus.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core"
+      ],
+      "canvas": [
+        32,
+        48
+      ],
+      "cell": [
+        32,
+        48
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "dust",
+      "kind": "effect_animation",
+      "generation_mode": "grok_image",
+      "output": "assets/source/dust.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/dust.md",
+      "provenance": "art/provenance/dust.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-animation-frames"
+      ],
+      "canvas": [
+        64,
+        16
+      ],
+      "cell": [
+        16,
+        16
+      ],
+      "required_reviews": [
+        "loop",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "crowd",
+      "kind": "prop",
+      "generation_mode": "grok_image",
+      "output": "assets/source/crowd.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/crowd.md",
+      "provenance": "art/provenance/crowd.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core"
+      ],
+      "canvas": [
+        48,
+        32
+      ],
+      "cell": [
+        48,
+        32
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "rock",
+      "kind": "prop",
+      "generation_mode": "grok_image",
+      "output": "assets/source/rock.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/rock.md",
+      "provenance": "art/provenance/rock.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core"
+      ],
+      "canvas": [
+        32,
+        16
+      ],
+      "cell": [
+        32,
+        16
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "palm",
+      "kind": "prop",
+      "generation_mode": "grok_image",
+      "output": "assets/source/palm.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/palm.md",
+      "provenance": "art/provenance/palm.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core"
+      ],
+      "canvas": [
+        32,
+        48
+      ],
+      "cell": [
+        32,
+        48
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "helicopter",
+      "kind": "prop",
+      "generation_mode": "grok_image",
+      "output": "assets/source/helicopter.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/helicopter.md",
+      "provenance": "art/provenance/helicopter.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core"
+      ],
+      "canvas": [
+        48,
+        16
+      ],
+      "cell": [
+        48,
+        16
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "chevron",
+      "kind": "prop",
+      "generation_mode": "grok_image",
+      "output": "assets/source/chevron.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/chevron.md",
+      "provenance": "art/provenance/chevron.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core"
+      ],
+      "canvas": [
+        16,
+        32
+      ],
+      "cell": [
+        16,
+        32
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "sign",
+      "kind": "prop",
+      "generation_mode": "grok_image",
+      "output": "assets/source/sign.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/sign.md",
+      "provenance": "art/provenance/sign.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core"
+      ],
+      "canvas": [
+        32,
+        32
+      ],
+      "cell": [
+        32,
+        32
+      ],
+      "required_reviews": [
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "hud_tach",
+      "kind": "ui",
+      "generation_mode": "grok_image",
+      "output": "assets/source/hud_tach.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/hud_tach.md",
+      "provenance": "art/provenance/hud_tach.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core",
+        "game-ui-icons"
+      ],
+      "canvas": [
+        48,
+        48
+      ],
+      "cell": [
+        48,
+        48
+      ],
+      "required_reviews": [
+        "identity",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "hud_minimap",
+      "kind": "ui",
+      "generation_mode": "bitmap_typography",
+      "output": "assets/source/hud_minimap.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/hud_minimap.md",
+      "provenance": "art/provenance/hud_minimap.json",
+      "required_skills": [
+        "game-ui-icons"
+      ],
+      "canvas": [
+        256,
+        48
+      ],
+      "cell": [
+        64,
+        48
+      ],
+      "required_reviews": [
+        "discrete_accuracy",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    },
+    {
+      "id": "skid",
+      "kind": "effect_animation",
+      "generation_mode": "grok_image",
+      "output": "assets/source/skid.png",
+      "raw_outputs": [],
+      "prompt": "art/prompts/skid.md",
+      "provenance": "art/provenance/skid.json",
+      "required_skills": [
+        "imagine",
+        "game-asset-core"
+      ],
+      "canvas": [
+        64,
+        16
+      ],
+      "cell": [
+        16,
+        16
+      ],
+      "required_reviews": [
+        "loop",
+        "native_1x",
+        "clean_room",
+        "in_game"
+      ]
+    }
+  ]
+}

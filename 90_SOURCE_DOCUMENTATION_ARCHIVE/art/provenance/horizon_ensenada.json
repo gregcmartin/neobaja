@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "asset": "horizon_ensenada",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/horizon_ensenada.png",
+  "source_sha256": "6741bb71f6865bc074dfe3228523e54a906e9aef1e399c2a74b4a5ca690bfa60",
+  "prompt": "art/prompts/horizon_ensenada.md",
+  "prompt_sha256": "5c300f5f5f787be2995fe825f402eff333aad88694592c3c956d4fb890f3f343",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/stage_ensenada_canonical.jpg",
+      "sha256": "3d390a3d72514cdf703d4571de012a3ccc83a3e8047955842b5d5d324374cc3f"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "native_1x",
+      "scanline_budget"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

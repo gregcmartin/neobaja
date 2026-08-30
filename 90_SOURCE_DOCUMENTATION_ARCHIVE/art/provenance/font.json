@@ -1,0 +1,37 @@
+{
+  "format": 1,
+  "asset": "font",
+  "origin": "bitmap_typography",
+  "production_eligible": true,
+  "source": "assets/source/font.png",
+  "source_sha256": "69965e7d5741f788b7542c1accb3f854bfae81aa92e5538969484183299a08a7",
+  "prompt": "art/prompts/font.md",
+  "prompt_sha256": "f81bac104f712bdd491eabbd48e0ca8f245dd5de5ad4e0e5d054ab6bf1b73127",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "discrete_accuracy",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  },
+  "typography": "deterministic_fix_bitmap_over_generated_art"
+}

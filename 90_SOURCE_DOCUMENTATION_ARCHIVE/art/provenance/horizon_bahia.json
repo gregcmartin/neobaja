@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "asset": "horizon_bahia",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/horizon_bahia.png",
+  "source_sha256": "6d7fb4f7e7caeb24e9741ad4ada38ce322e50543518fb6edf6fd1a82d1e064da",
+  "prompt": "art/prompts/horizon_bahia.md",
+  "prompt_sha256": "089d62ca615099f758dfe69bdcd8dfec850e17aec939f7a4d7e801f239da7f9a",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/stage_bahia_canonical.jpg",
+      "sha256": "ffffa249658d74a2e1c74c92b48d1692109d300a96db04fdfbcb9a6889eb8ef8"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "native_1x",
+      "scanline_budget"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

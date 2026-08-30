@@ -1,0 +1,45 @@
+{
+  "format": 1,
+  "asset": "cruz",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/cruz.png",
+  "source_sha256": "9a58a826ada8b3e7aa1dbaf4de0745d7f815701d7f4b7b935b4cd47688cb0c53",
+  "prompt": "art/prompts/cruz.md",
+  "prompt_sha256": "e82f27953cf2a9bbbc805ee7f11cd424c057756890aecd431625f67a79b7857e",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/cruz_canonical.jpg",
+      "sha256": "a664b534069b4184e080b2f2f275eb888f3b23b85e206024be3ce01b4e09d773"
+    },
+    {
+      "path": "art/raw/cruz_clean.jpg",
+      "sha256": "fa6f2cfcf9ea99d7210484e787c585495b2b4dba215b7890f722040a7d581e5a"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "identity",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

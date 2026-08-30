@@ -1,0 +1,45 @@
+{
+  "format": 1,
+  "asset": "ai_maverick",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/ai_maverick.png",
+  "source_sha256": "4c45ed452aac7646acce5238a11269a65c97b26c7fe6adc53cfbec814c70472b",
+  "prompt": "art/prompts/ai_maverick.md",
+  "prompt_sha256": "c892b617a0f53eab2b761c34d6bba609405e9d3814047e25bc397f1d98bbdc48",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/ai_maverick_utv.jpg",
+      "sha256": "ace5732e42151fbe8e5de46803c32d7855cd1e68ba1afc28d389204087444ebe"
+    },
+    {
+      "path": "art/raw/ai_maverick_rear.jpg",
+      "sha256": "311e53f05ad5d6ecb5ff50a16abdaaaf0eebbb51aff9e748b6266324bd051ca4"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "identity",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

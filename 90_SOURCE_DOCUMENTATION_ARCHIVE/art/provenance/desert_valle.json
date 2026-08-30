@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "asset": "desert_valle",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/desert_valle.png",
+  "source_sha256": "9405855ee69a2fbc6e646cf6292e7e194fe585eed5cd3ce366133d293f9499d2",
+  "prompt": "art/prompts/desert_valle.md",
+  "prompt_sha256": "f8cbdf85e12ad907641ccf0b08f35196e368b5d0bf57d2f93ad75480167b785b",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/stage_valle_canonical.jpg",
+      "sha256": "bf1cbcbe6edc9ea3d9ca57f5a36f9335d55619c9cda1f66ea3c36c66c5cca50f"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "native_1x",
+      "scanline_budget"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "asset": "desert_san_felipe",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/desert_san_felipe.png",
+  "source_sha256": "23666d9b7579da2874a05626c8d196c0e430bddf78c665966489a388223d6b9a",
+  "prompt": "art/prompts/desert_san_felipe.md",
+  "prompt_sha256": "2632968aeb924460ae726bbfd49a7ebc83c5691a35dcf7f28e3d56d7e9eedda8",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/stage_sanfelipe_canonical.jpg",
+      "sha256": "349a539d3e3247f8efaa56505a8978f1a5b5e4403a967eeb2f56eaf2621d4725"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "native_1x",
+      "scanline_budget"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

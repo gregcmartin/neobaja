@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "asset": "helicopter",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/helicopter.png",
+  "source_sha256": "17b0f83e64c4dc508509c5b777e2b1e9d0b93bb4975a8c4666f06097ed291b4a",
+  "prompt": "art/prompts/helicopter.md",
+  "prompt_sha256": "840fd39b96a1edcd38db4a28096c71010b4a44879479bc9a3006f9251598abf5",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/stage_ensenada_canonical.jpg",
+      "sha256": "3d390a3d72514cdf703d4571de012a3ccc83a3e8047955842b5d5d324374cc3f"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

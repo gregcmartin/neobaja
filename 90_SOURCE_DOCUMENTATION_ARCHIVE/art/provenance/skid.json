@@ -1,0 +1,41 @@
+{
+  "format": 1,
+  "asset": "skid",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/skid.png",
+  "source_sha256": "a7b86de4a72f045d94518e8648142fad6b8a2069cfa570f8e53c8fb693c80a20",
+  "prompt": "art/prompts/skid.md",
+  "prompt_sha256": "3e3f4cdf89694acb7f320b412c0e85851accf2af1e1d0d77a8e5d69a63fc8863",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/dust_canonical.jpg",
+      "sha256": "2e3eeffca7a97309da30e3c5b6d6d6e79b7c0225de3d45d6caf38fc822304c2f"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "loop",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

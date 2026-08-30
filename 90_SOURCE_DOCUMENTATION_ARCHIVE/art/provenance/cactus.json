@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "asset": "cactus",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/cactus.png",
+  "source_sha256": "e2bbf58f9f034d122979d93df9f5281e164b94afc883e6a1d19e9398de1f1690",
+  "prompt": "art/prompts/cactus.md",
+  "prompt_sha256": "0e00512a4f62867b02c5536e82933bd82b0b53a4b51885f48445483676dcb90b",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/cactus_canonical.jpg",
+      "sha256": "59317b16d85a31143addf9fc0f035c2a01e4b1c1c25f299502639dcd63dcc536"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "format": 1,
+  "name": "ensenada",
+  "world": {"width": 640, "height": 224},
+  "viewport": {"width": 320, "height": 224},
+  "chunk_width": 320,
+  "sample_step": 16,
+  "objects": [
+    {"id": "horizon", "asset": "horizon", "frame": 0, "space": "screen", "x": 0, "y": 0, "priority": 1},
+    {"id": "desert", "asset": "desert", "frame": 0, "space": "screen", "x": 0, "y": 96, "priority": 2},
+    {"id": "logo", "asset": "logo", "frame": 0, "space": "screen", "x": 160, "y": 48, "priority": 12},
+    {"id": "cactus_l", "asset": "cactus", "frame": 0, "space": "world", "x": 40, "y": 180, "priority": 20},
+    {"id": "cactus_r", "asset": "cactus", "frame": 0, "space": "world", "x": 280, "y": 176, "priority": 20},
+    {"id": "ai_rzr", "asset": "ai_rzr", "frame": 0, "space": "world", "x": 130, "y": 150, "priority": 30},
+    {"id": "ai_maverick", "asset": "ai_maverick", "frame": 0, "space": "world", "x": 200, "y": 138, "priority": 31},
+    {"id": "player", "asset": "player_rzr", "frame": 0, "space": "world", "x": 160, "y": 222, "priority": 40},
+    {"id": "max", "asset": "max", "frame": 0, "space": "world", "x": 78, "y": 150, "priority": 50},
+    {"id": "cruz", "asset": "cruz", "frame": 0, "space": "world", "x": 242, "y": 158, "priority": 50}
+  ],
+  "triggers": [
+    {"id": "stage_gate", "x": 300, "y": 0, "width": 16, "height": 224, "event": 1, "parameter": 0}
+  ]
+}

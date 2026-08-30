@@ -1,0 +1,45 @@
+{
+  "format": 1,
+  "asset": "max",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/max.png",
+  "source_sha256": "699ba4136b852c840213e9642e90ea41c05d658c3a48f1cef6c2f31cc464cde7",
+  "prompt": "art/prompts/max.md",
+  "prompt_sha256": "fef20cbb1f8601559b729e98ca16970733c1675ba9cad5daf4daf2fb904069ac",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/max_canonical.jpg",
+      "sha256": "4f300a018bc9f3ecaeef34879ffe895a99d416b1e97fc91ee7c8cb33017e7b3b"
+    },
+    {
+      "path": "art/raw/max_clean.jpg",
+      "sha256": "384ed1b325e7b420ea82c34d569e19cfe3661ba8fc633b6a58df5f13d6453f9f"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "identity",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

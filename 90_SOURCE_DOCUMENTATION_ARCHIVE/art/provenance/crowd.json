@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "asset": "crowd",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/crowd.png",
+  "source_sha256": "4071fd031424584d700410d9dd98c7897b6f2b07980adf81e5a52bd2389f0082",
+  "prompt": "art/prompts/crowd.md",
+  "prompt_sha256": "39143068eb0cbee76c3a31b32c931419281594f5d8de33f3fb795945b1e4b2d1",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/stage_sanfelipe_canonical.jpg",
+      "sha256": "349a539d3e3247f8efaa56505a8978f1a5b5e4403a967eeb2f56eaf2621d4725"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

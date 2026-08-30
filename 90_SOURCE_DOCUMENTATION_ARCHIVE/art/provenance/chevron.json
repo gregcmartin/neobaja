@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "asset": "chevron",
+  "origin": "grok_build",
+  "production_eligible": true,
+  "source": "assets/source/chevron.png",
+  "source_sha256": "b340240786641914ca8b91520e52c5dd5853cf6bff9d856b688472206e84d246",
+  "prompt": "art/prompts/chevron.md",
+  "prompt_sha256": "53761673658586ed041ebce86e68d1e5abccd5d9adec4b00363e4b0f9406dbc7",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [
+    {
+      "path": "art/raw/stage_valle_canonical.jpg",
+      "sha256": "bf1cbcbe6edc9ea3d9ca57f5a36f9335d55619c9cda1f66ea3c36c66c5cca50f"
+    }
+  ],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  }
+}

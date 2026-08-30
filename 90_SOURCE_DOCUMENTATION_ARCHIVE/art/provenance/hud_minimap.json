@@ -1,0 +1,37 @@
+{
+  "format": 1,
+  "asset": "hud_minimap",
+  "origin": "bitmap_typography",
+  "production_eligible": true,
+  "source": "assets/source/hud_minimap.png",
+  "source_sha256": "456f494fa9b36a369f64651f11c856e4319835edce9a4dd412b9f97d296eac0f",
+  "prompt": "art/prompts/hud_minimap.md",
+  "prompt_sha256": "bb21b07c388898b6018d38d32dd271f436d7053225f1ec91b06e4a5ac41d864c",
+  "generator": {
+    "tool": "grok-build",
+    "model": "grok-4.6",
+    "version": "1.0.13",
+    "session_id": "01a05371-ecfe-75c3-9686-b374741dc1da",
+    "skills": [
+      "imagine",
+      "game-asset-core"
+    ]
+  },
+  "raw_outputs": [],
+  "review": {
+    "status": "approved",
+    "reviewer": "gauntlet-builder-01a05371",
+    "checks": [
+      "clean_room",
+      "discrete_accuracy",
+      "in_game",
+      "native_1x"
+    ]
+  },
+  "conversion": {
+    "resampling": "nearest_neighbor",
+    "alpha": "hard",
+    "posterize": "neo_geo_5bit"
+  },
+  "typography": "deterministic_fix_bitmap_over_generated_art"
+}
