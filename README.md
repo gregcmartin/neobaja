@@ -25,3 +25,15 @@ implementation.
   records, not an implementation foundation.
 
 No new game code should be written until these boundaries have been read.
+
+## Current rebuild direction
+
+The new implementation is programming-first. The pinned projects named in
+`05_PROGRAMMING_FOUNDATION/REFERENCE_REGISTER.md` are nonshipping references;
+BAJANEW's deterministic fixed-point road, handling, rival AI, collision, and
+projection code is independently authored under `src/` and `include/`.
+
+Run `make check` to execute the gameplay regression suite and generate a
+deterministic telemetry trace. Native Neo Geo rendering and MAME validation are
+the next gate; approved Baja art is integrated only after that gameplay layer
+is controllable.

@@ -2,9 +2,16 @@
 
 - Read `START_HERE.md`, `AGENTS.md`, `01_GAME_VISION/`, and
   `02_REFERENCE_LIBRARY/README.md`.
-- Choose a new implementation approach without inspecting or recovering code,
-  constants, tests, tooling, ROMs, or build configuration from the rejected
-  BAJANEW tag or excluded sibling projects.
+- [x] Choose and document an independent fixed-point implementation approach
+  without recovering anything from the rejected BAJANEW implementation.
+- [x] Pin Cannonball, the OutRun arcade SDK article, and Pseudo3D-road as
+  nonshipping programming references.
+- [x] Select the enhanced Forge68 SDK and document its MCP host/MAME testing
+  loop, neutral-input requirement, and BAJANEW art-policy override.
+- [x] Pass the deterministic host gameplay and road-projection suite.
+- [ ] Build a fresh Neo Geo renderer/input shell around the immutable simulation
+  snapshot.
+- [ ] Verify literal keyboard A/B/Start mappings and moving frames in MAME.
 - Reuse only the explicitly approved original artwork under `art/`.
 - Build one Ensenada vertical slice focused first on readable road motion,
   responsive human controls, collision/off-road feel, and rival behavior.
