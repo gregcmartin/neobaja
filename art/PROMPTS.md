@@ -32,6 +32,18 @@ blue/gold number 8 jersey; Cruz, age 6, brown hair, slightly darker complexion,
 orange/blue number 6 jersey. A follow-up changed only Cruz to a short-haired boy
 and requested transparent background. No real-person likenesses or branding.
 
+### Outfit and number revision
+
+Use case: precise-object-edit. Change only the racers' outfit colors and chest
+numbers. The left blond racer Max must wear a predominantly red racing outfit
+and display the exact number `2`; the right brown-haired racer Cruz must wear a
+predominantly blue racing outfit and display the exact number `17`. Preserve
+their faces, identities, ages, hair, skin tones, expressions, anatomy, outlines,
+poses, hands, helmets, gloves, belts, scale, crop, spacing, pixel-art style and
+background. Keep Max left and Cruz right. No logos, brands, extra characters,
+other text, number 8, number 6, orange-dominant Cruz outfit, or blue-dominant
+Max outfit.
+
 ## Ensenada terrain and props
 
 Original 4x4 modular atlas containing four dirt/shoulder textures, rocks, agave,

@@ -202,7 +202,7 @@ def make_rival() -> Image.Image:
 
 
 def make_portraits() -> Image.Image:
-    source = remove_light_background(Image.open(RAW / "max-cruz-select.png"))
+    source = remove_light_background(Image.open(RAW / "max-cruz-select-v2.png"))
     cells = split_cells(source, 2, 1)
     canvas = Image.new("RGBA", (128, 256), (0, 0, 0, 0))
     for index, cell in enumerate(cells):

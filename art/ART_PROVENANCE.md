@@ -17,6 +17,13 @@ The second Ensenada environment pass is retained unchanged as
 It was generated from text only. No mockup or copyrighted screenshot was
 attached to the generation request.
 
+The revised racer-selection source is retained as `max-cruz-select-v2.png`
+(SHA-256
+`1669c99ad3bc25e45002d4e1f07358ae061da9074257630871b17184e04dc891`).
+It is a built-in `image_gen` edit of the original project-owned portrait:
+Max's outfit changed to red and number 2, while Cruz's changed to blue and
+number 17. The original raw remains alongside it unchanged.
+
 The Max Cruz Racing developer splash is the sole user-provided shipping image.
 Its pinned source remains unchanged at
 `02_REFERENCE_LIBRARY/developer-splash/devsplashlogo.jpg` and is converted with

@@ -224,8 +224,8 @@ static void enter_scene(enum BajaScene scene) {
             place_bitmap(41u, TILE_PORTRAITS, PAL_PORTRAITS, 8u, 8u, 16, 62u, 0x0fffu);
             place_bitmap(49u, (u16)(TILE_PORTRAITS + 64u), PAL_PORTRAITS, 8u, 8u, 176, 62u, 0x0fffu);
             ng_center_text(4, 0u, "CHOOSE YOUR RACER");
-            fixed_text(8, 25, "MAX  #8");
-            fixed_text(28, 25, "CRUZ #6");
+            fixed_text(8, 25, "MAX  #2");
+            fixed_text(28, 25, "CRUZ #17");
             ng_center_text(28, 0u, "LEFT/RIGHT   A CONFIRM");
             break;
         case BAJA_COUNTDOWN:

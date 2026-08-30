@@ -19,7 +19,7 @@ and MAME 0.289.
 
 ROM: `build/rom/bajanew.zip`
 
-SHA-256: `29023d714d8d522414cecc8c0de0b8ca93e86de4ceb0c76f227c619423f2350f`
+SHA-256: `cfcde8e4ccfc927d83f7691322bb533a928fafa38430bcc82fe0856d473238b7`
 
 68000 ELF footprint: 12,512 bytes text, 108 data, 631 BSS.
 
