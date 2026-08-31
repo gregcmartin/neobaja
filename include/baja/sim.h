@@ -10,6 +10,7 @@
 #define BAJA_ROAD_SAMPLE_MAX 32
 
 typedef int32_t BajaFp;
+typedef void (*BajaServiceHook)(void);
 
 typedef enum BajaPhase {
     BAJA_PHASE_SPLASH = 0,
@@ -94,20 +95,34 @@ typedef struct BajaRoadSample {
     uint8_t shade;
 } BajaRoadSample;
 
+typedef struct BajaObjectProjection {
+    int16_t screen_x;
+    int16_t screen_y;
+    uint16_t depth;
+    uint8_t zoom_x;
+    uint8_t zoom_y;
+    uint8_t visible;
+    uint8_t reserved;
+} BajaObjectProjection;
+
 BajaFp baja_fp_from_int(int32_t value);
 int32_t baja_fp_to_int(BajaFp value);
 BajaFp baja_fp_mul(BajaFp a, BajaFp b);
 BajaFp baja_fp_div(BajaFp a, BajaFp b);
 
 void baja_track_init(BajaTrack *track);
+void baja_track_init_cooperative(BajaTrack *track, BajaServiceHook service_hook);
 void baja_track_sample(const BajaTrack *track, BajaFp s, BajaFp *x,
                        BajaFp *y, BajaFp *curve);
 
 void baja_sim_init(BajaSim *sim);
+void baja_sim_init_cooperative(BajaSim *sim, BajaServiceHook service_hook);
 void baja_sim_step(BajaSim *sim, uint8_t input);
 void baja_sim_begin_race(BajaSim *sim);
 
 uint8_t baja_project_road(const BajaSim *sim, BajaRoadSample *samples,
                           uint8_t capacity);
+void baja_project_object(const BajaSim *sim, BajaFp object_s, BajaFp object_e,
+                         BajaObjectProjection *projection);
 
 #endif

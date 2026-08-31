@@ -1,0 +1,3 @@
+[submodule "sdk/forge68"]
+	path = sdk/forge68
+	url = https://github.com/gregcmartin/ng_neogeo_SDK.git

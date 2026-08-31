@@ -175,6 +175,10 @@ static void test_projection(void)
 {
     BajaSim sim;
     BajaRoadSample samples[BAJA_ROAD_SAMPLE_MAX];
+    BajaObjectProjection near_object;
+    BajaObjectProjection far_object;
+    BajaObjectProjection left_object;
+    BajaObjectProjection right_object;
     uint8_t count;
     uint8_t visible = 0;
     uint8_t i;
@@ -195,6 +199,17 @@ static void test_projection(void)
         }
     }
     REQUIRE(visible >= 8);
+
+    sim.player_s = 0;
+    sim.player_e = 0;
+    baja_project_object(&sim, baja_fp_from_int(40), 0, &near_object);
+    baja_project_object(&sim, baja_fp_from_int(120), 0, &far_object);
+    baja_project_object(&sim, baja_fp_from_int(40), -BAJA_FP_ONE / 2, &left_object);
+    baja_project_object(&sim, baja_fp_from_int(40), BAJA_FP_ONE / 2, &right_object);
+    REQUIRE(near_object.visible != 0);
+    REQUIRE(far_object.visible != 0);
+    REQUIRE(near_object.zoom_x > far_object.zoom_x);
+    REQUIRE(left_object.screen_x < right_object.screen_x);
 }
 
 static void test_finish_and_restart(void)

@@ -1,4 +1,6 @@
 CC ?= cc
+MAME ?= mame
+MAME_BIOS_DIR ?=
 CFLAGS ?= -std=c99 -O2 -Wall -Wextra -Werror -pedantic
 CPPFLAGS ?= -Iinclude
 
@@ -8,7 +10,7 @@ TEST_BIN := $(HOST_BUILD)/test_sim
 TRACE_BIN := $(HOST_BUILD)/sim_trace
 TRACE_CSV := $(HOST_BUILD)/sim_trace.csv
 
-.PHONY: all check test sanitize m68k-check trace clean
+.PHONY: all check test sanitize m68k-check trace native-host native-rom native-verify mame-smoke mame-keyboard mame-controls play clean
 
 all: check
 
@@ -24,6 +26,27 @@ m68k-check: build/m68k/sim.o
 	m68k-neogeo-elf-size $<
 
 trace: $(TRACE_CSV)
+
+native-host:
+	$(MAKE) -C native host
+
+native-rom:
+	$(MAKE) -C native rom
+
+native-verify:
+	$(MAKE) -C native verify
+
+mame-smoke:
+	$(MAKE) -C native mame-smoke MAME_BIOS_DIR="$(MAME_BIOS_DIR)" MAME="$(MAME)"
+
+mame-keyboard:
+	$(MAKE) -C native mame-keyboard MAME_BIOS_DIR="$(MAME_BIOS_DIR)" MAME="$(MAME)"
+
+mame-controls:
+	$(MAKE) -C native mame-controls MAME_BIOS_DIR="$(MAME_BIOS_DIR)" MAME="$(MAME)"
+
+play:
+	$(MAKE) -C native play MAME_BIOS_DIR="$(MAME_BIOS_DIR)" MAME="$(MAME)"
 
 $(TRACE_CSV): $(TRACE_BIN)
 	$(TRACE_BIN) > $@

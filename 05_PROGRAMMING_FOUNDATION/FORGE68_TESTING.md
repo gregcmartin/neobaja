@@ -13,7 +13,22 @@ AI-assisted verification layer on 2026-08-30.
 The SDK provides the Neo Geo BIOS/runtime layer, sprite renderer, asset and scene
 compilers, ROM packing, target telemetry, host build, MAME gates, audio, and the
 local `forge68` MCP server. BAJANEW does not reuse Forge68's demo gameplay,
-fixture art, tuning, or scene content.
+tuning, or scene content. Its fixture sprites are temporary diagnostic
+stand-ins in the programming shell only and cannot ship as BAJANEW game art.
+
+## Current integration status
+
+The SDK is pinned as `sdk/forge68` at the commit above. BAJANEW currently uses
+its native runtime, renderer, asset compiler, ROM packer/verifier, host platform,
+target telemetry, MAME smoke tools, and input-field control technique. The
+enhanced MCP server and persistent AI host protocol were inspected and recorded
+on 2026-08-30, including deterministic named inputs, structured state, debug
+screenshots, persistent MAME control, and bounded evidence bundles.
+
+The existing MCP executable still describes and builds the SDK demo. A
+BAJANEW-specific state serializer/adapter is therefore an open implementation
+gate. Until that adapter exists and passes against this game, no SDK demo MCP
+result may be reported as BAJANEW gameplay evidence.
 
 ## Required AI test loop
 

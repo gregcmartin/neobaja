@@ -1,7 +1,6 @@
 #include "baja/sim.h"
 
 #include <stddef.h>
-#include <string.h>
 
 #define FP_RATIO(n, d) ((BajaFp)(((int32_t)(n) * BAJA_FP_ONE) / (d)))
 
@@ -33,6 +32,13 @@ typedef struct TrackPiece {
     int16_t curve_milli;
     int16_t grade_milli;
 } TrackPiece;
+
+static void zero_bytes(void *memory, uint32_t bytes)
+{
+    uint8_t *cursor = (uint8_t *)memory;
+    uint32_t index;
+    for (index = 0; index < bytes; ++index) cursor[index] = 0U;
+}
 
 static BajaFp fp_abs(BajaFp value)
 {
@@ -86,7 +92,7 @@ static BajaFp smoothstep(BajaFp t)
     return baja_fp_mul(t2, (3 * BAJA_FP_ONE) - (2 * t));
 }
 
-void baja_track_init(BajaTrack *track)
+void baja_track_init_cooperative(BajaTrack *track, BajaServiceHook service_hook)
 {
     static const TrackPiece pieces[] = {
         {48, 0, 0},
@@ -104,7 +110,7 @@ void baja_track_init(BajaTrack *track)
     uint16_t segment = 0;
     uint16_t piece;
 
-    memset(track, 0, sizeof(*track));
+    zero_bytes(track, (uint32_t)sizeof(*track));
     track->segment_length = SEGMENT_LENGTH;
     track->total_length = SEGMENT_LENGTH * BAJA_TRACK_SEGMENTS;
 
@@ -126,8 +132,14 @@ void baja_track_init(BajaTrack *track)
             track->center_x[segment + 1] = track->center_x[segment] + heading;
             track->height[segment + 1] = track->height[segment] + current_grade;
             ++segment;
+            if (service_hook != NULL && (segment & 7U) == 0U) service_hook();
         }
     }
+}
+
+void baja_track_init(BajaTrack *track)
+{
+    baja_track_init_cooperative(track, NULL);
 }
 
 void baja_track_sample(const BajaTrack *track, BajaFp s, BajaFp *x,
@@ -159,7 +171,7 @@ static void reset_rivals(BajaSim *sim)
     BajaRival *evasive = &sim->rivals[0];
     BajaRival *blocker = &sim->rivals[1];
 
-    memset(sim->rivals, 0, sizeof(sim->rivals));
+    zero_bytes(sim->rivals, (uint32_t)sizeof(sim->rivals));
 
     evasive->s = baja_fp_from_int(58);
     evasive->e = FP_RATIO(-7, 20);
@@ -180,15 +192,20 @@ static void reset_rivals(BajaSim *sim)
     blocker->active = 1;
 }
 
-void baja_sim_init(BajaSim *sim)
+void baja_sim_init_cooperative(BajaSim *sim, BajaServiceHook service_hook)
 {
-    memset(sim, 0, sizeof(*sim));
-    baja_track_init(&sim->track);
+    zero_bytes(sim, (uint32_t)sizeof(*sim));
+    baja_track_init_cooperative(&sim->track, service_hook);
     sim->phase = BAJA_PHASE_SPLASH;
     sim->driver = BAJA_DRIVER_MAX;
     sim->surface = BAJA_SURFACE_ROAD;
     sim->position = BAJA_RIVAL_COUNT + 1;
     reset_rivals(sim);
+}
+
+void baja_sim_init(BajaSim *sim)
+{
+    baja_sim_init_cooperative(sim, NULL);
 }
 
 void baja_sim_begin_race(BajaSim *sim)
@@ -503,4 +520,50 @@ uint8_t baja_project_road(const BajaSim *sim, BajaRoadSample *samples,
         nearest_visible_y = sample->screen_y;
     }
     return count;
+}
+
+void baja_project_object(const BajaSim *sim, BajaFp object_s, BajaFp object_e,
+                         BajaObjectProjection *projection)
+{
+    const int16_t screen_center = 160;
+    const int16_t horizon = 72;
+    const BajaFp focal = baja_fp_from_int(640);
+    const BajaFp camera_height = baja_fp_from_int(3);
+    BajaFp depth;
+    BajaFp camera_x;
+    BajaFp camera_y;
+    BajaFp object_x;
+    BajaFp object_y;
+    BajaFp scale;
+    BajaFp screen_offset;
+    BajaFp screen_drop;
+    int32_t depth_units;
+    int32_t zoom;
+
+    if (projection == NULL) return;
+    zero_bytes(projection, (uint32_t)sizeof(*projection));
+    depth = object_s - sim->player_s;
+    if (depth <= baja_fp_from_int(2) || depth >= baja_fp_from_int(700)) return;
+
+    baja_track_sample(&sim->track, sim->player_s, &camera_x, &camera_y, NULL);
+    camera_x += baja_fp_mul(sim->player_e, WORLD_ROAD_HALF);
+    baja_track_sample(&sim->track, object_s, &object_x, &object_y, NULL);
+    object_x += baja_fp_mul(object_e, WORLD_ROAD_HALF);
+    scale = baja_fp_div(focal, depth);
+    screen_offset = baja_fp_mul(object_x - camera_x, scale);
+    screen_drop = baja_fp_mul((camera_y + camera_height) - object_y, scale);
+
+    projection->screen_x = (int16_t)(screen_center + baja_fp_to_int(screen_offset));
+    projection->screen_y = (int16_t)(horizon + baja_fp_to_int(screen_drop));
+    depth_units = baja_fp_to_int(depth);
+    projection->depth = (uint16_t)depth_units;
+    zoom = (20 * 15) / depth_units;
+    if (zoom > 15) zoom = 15;
+    if (zoom < 1) zoom = 1;
+    projection->zoom_x = (uint8_t)zoom;
+    projection->zoom_y = (uint8_t)(zoom * 17);
+    projection->visible = (uint8_t)(projection->screen_x > -64 &&
+                                    projection->screen_x < 384 &&
+                                    projection->screen_y >= horizon &&
+                                    projection->screen_y < 240);
 }
