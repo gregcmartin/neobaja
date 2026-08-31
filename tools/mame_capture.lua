@@ -46,8 +46,8 @@ end
 -- Machine frames.  The cartridge renders every other vblank, so the splash's
 -- 300 game frames take about 600 of these on top of the BIOS handover.
 local script = {
-    {620, 628, 16}, {700, 708, 16},
-    {820, 6000, 4},
+    {620, 628, 16}, {760, 768, 16},
+    {880, 6000, 4},
     {2300, 2360, 8},
 }
 -- Between the scripted moments, steer toward the centre of the road so the
@@ -58,7 +58,7 @@ local function centring_steer()
     if e < -4096 then return 2 end
     return 0
 end
-local captures = {300, 660, 740, 900, 1100, 1350, 1600, 2000, 2500, 3000, 3500, 4200, 5000}
+local captures = {300, 650, 665, 680, 900, 1100, 1350, 1600, 2000, 2500, 3000, 3500, 4200}
 
 emu.print_info(string.format("BAJANEW_CAPTURE_LOADED left=%d right=%d a=%d b=%d start=%d",
     #fields.left, #fields.right, #fields.a, #fields.b, #fields.start))

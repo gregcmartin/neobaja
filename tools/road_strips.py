@@ -31,6 +31,10 @@ PLATE_DEPTH_C = PLATE_DY_NEAR * PLATE_NEAR_DEPTH
 PLATE_HALF_REACH = 735.0
 # Length blended across the wrap so the texture tiles without a visible seam.
 WRAP_BLEND_M = 4.0
+# No pixel of the road surface may fall below this luminance, and anything
+# already flat black becomes dirt rather than being scaled up from nothing.
+SHADOW_FLOOR = 48.0
+SHADOW_TONE = (62.0, 40.0, 20.0)
 
 
 def _plate() -> np.ndarray:
@@ -69,6 +73,18 @@ def rectify_road_texture(rows: int = 384) -> tuple[np.ndarray, np.ndarray]:
     gain[(edge >= 0.90) & (edge < 1.03)] = 1.20
     gain[(edge >= 1.03) & (edge < 1.24)] = 0.84
     texture *= gain[None, :, None]
+    np.clip(texture, 0, 255, out=texture)
+
+    # Lift the deepest shadows.  The plate's far verge carries near-black
+    # scrub, and a strip's outer columns clamp onto it and smear it into solid
+    # blocks; a sunlit Baja road has no true black in it anyway.  Hue is kept
+    # and only the level is raised.
+    luminance = texture.sum(axis=2) / 3.0
+    lift = np.where(luminance < SHADOW_FLOOR,
+                    SHADOW_FLOOR / np.maximum(luminance, 1.0), 1.0)
+    texture *= lift[:, :, None]
+    flat = luminance < 6.0
+    texture[flat] = np.array(SHADOW_TONE, dtype=np.float64)
     np.clip(texture, 0, 255, out=texture)
 
     # Cross-fade the tail back over the head so v wraps cleanly.
@@ -172,6 +188,8 @@ def build_sheets() -> tuple[list[tuple[str, np.ndarray, dict]], dict]:
         "texture_length_m": TEX_LEN_M,
         "lateral_span_road_half_widths": TEX_U_SPAN,
         "edge_accent": {"berm_gain": 1.20, "verge_gain": 0.84},
+        "shadow_floor": SHADOW_FLOOR,
+        "shadow_tone": list(SHADOW_TONE),
         "bands": [dict(g) for g in strip_geometry()],
     }
     return sheets, report

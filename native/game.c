@@ -36,6 +36,8 @@
  * the road already claims most of it, so the field is capped rather than left
  * to drop columns at the worst possible moment. */
 #define SCENERY_BUDGET 3
+/* Baseline the selection portraits stand on. */
+#define DRIVER_BASE_Y 190
 
 #define SHADE_AMBER 0x80
 
@@ -382,6 +384,25 @@ static void draw_player(BajanewGame *game)
     }
 }
 
+/* The chosen racer stands full height; the other one steps back.  Shrink is
+ * measured from the frame's own origin, so the anchor is nudged to keep the
+ * smaller portrait standing on the same line and centred on the same spot. */
+static void draw_driver(BajanewGame *game, const NgSpriteFrame *frame,
+                        int16_t x, uint8_t chosen)
+{
+    uint8_t zoom_x = chosen ? 0x0fU : 0x0bU;
+    uint8_t zoom_y = (uint8_t)(((zoom_x + 1U) << 4) - 1U);
+    int16_t width = (int16_t)(frame->width_tiles * (zoom_x + 1U));
+    int16_t height = (int16_t)(((int32_t)frame->height_tiles * 16 * (zoom_y + 1)) / 256);
+    int16_t full_width = (int16_t)(frame->width_tiles * 16U);
+    int16_t full_height = (int16_t)(frame->height_tiles * 16U);
+
+    submit(&game->renderer, frame,
+           (int16_t)(x + ((full_width - width) / 2)),
+           (int16_t)(DRIVER_BASE_Y + (full_height - height)),
+           PRIORITY_PLAYER, zoom_x, zoom_y, 0U);
+}
+
 /* ------------------------------------------------------------------- HUD -- */
 
 static void draw_hud(BajanewGame *game)
@@ -429,18 +450,20 @@ static void draw_hud(BajanewGame *game)
         put_text(game, 32, 2, 0, "-'--\"--");
     }
 
+    /* Both blocks sit outside the columns the player vehicle occupies, so the
+     * driving line stays clear at 1x. */
     put_text(game, 1, 24, 0, "SPEED");
     put_uint(game, 1, 25, SHADE_AMBER, speed, 3, 0);
     put_text(game, 5, 25, 0, "KMH");
-    put_text(game, 1, 27, 0, "GEAR");
-    put_uint(game, 6, 27, SHADE_AMBER, sim->gear, 1, 1);
     revs = (uint16_t)((sim->speed * 8) / BAJA_FP_ONE);
     if (revs > 6U) revs = 6U;
     put_bar(game, 1, 26, 6, (uint8_t)(revs * 8U + 4U));
+    put_text(game, 1, 27, 0, "GEAR");
+    put_uint(game, 6, 27, SHADE_AMBER, sim->gear, 1, 1);
 
-    put_text(game, 26, 24, 0, "ENSENADA");
-    put_text(game, 24, 25, SHADE_AMBER, "PACIFIC RUN");
-    put_bar(game, 24, 27, 12, (uint8_t)((progress * 96U) / 100U));
+    put_text(game, 31, 24, 0, "ENSENADA");
+    put_text(game, 28, 25, SHADE_AMBER, "PACIFIC RUN");
+    put_bar(game, 29, 26, 10, (uint8_t)((progress * 80U) / 100U));
 
     if (sim->surface == BAJA_SURFACE_DIRT) put_text(game, 17, 22, SHADE_AMBER, "OFF ROAD");
     else if (sim->surface == BAJA_SURFACE_SHOULDER) put_text(game, 18, 22, 0, "EDGE");
@@ -508,16 +531,15 @@ static void draw_frame(BajanewGame *game)
     case BAJA_PHASE_SELECT: {
         uint8_t is_max = (uint8_t)(sim->driver == BAJA_DRIVER_MAX);
         draw_race(game, 0);
-        put_text(game, 13, 6, 0, "CHOOSE DRIVER");
-        put_text(game, 7, 12, is_max ? SHADE_AMBER : 0U, "MAX");
-        put_text(game, 7, 13, 0, "AGE 8");
-        put_text(game, 7, 14, 0, "NO 8");
-        put_text(game, 27, 12, is_max ? 0U : SHADE_AMBER, "CRUZ");
-        put_text(game, 27, 13, 0, "AGE 6");
-        put_text(game, 27, 14, 0, "NO 6");
-        put_text(game, is_max ? 5 : 25, 12, 0, ">");
-        put_text(game, 8, 24, 0, "LEFT RIGHT CHOOSE");
-        put_text(game, 11, 25, 0, "START CONFIRMS");
+        put_text(game, 13, 3, 0, "CHOOSE DRIVER");
+        draw_driver(game, &ng_asset_driver_max_frames[0], 84, is_max);
+        draw_driver(game, &ng_asset_driver_cruz_frames[0], 236, (uint8_t)!is_max);
+        put_text(game, 8, 24, is_max ? SHADE_AMBER : 0U, "MAX");
+        put_text(game, 6, 25, 0, "AGE 8  NO 2");
+        put_text(game, 27, 24, is_max ? 0U : SHADE_AMBER, "CRUZ");
+        put_text(game, 25, 25, 0, "AGE 6  NO 17");
+        put_text(game, is_max ? 6 : 25, 24, 0, ">");
+        put_text(game, 8, 27, 0, "LEFT RIGHT   START");
         break;
     }
     case BAJA_PHASE_COUNTDOWN: {

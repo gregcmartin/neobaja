@@ -205,6 +205,35 @@ def build_splash(sprites: list[dict]) -> dict:
             "letterbox": [x0, 0, width, height], "aspect_preserved": True}
 
 
+DRIVER_SOURCE = "max-cruz-select-v2.png"
+DRIVER_BOXES = [(30, 31, 738, 990), (840, 151, 1492, 990)]
+DRIVER_FRAME = (96, 128)
+
+
+def build_drivers(sprites: list[dict]) -> dict:
+    """Max and Cruz for the selection screen.
+
+    The source ships its transparency as a near-white matte, so it is keyed out
+    rather than trusted as alpha.
+    """
+    note_source(DRIVER_SOURCE)
+    plate = np.array(Image.open(RAW / DRIVER_SOURCE).convert("RGB")).astype(np.int32)
+    low, high = plate.min(axis=2), plate.max(axis=2)
+    matte = (low >= 235) & ((high - low) <= 14)
+    rgba = np.dstack([plate, np.where(matte, 0, 255).astype(np.int32)])
+
+    out = []
+    for index, (name, box) in enumerate(zip(("driver_max", "driver_cruz"), DRIVER_BOXES)):
+        x0, y0, x1, y1 = box
+        art = fit_sprite(rgba[y0:y1 + 1, x0:x1 + 1], DRIVER_FRAME)
+        palette = pick_palette(art)
+        sprites.append(emit(name, art, DRIVER_FRAME,
+                            (DRIVER_FRAME[0] // 2, DRIVER_FRAME[1] - 1),
+                            18 + index, palette))
+        out.append(name)
+    return {"source": DRIVER_SOURCE, "frame": list(DRIVER_FRAME), "drivers": out}
+
+
 # ---------------------------------------------------------------- backdrop --
 
 def build_backdrop(sprites: list[dict]) -> dict:
@@ -228,23 +257,27 @@ def build_backdrop(sprites: list[dict]) -> dict:
     panel = np.zeros((BACKDROP_H, SCREEN_W, 4), dtype=np.float64)
     panel[:HORIZON_Y] = fitted[:HORIZON_Y]
 
-    raw_plate = np.array(Image.open(RAW / road_strips.PLATE).convert("RGB")).astype(np.float64)
-    plate_h, plate_w, _ = raw_plate.shape
-    squeeze = FUNNEL_K / (road_strips.PLATE_K * road_strips.PLATE_DEPTH_C / 480.0) * 0.5
+    # Below the horizon the panel is the plate's own ground, with its road
+    # painted out by mirroring the hillside inward across it.  Tiling a verge
+    # sample instead produced a moire arch that read as a rendering fault
+    # rather than as terrain.
+    plate_cx = SCREEN_W * road_strips.PLATE_VX / 1498.0
+    # The plate's road widens more slowly than this game's funnel, so its
+    # roadway always sits inside the band the real road covers.
+    plate_slope = road_strips.PLATE_K * (1050.0 / SCREEN_H) * (SCREEN_W / 1498.0)
     for row in range(HORIZON_Y, BACKDROP_H):
-        dy = float(row - HORIZON_Y) + 1.0
-        plate_dy = float(np.clip(road_strips.PLATE_DEPTH_C * dy / 480.0, 60.0,
-                                 plate_h - road_strips.PLATE_VY - 6))
-        y = int(round(road_strips.PLATE_VY + plate_dy))
-        inner = int(round(road_strips.PLATE_K * plate_dy * 1.34))
-        # Only the plate's right-hand verge: the left side runs into the sea,
-        # and a strip of ocean tiled across the ground plane reads as a bug.
-        verge = raw_plate[y, min(plate_w - 8, int(round(road_strips.PLATE_VX)) + inner):]
-        width = max(8, int(round(len(verge) * squeeze)))
-        run = np.asarray(Image.fromarray(
-            verge[None, :, :].astype(np.uint8)).resize((width, 1), Image.BOX)).astype(np.float64)[0]
-        run = np.roll(run, (row * 5) % width, axis=0)
-        panel[row, :, :3] = np.resize(run, (SCREEN_W, 3))
+        source = fitted[row].astype(np.float64)
+        half = plate_slope * float(row - HORIZON_Y) + 2.0
+        left_edge = int(round(plate_cx - half))
+        right_edge = int(round(plate_cx + half))
+        line = source.copy()
+        for x in range(max(0, left_edge), min(SCREEN_W, right_edge + 1)):
+            if x <= plate_cx:
+                mirrored = 2 * left_edge - x
+            else:
+                mirrored = 2 * right_edge - x
+            line[x] = source[int(np.clip(mirrored, 0, SCREEN_W - 1))]
+        panel[row] = line
         panel[row, :, 3] = 255.0
 
     panorama = np.concatenate([panel[:, ::-1], panel], axis=1).astype(np.int32)
@@ -418,6 +451,7 @@ def main() -> None:
     road = build_road(sprites)
     backdrop = build_backdrop(sprites)
     splash = build_splash(sprites)
+    drivers = build_drivers(sprites)
     player = build_player(sprites)
     rivals = build_rivals(sprites)
     scenery = build_scenery(sprites)
@@ -444,7 +478,7 @@ def main() -> None:
     generated.mkdir(parents=True, exist_ok=True)
     emit_c_tables(road, scenery, generated)
     write_json(ROOT / "build/assets/CONVERSION.json", {
-        "road": road, "backdrop": backdrop, "splash": splash,
+        "road": road, "backdrop": backdrop, "splash": splash, "drivers": drivers,
         "player": player, "rivals": rivals,
         "scenery": scenery, "fix": fix,
         "sources": record["sources"], "sheets": record["sheets"],

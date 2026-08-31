@@ -83,6 +83,9 @@ mame-smoke: verify
 		--script $(FORGE68)/tools/mame_smoke.lua \
 		--screenshot $(BUILD)/evidence/bajanew-mame.png \
 		--audio $(BUILD)/evidence/bajanew-mame.wav
+	$(PYTHON) $(ROOT)/tools/verify_screen_alignment.py \
+		--capture $(BUILD)/evidence/bajanew-mame.png \
+		--asset $(ROOT)/assets/source/splash.png
 
 mame-keyboard: verify
 	@test -n "$(MAME_BIOS_DIR)" || (echo "Set MAME_BIOS_DIR to the directory containing neogeo.zip" && exit 2)

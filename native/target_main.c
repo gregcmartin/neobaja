@@ -17,11 +17,6 @@ static NgRasterSchedule ng_raster;
 
 extern volatile uint32_t ng_vblank_counter;
 
-static void raster_event(const NgRasterEvent *event)
-{
-    if (event->channel == 0U) ng_platform_backdrop(event->value);
-}
-
 static void clear_telemetry(void)
 {
     volatile uint8_t *bytes = (volatile uint8_t *)&ng_telemetry;
@@ -104,7 +99,9 @@ void ng_target_main(void)
     ng_audio_init(&ng_audio);
     ng_program_banks_init(&ng_banks, 4);
     ng_raster_init(&ng_raster);
-    (void)ng_raster_add(&ng_raster, 72, 0, 0x8000U, 0);
+    /* No mid-screen backdrop change: BAJANEW covers the whole frame with its
+     * own layers, and the SDK demo's raster event only ever showed through as
+     * black where something was missing. */
     (void)ng_audio_enqueue(&ng_audio, NG_AUDIO_CMD_PLAY_MUSIC);
     bajanew_game_init(&ng_game);
     update_game_telemetry((NgPad){0, 0, 0});
@@ -121,7 +118,7 @@ void ng_target_main(void)
             ng_platform_wait_vblank();
         }
         deadline = ng_vblank_counter + BAJANEW_FIELDS_PER_FRAME;
-        (void)ng_raster_activate(&ng_raster, ng_timing_profile(NG_VIDEO_NTSC), raster_event);
+        (void)ng_raster_activate(&ng_raster, ng_timing_profile(NG_VIDEO_NTSC), 0);
         pad = ng_platform_read_pad(1);
         bajanew_game_tick(&ng_game, pad);
         ng_audio_update(&ng_audio);

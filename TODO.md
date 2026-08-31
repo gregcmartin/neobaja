@@ -34,9 +34,8 @@
   time is the next thing worth measuring.
 - [ ] The HUD's lower row overlaps the player vehicle; recompose once the play
   area is settled.
-- [ ] Scenery reads dark at 1x: the chevron sign and flag are near-black
-  silhouettes at race distances.  Their conversion needs more contrast against
-  the dirt.
+- [ ] Scenery still reads dark at 1x at long range; the chevron sign in
+  particular wants more contrast against the dirt.
 - [ ] Title and character-select screens are placeholder text over the race
   backdrop.  `max-cruz-select-v2.png` is converted but not yet used.
 - [ ] Audio is still the Forge68 SDK's driver and V-ROM content, not BAJANEW
