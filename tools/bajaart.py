@@ -37,7 +37,7 @@ PLATE_VX, PLATE_VY, PLATE_K = 740.0, 383.0, 0.78
 TEX_U_SPAN = 2.6
 TEX_LEN_M = 8.0
 TEX_W, TEX_H = 512, 64
-ROAD_PHASES = 4
+ROAD_PHASES = 2
 
 
 def sha256(path: Path) -> str:

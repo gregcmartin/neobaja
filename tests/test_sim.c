@@ -238,20 +238,20 @@ static void test_bands_track_curve_and_surface_phase(void)
 
     /* The middle distance streams its surface phase; the nearest bands opt
      * out because a metre of road crosses them in under a frame. */
-    previous = curved[8].phase;
+    previous = curved[2].phase;
     for (i = 0; i < 120; ++i) {
         BajaRoadBand bands[BAJA_ROAD_BANDS];
         uint8_t b;
         drive_frames(&sim, 1);
         (void)baja_project_bands(&sim, bands);
-        if (bands[8].phase != previous) ++phase_changes;
-        previous = bands[8].phase;
+        if (bands[2].phase != previous) ++phase_changes;
+        previous = bands[2].phase;
         for (b = 0; b < BAJA_ROAD_BANDS; ++b) {
             if (baja_band_stripe_shift[b] == 0U) REQUIRE(bands[b].phase == 0U);
         }
     }
     REQUIRE(phase_changes >= 2);
-    REQUIRE(baja_band_stripe_shift[0] > baja_band_stripe_shift[8]);
+    REQUIRE(baja_band_stripe_shift[0] > baja_band_stripe_shift[2]);
     REQUIRE(baja_band_stripe_shift[BAJA_ROAD_BANDS - 1] == 0U);
     ++checks;
 }

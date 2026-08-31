@@ -5,7 +5,10 @@
 
 #define BAJA_FP_SHIFT 16
 #define BAJA_FP_ONE ((int32_t)1 << BAJA_FP_SHIFT)
-#define BAJA_TRACK_SEGMENTS 384
+#define BAJA_TRACK_SEGMENTS 512
+/* One course segment is eight metres, chosen as a power of two so the 68000
+ * never divides to locate a point on the track. */
+#define BAJA_SEGMENT_SHIFT 19
 #define BAJA_RIVAL_COUNT 3
 #define BAJA_SCENERY_COUNT 48
 
@@ -15,7 +18,7 @@
 #define BAJA_SCREEN_HEIGHT 224
 #define BAJA_SCREEN_CENTER 160
 #define BAJA_HORIZON_Y 84
-#define BAJA_ROAD_BANDS 17
+#define BAJA_ROAD_BANDS 6
 
 typedef int32_t BajaFp;
 typedef void (*BajaServiceHook)(void);
@@ -167,6 +170,19 @@ void baja_track_frame_init(const BajaTrack *track, BajaFp base_s,
                            BajaTrackFrame *frame);
 void baja_track_frame_sample(const BajaTrack *track, const BajaTrackFrame *frame,
                              BajaFp s, BajaFp *lateral, BajaFp *rise);
+
+/* The whole scene shares one view: building it per object cost the 68000 an
+ * entire frame in redundant track sampling. */
+typedef struct BajaView {
+    BajaTrackFrame frame;
+    BajaFp camera_lateral;
+    BajaFp camera_rise;
+} BajaView;
+
+void baja_view_init(const BajaSim *sim, BajaView *view);
+void baja_project_object_in(const BajaSim *sim, const BajaView *view,
+                            BajaFp object_s, BajaFp object_e,
+                            BajaObjectProjection *projection);
 
 void baja_sim_init(BajaSim *sim);
 void baja_sim_init_cooperative(BajaSim *sim, BajaServiceHook service_hook);

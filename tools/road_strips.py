@@ -12,11 +12,13 @@ speckle is kept for the middle distance, where it can actually be resolved.
 """
 from __future__ import annotations
 
+import re
+
 import numpy as np
 from PIL import Image
 
 from bajaart import (FUNNEL_K, PLATE_K, PLATE_VX, PLATE_VY, RAW, ROAD_PHASES,
-                     TEX_LEN_M, TEX_U_SPAN, TEX_W, band_tables)
+                     ROOT, TEX_LEN_M, TEX_U_SPAN, TEX_W, band_tables)
 
 PLATE = "ensenada-full-environment.png"
 
@@ -59,6 +61,16 @@ def rectify_road_texture(rows: int = 384) -> tuple[np.ndarray, np.ndarray]:
         x = np.clip(np.round(PLATE_VX + us * PLATE_K * dy).astype(int), 0, width - 1)
         texture[index] = plate[y, x]
 
+    # Sharpen the road edge.  The plate already changes here; lifting the
+    # packed berm and dropping the loose dirt just beyond it makes the boundary
+    # readable at 1x before the player crosses it.
+    edge = np.abs(us)
+    gain = np.ones_like(edge)
+    gain[(edge >= 0.90) & (edge < 1.03)] = 1.20
+    gain[(edge >= 1.03) & (edge < 1.24)] = 0.84
+    texture *= gain[None, :, None]
+    np.clip(texture, 0, 255, out=texture)
+
     # Cross-fade the tail back over the head so v wraps cleanly.
     keep = int(np.searchsorted(depths, PLATE_NEAR_DEPTH + TEX_LEN_M))
     tail = rows - keep
@@ -77,7 +89,7 @@ def strip_geometry() -> list[dict]:
         dy0, dy1 = dy[b], dy[b + 1]
         rows = dy1 - dy0
         width = int(round(2.0 * TEX_U_SPAN * FUNNEL_K * dy1))
-        width = max(16, min(896, (width + 15) // 16 * 16))
+        width = max(80, min(896, (width + 15) // 16 * 16))
         # Author tall enough that a downhill stretch never opens a seam.
         height = max(16, (int(round(rows * 1.9)) + 15) // 16 * 16)
         depth_far = 480.0 / dy0
@@ -89,12 +101,22 @@ def strip_geometry() -> list[dict]:
             "columns_on_screen": min(20, width // 16),
             "depth_span_m": round(depth_far - depth_near, 3),
             "depth_mid_m": round(480.0 / ((dy0 + dy1) / 2.0), 3),
+            "phases": ROAD_PHASES if stripe_shifts()[b] else 1,
         })
     return out
 
 
-def render_strip(texture: np.ndarray, depths: np.ndarray, geometry: dict,
-                 phase: int) -> np.ndarray:
+def stripe_shifts() -> list[int]:
+    """Per-band surface phase wavelength, read from the gameplay core."""
+    text = (ROOT / "src/sim.c").read_text(encoding="utf-8")
+    match = re.search(r"const uint8_t baja_band_stripe_shift\[[^\]]*\] = \{([^}]*)\}", text)
+    if not match:
+        raise SystemExit("cannot find baja_band_stripe_shift in src/sim.c")
+    return [int(v) for v in match.group(1).replace("\n", " ").split(",") if v.strip()]
+
+
+def render_strip(texture: np.ndarray, depths: np.ndarray,
+                 geometry: dict) -> np.ndarray:
     """Draw one band strip: a perspective slice of the rectified road."""
     width, height = geometry["width"], geometry["height"]
     dy0, dy1 = geometry["dy0"], geometry["dy1"]
@@ -125,28 +147,21 @@ def render_strip(texture: np.ndarray, depths: np.ndarray, geometry: dict,
         out[row, :, :3] = line[col]
         out[row, :, 3] = 255.0
 
-    if phase:
-        # The alternate surface phase is the same road under a slightly cooler,
-        # darker pass of light.  Bands toggle between the two as the course
-        # moves under them, which is what makes the surface stream.
-        out[..., 0] *= 0.88
-        out[..., 1] *= 0.90
-        out[..., 2] *= 0.97
     return out
 
 
 def build_sheets() -> tuple[list[tuple[str, np.ndarray, dict]], dict]:
-    """One sheet per band; frames across the sheet are the surface phases."""
+    """One strip per band, at its authored surface phase 0.
+
+    The alternate phase is produced later as a palette shift of these exact
+    pixels, so both phases stay inside one fifteen colour road palette.
+    """
     texture, depths = rectify_road_texture()
     sheets = []
     for geometry in strip_geometry():
-        width, height = geometry["width"], geometry["height"]
-        sheet = np.zeros((height, width * ROAD_PHASES, 4), dtype=np.float64)
-        for phase in range(ROAD_PHASES):
-            sheet[:, phase * width:(phase + 1) * width] = render_strip(
-                texture, depths, geometry, phase)
+        strip = render_strip(texture, depths, geometry)
         sheets.append((f"road{geometry['band']:02d}",
-                       np.clip(sheet, 0, 255).astype(np.int32), geometry))
+                       np.clip(strip, 0, 255).astype(np.int32), geometry))
     report = {
         "plate": PLATE,
         "vanishing_point": [PLATE_VX, PLATE_VY],
@@ -156,6 +171,7 @@ def build_sheets() -> tuple[list[tuple[str, np.ndarray, dict]], dict]:
         "texture_columns": TEX_W,
         "texture_length_m": TEX_LEN_M,
         "lateral_span_road_half_widths": TEX_U_SPAN,
-        "phases": ROAD_PHASES,
+        "edge_accent": {"berm_gain": 1.20, "verge_gain": 0.84},
+        "bands": [dict(g) for g in strip_geometry()],
     }
     return sheets, report

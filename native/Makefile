@@ -1,7 +1,8 @@
 ROOT := ..
 FORGE68 := $(ROOT)/sdk/forge68
 BUILD := $(ROOT)/build/native
-GEN := $(FORGE68)/build/generated
+GEN := $(ROOT)/build/assets/generated
+AUDIO_GEN := $(FORGE68)/build/generated
 ROMDIR := $(BUILD)/roms
 
 PYTHON ?= python3
@@ -14,9 +15,14 @@ MAME_BIOS_DIR ?=
 
 WARNINGS := -Wall -Wextra -Werror -Wshadow
 INCLUDES := -I$(ROOT)/include -I$(ROOT)/native/include -I$(FORGE68)/include -I$(GEN)
-HOST_CFLAGS := -std=c11 -O2 $(WARNINGS) $(INCLUDES) -DNG_HOST
+# -MMD/-MP: without generated header dependencies a changed struct layout
+# silently links stale objects together, which is exactly how a game boots
+# and then reads its own state at the wrong offsets.
+DEPFLAGS := -MMD -MP
+HOST_CFLAGS := -std=c11 -O2 $(WARNINGS) $(INCLUDES) $(DEPFLAGS) -DNG_HOST
 M68K_CFLAGS := -m68000 -std=c11 -Os -g3 -gdwarf-2 -ffreestanding -fno-builtin \
-	-ffunction-sections -fdata-sections -fomit-frame-pointer $(WARNINGS) $(INCLUDES)
+	-ffunction-sections -fdata-sections -fomit-frame-pointer $(WARNINGS) $(INCLUDES) \
+	$(DEPFLAGS)
 M68K_LDFLAGS := -m68000 -nostdlib -Wl,-T,$(ROOT)/native/link.ld \
 	-Wl,-Map,$(BUILD)/m68k/bajanew.map -Wl,--gc-sections
 
@@ -26,14 +32,14 @@ HOST_ENGINE_OBJECTS := $(addprefix $(BUILD)/host/engine/,$(addsuffix .o,$(ENGINE
 HOST_OBJECTS := $(HOST_ENGINE_OBJECTS) $(BUILD)/host/engine/platform_host.o \
 	$(BUILD)/host/game/sim.o $(BUILD)/host/game/game.o \
 	$(BUILD)/host/game/host_main.o $(BUILD)/host/generated/assets.o \
-	$(BUILD)/host/generated/scenes.o
+	$(BUILD)/host/generated/bajanew_assets.o
 HOST_BINARY := $(BUILD)/bajanew-host
 
 TARGET_ENGINE_OBJECTS := $(addprefix $(BUILD)/m68k/engine/,$(addsuffix .o,$(ENGINE_REL)))
 TARGET_OBJECTS := $(TARGET_ENGINE_OBJECTS) $(BUILD)/m68k/game/sim.o \
 	$(BUILD)/m68k/game/game.o $(BUILD)/m68k/target/platform.o \
 	$(BUILD)/m68k/target/memory.o $(BUILD)/m68k/game/target_main.o \
-	$(BUILD)/m68k/generated/assets.o $(BUILD)/m68k/generated/scenes.o
+	$(BUILD)/m68k/generated/assets.o $(BUILD)/m68k/generated/bajanew_assets.o
 TARGET_CRT := $(BUILD)/m68k/crt0.o
 TARGET_ELF := $(BUILD)/m68k/bajanew.elf
 TARGET_RAW := $(BUILD)/m68k/bajanew.p
@@ -43,20 +49,27 @@ ROM_ZIP := $(ROMDIR)/puzzledp.zip
 
 all: host rom verify
 
+# BAJANEW compiles its own approved artwork; only the audio driver and V-ROM
+# still come from the SDK build.
 assets:
-	$(MAKE) -C $(FORGE68) assets scenes audio PYTHON=$(PYTHON)
+	@mkdir -p $(GEN)
+	$(PYTHON) $(ROOT)/tools/build_assets.py
+	@$(PYTHON) $(FORGE68)/tools/ngasset.py $(ROOT)/assets/manifest.json --output $(GEN) > $(GEN)/asset_compile.json
+	$(MAKE) -C $(FORGE68) audio PYTHON=$(PYTHON)
 
 host: $(HOST_BINARY)
-	$(HOST_BINARY)
+	@mkdir -p $(BUILD)/evidence
+	$(HOST_BINARY) > $(BUILD)/evidence/bajanew-host.json
 
 rom: $(ROM_ZIP)
 	@ls -lh $(ROM_ZIP) $(TARGET_ELF)
 
-verify: $(ROM_ZIP)
-	$(PYTHON) $(FORGE68)/tools/verify_rom.py --rom-dir $(ROMDIR) \
+verify: $(ROM_ZIP) host
+	$(PYTHON) $(ROOT)/tools/verify_rom.py --rom-dir $(ROMDIR) \
 		--elf $(TARGET_ELF) --asset-report $(GEN)/asset_report.json \
-		--scene-report $(GEN)/scene_report.json \
-		--audio-report $(GEN)/audio/audio_report.json --size-tool $(M68K_SIZE)
+		--audio-report $(AUDIO_GEN)/audio/audio_report.json \
+		--render-report $(BUILD)/evidence/bajanew-host.json \
+		--size-tool $(M68K_SIZE)
 
 mame-smoke: verify
 	@test -n "$(MAME_BIOS_DIR)" || (echo "Set MAME_BIOS_DIR to the directory containing neogeo.zip" && exit 2)
@@ -153,8 +166,10 @@ $(ROM_ZIP): $(TARGET_RAW) | assets
 	@mkdir -p $(ROMDIR)
 	$(PYTHON) $(FORGE68)/tools/rompack.py --p-raw $(TARGET_RAW) \
 		--s1 $(GEN)/s1.bin --m1 $(FORGE68)/build/m68k/m1.bin \
-		--v1 $(GEN)/audio/v1.bin --c1 $(GEN)/c1.bin --c2 $(GEN)/c2.bin \
+		--v1 $(AUDIO_GEN)/audio/v1.bin --c1 $(GEN)/c1.bin --c2 $(GEN)/c2.bin \
 		--output $(ROMDIR)
+
+-include $(HOST_OBJECTS:.o=.d) $(TARGET_OBJECTS:.o=.d)
 
 clean:
 	rm -rf $(BUILD)
