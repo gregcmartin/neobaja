@@ -1,98 +1,104 @@
 # What the 68000 can afford
 
-Every number here was measured on the real cartridge in MAME by writing a
-render level into `bajanew_render_level` and reading the cartridge's own
-telemetry: game frames against vblanks, so the metric is exactly "how many
-60 Hz fields does one game frame take".
+Every number here was measured on the real cartridge in MAME. The game writes a
+stage number to `bajanew_stage` at each step of its frame; a MAME script taps
+that address and turns the gaps into 68000 cycles, which is the only way to see
+costs smaller than a whole 60 Hz field. `bajanew_render_level` peels layers off
+the scene so each one can be priced separately. Nothing in the game writes
+either byte.
 
-## Method
+## Where it started
 
-`native/game.c` peels the frame apart by level, and nothing in the game ever
-writes that byte:
+The Ensenada race ran at 3.1 fields per frame, and because the simulation
+stepped once per drawn frame it was also running at roughly a third of the
+sixty steps a second everything is tuned for. A frame cost about 472,000
+cycles against a field's 200,000.
 
-| Level | Frame contains |
-| ---: | --- |
-| 7 | simulation and main loop only, no drawing |
-| 6 | + FIX clear/flush and an empty renderer flush |
-| 5 | + the phase's HUD and menu text |
-| 4 | + the shared view and the road band projection |
-| 3 | + the backdrop panorama |
-| 2 | + the road bands |
-| 1 | + scenery |
-| 0 | + rivals, player, dust |
+## Where it is now
 
-Levels 16 and up draw only the first N road bands, which produces a cost curve
-against hardware sprite columns.
+Racing holds **2.01 fields per frame - a locked 30 Hz display - with the
+simulation advancing twice per drawn frame, so gameplay runs at its designed
+60 Hz.** The road carries eight bands rather than the six it had been cut to
+for speed.
 
-## Results
+Frame breakdown while racing, in 68000 cycles:
 
-Held at the title screen, six bands, after the optimisations below:
+| Stage | Before | After |
+| --- | ---: | ---: |
+| simulation step | 18,720 | 19,700 (two steps now) |
+| FIX clear and renderer begin | 16,904 | 6,100 |
+| view and road band projection | 54,063 | 45,000 |
+| backdrop and road submit | 19,676 | 22,000 |
+| scenery, rivals, player, HUD submit | 118,833 | 61,000 |
+| renderer flush | 220,207 | 140,000 |
+| FIX flush | 24,208 | 10,400 |
+| **total** | **472,612** | **~305,000** |
 
-| Level | Columns | Vblanks per game frame |
-| ---: | ---: | ---: |
-| 7 | – | 1.000 |
-| 6 | 0 | 1.000 |
-| 5 | 0 | 1.000 |
-| 4 | 0 | 1.000 |
-| 3 | 20 | 1.003 |
-| 2 | 111 | 2.007 |
-| 1 | 121 | 2.027 |
-| 0 | 121 | 2.013 |
+## What the renderer cost, and why
 
-Racing adds the player, three rivals, dust and the full HUD and settles at
-3-4 vblanks per frame.
+A sprite column cost 1,500 to 2,200 cycles **even when the renderer's cache
+suppressed every VRAM write** - cartridge telemetry reported `vram_writes = 0`
+on a still frame that still took six fields to draw. It was not bandwidth. It
+was rebuilding each column's tile pointer, zoom and control words from scratch
+every frame, for every column, including the twenty a full-width road band
+needs.
 
-The band sweep, taken before the trims, gives the column cost directly:
+The flush now remembers each command's run of hardware sprites. If a command
+lands on the same sprites with the same tiles, palette and transform as last
+frame, every chained column after the head is provably unchanged: only the head
+carries a position, and the sticky columns inherit it. A wide object that slid
+sideways costs one word. One that only resized costs one word per column,
+because shrink is per hardware sprite, and touches no tile map.
 
-| Bands | Columns | Vblanks |
-| ---: | ---: | ---: |
-| 0 | 30 | 2.007 |
-| 2 | 40 | 2.990 |
-| 8 | 130 | 3.010 |
-| 10 | 172 | 3.987 |
-| 12 | 212 | 4.013 |
+Reuse is only sound while a run still owns its sprites. The sort order changes
+as objects move, so the flush records which command last wrote each hardware
+sprite and refuses to reuse a run that has been overwritten.
 
-Between 40 and 130 columns the cost does not change bucket, which brackets the
-per-column cost at **1400 to 2200 cycles**.  A 12 MHz 68000 has about 200,000
-cycles per field, so the whole scene may spend roughly **90 sprite columns per
-field**, and a full-width road band is twenty of them.
+Scanline pressure moved from adding to every covered line - which grew with the
+total height of every wide object - to two edits per command drained once, in
+place, so the next frame starts clean without a separate clear. That alone was
+43,000 cycles a frame.
 
-Cartridge telemetry reports `vram_writes = 0` for these frames: the renderer's
-cache suppresses every hardware write, so this is not VRAM bandwidth.  It is
-the per-column bookkeeping in `ng_renderer_flush`.
-
-## What was already fixed
+## Everything else that was in the way
 
 - **Stale objects.** `native/Makefile` had no header dependencies, so a changed
   struct layout linked old and new objects together and the game read its own
-  state at the wrong offsets.  `-MMD -MP` now tracks headers.
+  state at the wrong offsets. `-MMD -MP` now tracks headers.
 - **64-bit fixed point.** `baja_fp_mul` went through libgcc's `__muldi3` plus a
-  64-bit shift, about a thousand cycles a call, a few hundred times a frame.
-  It is now four 16x16 products.  The hot divisions are gone: the segment
-  length is a power of two, the object scale is one 32-bit divide, and the
-  speed ratio is a constant multiply.
-- **One view per frame.** Object projection rebuilt the road-tangent frame per
-  object; it is now built once and shared.
-- **FIX layer.** Clearing and comparing all 1120 cells twice a frame cost a
-  full field.  Only rows the HUD actually wrote are touched.
+  64-bit shift. It is now four 16x16 products, inlined in the header - out of
+  line, the call and register save cost more than the arithmetic.
+- **Hot divisions.** The segment length is a power of two, the object scale is
+  one 32-bit divide, the speed ratio is a constant multiply, and the HUD's
+  decimal conversion uses exact 16-bit reciprocals instead of two software
+  divisions per digit.
+- **One view per frame** instead of rebuilding the road-tangent frame per
+  object.
+- **FIX layer.** Only rows the HUD wrote are touched, and each row is cleared
+  and compared four cells at a time.
 - **Backdrop.** Sky and ground were separate full-width layers, forty columns
-  between them.  They are one panorama now.
+  between them; they are one panorama now.
+- **Camera shake** is a uniform pixel offset rather than a term in the
+  projection, so a band's height - and therefore its shrink - does not change
+  every frame.
+- **The road is contiguous in the sprite table.** Objects used to be
+  interleaved between the bands they stand on, so an object changing band
+  shifted every later band onto new hardware sprites.
+- The 68000 target builds at `-O2`; ROM is 41 KB of 512 KB.
 
-Those took the title screen from six fields per frame to two.
+## Proving it changed nothing
 
-## What is left
+`tools/verify_renderer.py` builds the game's host renderer twice, once with the
+fast paths and once with `NG_RENDERER_NO_RUN_REUSE`, and compares the VRAM
+digest after every frame of an identical 1500 frame run. They match exactly.
+The SDK's own `test_wide_object_reuse` pins the write counts: a chained
+sixteen column object costs zero words when nothing moved, one when it slid,
+one per column when it resized, and a full rebuild when its frame changed.
 
-The road cannot get much cheaper by drawing less: the near bands are wide
-because the road genuinely fills the screen there, and fewer bands means a
-visible lateral step at band boundaries during a bend.
+## What would buy the next field
 
-The real lever is the cost of submitting a sprite column.  Roughly 1500 cycles
-to decide that nothing changed and write nothing is about ten times what a
-hand-written Neo Geo sprite loop costs.  A fast path in the Forge68 renderer —
-one that skips the per-column recomputation when a command's frame, zoom and
-column span are unchanged from the previous frame, or that writes SCB entries
-from a prepared list — would return the whole road's cost.  That is a change to
-the pinned SDK and is Greg's call, not one to make unilaterally.
-
-The alternative inside BAJANEW is to accept a smaller play area or fewer bands,
-both of which cost visible quality.  Neither reaches 60 Hz.
+60 Hz needs the frame under about 180,000 cycles, which is another 125,000.
+The flush is still the largest item at roughly 140,000, and about 50 of the
+190 columns are genuinely rebuilt each frame because the objects that move also
+scale, change level of detail, and reorder. Precomputing each frame's SCB1
+words at asset compile time would turn a tile map upload into a copy, and is
+the next thing worth measuring.

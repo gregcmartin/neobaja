@@ -10,7 +10,7 @@ TEST_BIN := $(HOST_BUILD)/test_sim
 TRACE_BIN := $(HOST_BUILD)/sim_trace
 TRACE_CSV := $(HOST_BUILD)/sim_trace.csv
 
-.PHONY: all check test sanitize m68k-check trace native-host native-rom native-verify mame-smoke mame-keyboard mame-controls play clean
+.PHONY: all check test sanitize m68k-check trace native-host native-rom native-verify renderer-check mame-smoke mame-keyboard mame-controls play clean
 
 all: check
 
@@ -35,6 +35,9 @@ native-rom:
 
 native-verify:
 	$(MAKE) -C native verify
+
+renderer-check:
+	$(MAKE) -C native renderer-check
 
 mame-smoke:
 	$(MAKE) -C native mame-smoke MAME_BIOS_DIR="$(MAME_BIOS_DIR)" MAME="$(MAME)"

@@ -46,12 +46,12 @@ end
 -- Machine frames.  The cartridge renders every other vblank, so the splash's
 -- 300 game frames take about 600 of these on top of the BIOS handover.
 local script = {
-    {900, 906, 16}, {980, 986, 16},
-    {1100, 6000, 4},
-    {1900, 2000, 4 | 2}, {2400, 2500, 4 | 1}, {3000, 3060, 8},
-    {3600, 3760, 4 | 2}, {4400, 4560, 4 | 1},
+    {620, 628, 16}, {700, 708, 16},
+    {820, 6000, 4},
+    {1300, 1400, 4 | 2}, {1800, 1900, 4 | 1}, {2300, 2360, 8},
+    {2900, 3060, 4 | 2}, {3600, 3760, 4 | 1},
 }
-local captures = {400, 930, 1010, 1200, 1450, 1700, 2100, 2600, 3100, 3700, 4200, 4800, 5600}
+local captures = {300, 660, 740, 900, 1100, 1350, 1600, 2000, 2500, 3000, 3500, 4200, 5000}
 
 emu.print_info(string.format("BAJANEW_CAPTURE_LOADED left=%d right=%d a=%d b=%d start=%d",
     #fields.left, #fields.right, #fields.a, #fields.b, #fields.start))

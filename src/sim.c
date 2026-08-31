@@ -35,6 +35,8 @@
 
 #define VEHICLE_HALF_LENGTH FP_RATIO(5, 2)
 #define VEHICLE_HALF_WIDTH FP_RATIO(3, 10)
+/* Screen pixels of camera shake per world unit of suspension travel. */
+#define SHAKE_PIXELS FP_RATIO(26, 1)
 
 typedef struct TrackPiece {
     int16_t count;
@@ -43,36 +45,37 @@ typedef struct TrackPiece {
 } TrackPiece;
 
 const int16_t baja_band_dy[BAJA_ROAD_BANDS + 1] = {
-    2, 8, 18, 36, 66, 102, 140
+    2, 6, 12, 22, 38, 62, 90, 116, 140
 };
 
 const int16_t baja_band_half_width[BAJA_ROAD_BANDS] = {
-    7, 17, 36, 68, 112, 161
+    5, 12, 23, 40, 67, 101, 137, 171
 };
 
 /* Surface phase wavelength per band, as a fixed-point shift.  It grows with
  * depth so the pattern keeps a roughly constant size on screen instead of
  * aliasing into flicker; the nearest bands opt out entirely. */
 const uint8_t baja_band_stripe_shift[BAJA_ROAD_BANDS] = {
-    24, 22, 20, 18, 0, 0
+    25, 23, 21, 19, 18, 0, 0, 0
 };
 
 /* depth = camera_height * focal / dy_mid */
 static const BajaFp band_depth_fp[BAJA_ROAD_BANDS] = {
-    6291456, 2419791, 1165084,
-    616809, 374491, 259978
+    7864320, 3495253, 1850428, 1048576,
+    629146, 413912, 305410, 245760
 };
 
 /* screen pixels per world unit at the middle of each band */
 static const BajaFp band_scale_fp[BAJA_ROAD_BANDS] = {
-    109227, 283989, 589824,
-    1114112, 1835008, 2643285
+    87381, 196608, 371371, 655360,
+    1092267, 1660245, 2250069, 2796203
 };
 
 /* screen pixels per world unit at each band boundary */
 static const BajaFp band_edge_scale_fp[BAJA_ROAD_BANDS + 1] = {
-    43691, 174763, 393216, 786432,
-    1441792, 2228224, 3058347
+    43691, 131072, 262144, 480597,
+    830123, 1354411, 1966080, 2534059,
+    3058347
 };
 
 static void zero_bytes(void *memory, uint32_t bytes)
@@ -107,55 +110,6 @@ static BajaFp fp_approach(BajaFp value, BajaFp target, BajaFp rate)
     return value;
 }
 
-BajaFp baja_fp_from_int(int32_t value)
-{
-    return value * BAJA_FP_ONE;
-}
-
-int32_t baja_fp_to_int(BajaFp value)
-{
-    return value / BAJA_FP_ONE;
-}
-
-/* 16.16 multiply built from four 16x16 products.
- *
- * The obvious ((int64_t)a * b) >> 16 costs the 68000 a libgcc 64-bit multiply
- * and a 64-bit shift on every call, which measured out at roughly a thousand
- * cycles.  The projection calls this a few hundred times a frame, so the
- * decomposition below is the difference between a playable frame and a
- * six-frame one. */
-BajaFp baja_fp_mul(BajaFp a, BajaFp b)
-{
-    uint32_t ua;
-    uint32_t ub;
-    uint32_t ah;
-    uint32_t al;
-    uint32_t bh;
-    uint32_t bl;
-    uint32_t product;
-    uint8_t negative = 0;
-
-    if (a < 0) { a = -a; negative = 1U; }
-    if (b < 0) { b = -b; negative ^= 1U; }
-    ua = (uint32_t)a;
-    ub = (uint32_t)b;
-    ah = ua >> 16;
-    al = ua & 0xffffU;
-    bh = ub >> 16;
-    bl = ub & 0xffffU;
-    product = (ah * bh) << 16;
-    product += ah * bl;
-    product += al * bh;
-    product += (al * bl) >> 16;
-    if (!negative) return (BajaFp)product;
-    /* Floor rather than truncate toward zero, so the result matches an
-     * arithmetic shift of the full product exactly. */
-    return ((al * bl) & 0xffffU) != 0U ? -(BajaFp)product - 1 : -(BajaFp)product;
-}
-
-/* Kept on the 64-bit path deliberately: after the projection stopped dividing
- * per object this is called a handful of times a frame, and correctness across
- * the full 16.16 range matters more than its cost. */
 BajaFp baja_fp_div(BajaFp a, BajaFp b)
 {
     if (b == 0) return 0;
@@ -723,7 +677,9 @@ void baja_view_init(const BajaSim *sim, BajaView *view)
     if (view == NULL) return;
     baja_track_frame_init(&sim->track, sim->player_s, &view->frame);
     view->camera_lateral = baja_fp_mul(sim->player_e, WORLD_ROAD_HALF);
-    view->camera_rise = CAMERA_HEIGHT + sim->bounce;
+    view->camera_rise = CAMERA_HEIGHT;
+    view->shake = (int16_t)baja_fp_to_int(baja_fp_mul(sim->bounce, SHAKE_PIXELS));
+    view->reserved = 0;
 }
 
 uint8_t baja_project_bands(const BajaSim *sim, BajaRoadBand *bands)
@@ -754,7 +710,7 @@ uint8_t baja_project_bands(const BajaSim *sim, BajaRoadBand *bands)
             depth = (band_depth_fp[i - 1] + band_depth_fp[i]) / 2;
         }
         baja_track_frame_sample(&sim->track, frame_ptr, sim->player_s + depth, NULL, &rise);
-        edge_y[i] = (int16_t)(BAJA_HORIZON_Y +
+        edge_y[i] = (int16_t)(BAJA_HORIZON_Y + view.shake +
                               baja_fp_to_int(baja_fp_mul(camera_rise - rise,
                                                          band_edge_scale_fp[i])));
     }
@@ -826,7 +782,7 @@ void baja_project_object_in(const BajaSim *sim, const BajaView *view,
     projection->screen_x = (int16_t)(BAJA_SCREEN_CENTER +
                                      baja_fp_to_int(baja_fp_mul(lateral - view->camera_lateral,
                                                                 scale)));
-    projection->ground_y = (int16_t)(BAJA_HORIZON_Y +
+    projection->ground_y = (int16_t)(BAJA_HORIZON_Y + view->shake +
                                      baja_fp_to_int(baja_fp_mul(view->camera_rise - rise,
                                                                 scale)));
     depth_units = baja_fp_to_int(depth);

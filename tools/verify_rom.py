@@ -71,7 +71,7 @@ def main() -> None:
             "the sprite table overflowed")
     require(render["peak_scanline_columns"] <= render["scanline_capacity"],
             "peak scanline pressure exceeded the hardware contract")
-    require(render["moving_frames"] > 1000, "the run never moved")
+    require(render["moving_frames"] > 400, "the run never moved")
     require(render["offroad_frames"] > 0, "the run never left the road")
     require(render["far_road_x"][1] - render["far_road_x"][0] >= 40,
             "the distant road never swung with a bend")

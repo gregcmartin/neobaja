@@ -18,7 +18,13 @@
 #define BAJA_SCREEN_HEIGHT 224
 #define BAJA_SCREEN_CENTER 160
 #define BAJA_HORIZON_Y 84
-#define BAJA_ROAD_BANDS 6
+#define BAJA_ROAD_BANDS 8
+
+#if defined(__GNUC__)
+#define BAJA_INLINE __inline__ __attribute__((always_inline))
+#else
+#define BAJA_INLINE inline
+#endif
 
 typedef int32_t BajaFp;
 typedef void (*BajaServiceHook)(void);
@@ -145,9 +151,52 @@ typedef struct BajaObjectProjection {
     uint8_t reserved[2];
 } BajaObjectProjection;
 
-BajaFp baja_fp_from_int(int32_t value);
-int32_t baja_fp_to_int(BajaFp value);
-BajaFp baja_fp_mul(BajaFp a, BajaFp b);
+/* The projection calls these a few hundred times a frame.  Out of line they
+ * cost a jsr, a register save and a return on top of the arithmetic, which on
+ * a 12 MHz 68000 is most of the call; inline they are just the four 16x16
+ * products the hardware can actually do. */
+static BAJA_INLINE BajaFp baja_fp_from_int(int32_t value)
+{
+    return value * BAJA_FP_ONE;
+}
+
+static BAJA_INLINE int32_t baja_fp_to_int(BajaFp value)
+{
+    return value / BAJA_FP_ONE;
+}
+
+static BAJA_INLINE BajaFp baja_fp_mul(BajaFp a, BajaFp b)
+{
+    uint32_t ua;
+    uint32_t ub;
+    uint32_t ah;
+    uint32_t al;
+    uint32_t bh;
+    uint32_t bl;
+    uint32_t product;
+    uint8_t negative = 0;
+
+    if (a < 0) { a = -a; negative = 1U; }
+    if (b < 0) { b = -b; negative ^= 1U; }
+    ua = (uint32_t)a;
+    ub = (uint32_t)b;
+    ah = ua >> 16;
+    al = ua & 0xffffU;
+    bh = ub >> 16;
+    bl = ub & 0xffffU;
+    product = (ah * bh) << 16;
+    product += ah * bl;
+    product += al * bh;
+    product += (al * bl) >> 16;
+    if (!negative) return (BajaFp)product;
+    /* Floor rather than truncate toward zero, so the result matches an
+     * arithmetic shift of the full product exactly. */
+    return ((al * bl) & 0xffffU) != 0U ? -(BajaFp)product - 1 : -(BajaFp)product;
+}
+
+/* Left out of line on purpose: after the projection stopped dividing per
+ * object this runs a handful of times a frame, and correctness across the full
+ * 16.16 range matters more than its cost. */
 BajaFp baja_fp_div(BajaFp a, BajaFp b);
 
 void baja_track_init(BajaTrack *track);
@@ -177,6 +226,12 @@ typedef struct BajaView {
     BajaTrackFrame frame;
     BajaFp camera_lateral;
     BajaFp camera_rise;
+    /* Suspension travel as a whole-pixel shift applied equally to every band.
+     * Feeding it through the projection instead would change each band's
+     * height a little every frame, and a band whose height changes needs its
+     * shrink rewritten on every one of its hardware sprites. */
+    int16_t shake;
+    int16_t reserved;
 } BajaView;
 
 void baja_view_init(const BajaSim *sim, BajaView *view);

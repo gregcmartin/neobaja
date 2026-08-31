@@ -20,7 +20,7 @@ INCLUDES := -I$(ROOT)/include -I$(ROOT)/native/include -I$(FORGE68)/include -I$(
 # and then reads its own state at the wrong offsets.
 DEPFLAGS := -MMD -MP
 HOST_CFLAGS := -std=c11 -O2 $(WARNINGS) $(INCLUDES) $(DEPFLAGS) -DNG_HOST
-M68K_CFLAGS := -m68000 -std=c11 -Os -g3 -gdwarf-2 -ffreestanding -fno-builtin \
+M68K_CFLAGS := -m68000 -std=c11 -O2 -g3 -gdwarf-2 -ffreestanding -fno-builtin \
 	-ffunction-sections -fdata-sections -fomit-frame-pointer $(WARNINGS) $(INCLUDES) \
 	$(DEPFLAGS)
 M68K_LDFLAGS := -m68000 -nostdlib -Wl,-T,$(ROOT)/native/link.ld \
@@ -45,7 +45,7 @@ TARGET_ELF := $(BUILD)/m68k/bajanew.elf
 TARGET_RAW := $(BUILD)/m68k/bajanew.p
 ROM_ZIP := $(ROMDIR)/puzzledp.zip
 
-.PHONY: all assets host rom verify mame-smoke mame-keyboard mame-controls play clean
+.PHONY: all assets host rom verify renderer-check mame-smoke mame-keyboard mame-controls play clean
 
 all: host rom verify
 
@@ -64,7 +64,12 @@ host: $(HOST_BINARY)
 rom: $(ROM_ZIP)
 	@ls -lh $(ROM_ZIP) $(TARGET_ELF)
 
-verify: $(ROM_ZIP) host
+# The flush optimisation is only allowed to skip work the hardware would not
+# have noticed, so prove it against a build with the fast paths compiled out.
+renderer-check: | assets
+	$(PYTHON) $(ROOT)/tools/verify_renderer.py
+
+verify: $(ROM_ZIP) host renderer-check
 	$(PYTHON) $(ROOT)/tools/verify_rom.py --rom-dir $(ROMDIR) \
 		--elf $(TARGET_ELF) --asset-report $(GEN)/asset_report.json \
 		--audio-report $(AUDIO_GEN)/audio/audio_report.json \

@@ -18,21 +18,25 @@
 - [x] Draw a real projected road, rivals, scenery and HUD on Neo Geo hardware
   in MAME.
 
+- [x] Optimise the Forge68 sprite path.  The race now holds a locked 30 Hz
+  display with the simulation advancing at its designed 60 Hz, up from 3-4
+  vblanks per frame with the simulation running at a third speed.  Measurements
+  and method are in `05_PROGRAMMING_FOUNDATION/PERFORMANCE.md`; the flush's
+  equivalence to the unoptimised path is checked by `make renderer-check`.
+
 ## Open before Greg's five-minute play gate
 
-- [ ] **Frame rate.** The race runs at 3-4 vblanks per frame (15-20 fps); the
-  title screen holds 2 (30 fps).  Measured cause: the Forge68 sprite renderer
-  costs roughly 1500-2200 68000 cycles per hardware sprite column even when its
-  cache suppresses every VRAM write, and a full-width road band is twenty
-  columns.  See `05_PROGRAMMING_FOUNDATION/PERFORMANCE.md` for the measurements
-  and the options.  This is the blocking issue: an arcade racer cannot be
-  judged for feel at 15 fps.
-- [ ] Road band count is currently six, chosen for frame rate rather than for
-  looks.  The lateral step at a band boundary reaches roughly 37 px when the
-  player is at the road edge.  More bands are wanted once the sprite path is
-  cheaper.
+- [ ] Road band count is eight, still chosen partly for frame rate.  The
+  lateral step at a band boundary reaches roughly 26 px when the player is at
+  the road edge.  Ten bands cost 2.13 vblanks and were backed out.
+- [ ] 60 Hz would need about another 125,000 cycles a frame.  The flush is
+  still the largest item; precomputing each frame's SCB1 words at asset compile
+  time is the next thing worth measuring.
 - [ ] The HUD's lower row overlaps the player vehicle; recompose once the play
   area is settled.
+- [ ] Scenery reads dark at 1x: the chevron sign and flag are near-black
+  silhouettes at race distances.  Their conversion needs more contrast against
+  the dirt.
 - [ ] Title and character-select screens are placeholder text over the race
   backdrop.  `max-cruz-select-v2.png` is converted but not yet used.
 - [ ] Audio is still the Forge68 SDK's driver and V-ROM content, not BAJANEW

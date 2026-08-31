@@ -42,21 +42,21 @@
       ],
       "palette": 3,
       "palette_colors": [
-        "#191000",
-        "#D68429",
-        "#844208",
+        "#211000",
+        "#D68421",
+        "#7B4210",
         "#A56319",
-        "#EFC57B",
-        "#4A2908",
+        "#EFCE8C",
+        "#5A3108",
         "#080000",
         "#BD7B29",
-        "#E69C3A",
+        "#EF9C3A",
         "#945210",
-        "#B58C52",
-        "#735A29",
-        "#633A10",
+        "#DEAD63",
+        "#7B5A29",
         "#B56B19",
-        "#312108"
+        "#422108",
+        "#D6943A"
       ],
       "source": "source/road00.png"
     },
@@ -75,30 +75,30 @@
           "name": "all"
         }
       ],
-      "frame_height": 32,
-      "frame_width": 128,
+      "frame_height": 16,
+      "frame_width": 96,
       "name": "road01",
       "origin": [
-        64,
+        48,
         0
       ],
       "palette": 3,
       "palette_colors": [
-        "#191000",
-        "#D68429",
-        "#844208",
+        "#211000",
+        "#D68421",
+        "#7B4210",
         "#A56319",
-        "#EFC57B",
-        "#4A2908",
+        "#EFCE8C",
+        "#5A3108",
         "#080000",
         "#BD7B29",
-        "#E69C3A",
+        "#EF9C3A",
         "#945210",
-        "#B58C52",
-        "#735A29",
-        "#633A10",
+        "#DEAD63",
+        "#7B5A29",
         "#B56B19",
-        "#312108"
+        "#422108",
+        "#D6943A"
       ],
       "source": "source/road01.png"
     },
@@ -117,30 +117,30 @@
           "name": "all"
         }
       ],
-      "frame_height": 48,
-      "frame_width": 256,
+      "frame_height": 32,
+      "frame_width": 160,
       "name": "road02",
       "origin": [
-        128,
+        80,
         0
       ],
       "palette": 3,
       "palette_colors": [
-        "#191000",
-        "#D68429",
-        "#844208",
+        "#211000",
+        "#D68421",
+        "#7B4210",
         "#A56319",
-        "#EFC57B",
-        "#4A2908",
+        "#EFCE8C",
+        "#5A3108",
         "#080000",
         "#BD7B29",
-        "#E69C3A",
+        "#EF9C3A",
         "#945210",
-        "#B58C52",
-        "#735A29",
-        "#633A10",
+        "#DEAD63",
+        "#7B5A29",
         "#B56B19",
-        "#312108"
+        "#422108",
+        "#D6943A"
       ],
       "source": "source/road02.png"
     },
@@ -159,30 +159,30 @@
           "name": "all"
         }
       ],
-      "frame_height": 64,
-      "frame_width": 464,
+      "frame_height": 32,
+      "frame_width": 272,
       "name": "road03",
       "origin": [
-        232,
+        136,
         0
       ],
       "palette": 3,
       "palette_colors": [
-        "#191000",
-        "#D68429",
-        "#844208",
+        "#211000",
+        "#D68421",
+        "#7B4210",
         "#A56319",
-        "#EFC57B",
-        "#4A2908",
+        "#EFCE8C",
+        "#5A3108",
         "#080000",
         "#BD7B29",
-        "#E69C3A",
+        "#EF9C3A",
         "#945210",
-        "#B58C52",
-        "#735A29",
-        "#633A10",
+        "#DEAD63",
+        "#7B5A29",
         "#B56B19",
-        "#312108"
+        "#422108",
+        "#D6943A"
       ],
       "source": "source/road03.png"
     },
@@ -190,39 +190,41 @@
       "clips": [
         {
           "durations": [
-            1
+            8,
+            8
           ],
           "frames": [
-            0
+            0,
+            1
           ],
           "loop": true,
-          "name": "still"
+          "name": "all"
         }
       ],
-      "frame_height": 80,
-      "frame_width": 720,
+      "frame_height": 48,
+      "frame_width": 432,
       "name": "road04",
       "origin": [
-        360,
+        216,
         0
       ],
       "palette": 3,
       "palette_colors": [
-        "#191000",
-        "#D68429",
-        "#844208",
+        "#211000",
+        "#D68421",
+        "#7B4210",
         "#A56319",
-        "#EFC57B",
-        "#4A2908",
+        "#EFCE8C",
+        "#5A3108",
         "#080000",
         "#BD7B29",
-        "#E69C3A",
+        "#EF9C3A",
         "#945210",
-        "#B58C52",
-        "#735A29",
-        "#633A10",
+        "#DEAD63",
+        "#7B5A29",
         "#B56B19",
-        "#312108"
+        "#422108",
+        "#D6943A"
       ],
       "source": "source/road04.png"
     },
@@ -239,32 +241,112 @@
           "name": "still"
         }
       ],
-      "frame_height": 80,
-      "frame_width": 896,
+      "frame_height": 64,
+      "frame_width": 624,
       "name": "road05",
+      "origin": [
+        312,
+        0
+      ],
+      "palette": 3,
+      "palette_colors": [
+        "#211000",
+        "#D68421",
+        "#7B4210",
+        "#A56319",
+        "#EFCE8C",
+        "#5A3108",
+        "#080000",
+        "#BD7B29",
+        "#EF9C3A",
+        "#945210",
+        "#DEAD63",
+        "#7B5A29",
+        "#B56B19",
+        "#422108",
+        "#D6943A"
+      ],
+      "source": "source/road05.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 64,
+      "frame_width": 816,
+      "name": "road06",
+      "origin": [
+        408,
+        0
+      ],
+      "palette": 3,
+      "palette_colors": [
+        "#211000",
+        "#D68421",
+        "#7B4210",
+        "#A56319",
+        "#EFCE8C",
+        "#5A3108",
+        "#080000",
+        "#BD7B29",
+        "#EF9C3A",
+        "#945210",
+        "#DEAD63",
+        "#7B5A29",
+        "#B56B19",
+        "#422108",
+        "#D6943A"
+      ],
+      "source": "source/road06.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 48,
+      "frame_width": 896,
+      "name": "road07",
       "origin": [
         448,
         0
       ],
       "palette": 3,
       "palette_colors": [
-        "#191000",
-        "#D68429",
-        "#844208",
+        "#211000",
+        "#D68421",
+        "#7B4210",
         "#A56319",
-        "#EFC57B",
-        "#4A2908",
+        "#EFCE8C",
+        "#5A3108",
         "#080000",
         "#BD7B29",
-        "#E69C3A",
+        "#EF9C3A",
         "#945210",
-        "#B58C52",
-        "#735A29",
-        "#633A10",
+        "#DEAD63",
+        "#7B5A29",
         "#B56B19",
-        "#312108"
+        "#422108",
+        "#D6943A"
       ],
-      "source": "source/road05.png"
+      "source": "source/road07.png"
     },
     {
       "clips": [

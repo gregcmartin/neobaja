@@ -17,11 +17,18 @@
 #define FIX_VISIBLE_ROWS 28
 #define FIX_CELLS (FIX_VISIBLE_ROWS * BAJANEW_FIX_COLUMNS)
 
-/* Draw order: sky, ground, then every band front-to-back with room between
- * consecutive bands for the objects standing on that stretch of road. */
+/* Draw order: backdrop, the whole road far-to-near, then the world objects
+ * still sorted by depth among themselves.
+ *
+ * Objects used to be interleaved between the bands they stand on, which is
+ * strictly more correct but put a moving object in the middle of the sprite
+ * table: whenever one changed band, every road band after it shifted to a new
+ * hardware sprite and had to be rebuilt.  A prop beside the road and the road
+ * strips below it do not overlap on screen, so keeping the road contiguous
+ * costs nothing visible and keeps its hardware sprites still. */
 #define PRIORITY_BACKDROP 0
-#define PRIORITY_BAND(b) ((uint8_t)(8U + (uint8_t)(b) * 4U))
-#define PRIORITY_ON_BAND(b) ((uint8_t)(10U + (uint8_t)(b) * 4U))
+#define PRIORITY_BAND(b) ((uint8_t)(8U + (uint8_t)(b)))
+#define PRIORITY_ON_BAND(b) ((uint8_t)(100U + (uint8_t)(b)))
 #define PRIORITY_DUST 200
 #define PRIORITY_PLAYER 204
 
@@ -45,6 +52,12 @@ enum {
  * Zero is the shipping scene and nothing in the game ever writes it. */
 volatile uint8_t bajanew_render_level = 0;
 
+/* Development timing marker.  Each stage of the frame writes its number here;
+ * a MAME script taps the address and turns the gaps into 68000 cycles, which
+ * is the only way to see costs smaller than a whole 60 Hz field. */
+volatile uint8_t bajanew_stage = 0;
+#define STAGE(n) do { bajanew_stage = (uint8_t)(n); } while (0)
+
 static uint8_t map_input(NgPad pad)
 {
     uint8_t input = 0;
@@ -67,10 +80,10 @@ static void clear_next(BajanewGame *game)
     uint8_t row;
     for (row = 0; row < FIX_VISIBLE_ROWS; ++row) {
         if ((dirty & (1UL << row)) != 0UL) {
-            uint8_t *cells = &game->fix_next[row][0];
-            uint8_t column;
-            for (column = 0; column < BAJANEW_FIX_COLUMNS; ++column) {
-                cells[column] = (uint8_t)' ';
+            uint32_t *cells = (uint32_t *)(void *)&game->fix_next[row][0];
+            uint8_t word;
+            for (word = 0; word < BAJANEW_FIX_COLUMNS / 4U; ++word) {
+                cells[word] = 0x20202020UL;
             }
         }
     }
@@ -99,20 +112,34 @@ static void put_text(BajanewGame *game, int16_t column, int16_t row,
     }
 }
 
+/* Exact for every 16-bit value, and one 16x16 multiply instead of the 68000's
+ * software division.  The HUD extracts about thirty digits a frame, which was
+ * sixty divide calls. */
+static uint16_t divide_by_ten(uint16_t value)
+{
+    return (uint16_t)(((uint32_t)value * 52429UL) >> 19);
+}
+
+static uint16_t divide_by_three(uint16_t value)
+{
+    return (uint16_t)(((uint32_t)value * 43691UL) >> 17);
+}
+
 static void put_uint(BajanewGame *game, int16_t column, int16_t row, uint8_t shade,
-                     uint32_t value, uint8_t digits, uint8_t pad_zero)
+                     uint16_t value, uint8_t digits, uint8_t pad_zero)
 {
     uint8_t *cells = fix_row(game, row);
     uint8_t index;
     if (cells == 0) return;
     for (index = 0; index < digits; ++index) {
         int16_t at = (int16_t)(column + (int16_t)(digits - index - 1U));
-        uint8_t glyph = (uint8_t)('0' + (uint8_t)(value % 10U));
+        uint16_t next = divide_by_ten(value);
+        uint8_t glyph = (uint8_t)('0' + (uint8_t)(value - (uint16_t)(next * 10U)));
         if (!pad_zero && index > 0U && value == 0U) glyph = (uint8_t)' ';
         if (at >= 0 && at < BAJANEW_FIX_COLUMNS) {
             cells[at] = (uint8_t)(glyph + shade);
         }
-        value /= 10U;
+        value = next;
     }
 }
 
@@ -143,16 +170,26 @@ static void flush_fix(BajanewGame *game)
     uint8_t row;
 
     for (row = 0; row < FIX_VISIBLE_ROWS; ++row) {
-        uint8_t *shadow;
-        const uint8_t *next;
-        uint8_t column;
+        uint32_t *shadow_words;
+        const uint32_t *next_words;
+        uint8_t word;
         if ((dirty & (1UL << row)) == 0UL) continue;
-        shadow = &game->fix_shadow[row][0];
-        next = &game->fix_next[row][0];
-        for (column = 0; column < BAJANEW_FIX_COLUMNS; ++column) {
-            if (shadow[column] != next[column]) {
-                shadow[column] = next[column];
-                ng_fix_putc(column, row, 0, (char)next[column]);
+        shadow_words = (uint32_t *)(void *)&game->fix_shadow[row][0];
+        next_words = (const uint32_t *)(const void *)&game->fix_next[row][0];
+        /* Four cells at a time: only a group that actually changed is worth
+         * looking at cell by cell. */
+        for (word = 0; word < BAJANEW_FIX_COLUMNS / 4U; ++word) {
+            if (shadow_words[word] != next_words[word]) {
+                uint8_t *shadow = &game->fix_shadow[row][word * 4U];
+                const uint8_t *next = &game->fix_next[row][word * 4U];
+                uint8_t offset;
+                for (offset = 0; offset < 4U; ++offset) {
+                    if (shadow[offset] != next[offset]) {
+                        shadow[offset] = next[offset];
+                        ng_fix_putc((uint8_t)(word * 4U + offset), row, 0,
+                                    (char)next[offset]);
+                    }
+                }
             }
         }
     }
@@ -350,12 +387,17 @@ static void draw_player(BajanewGame *game)
 static void draw_hud(BajanewGame *game)
 {
     const BajaSim *sim = &game->sim;
-    uint32_t hundredths = (sim->race_frames * 100U) / 60U;
-    uint32_t seconds = hundredths / 100U;
-    uint32_t speed = (uint32_t)((sim->speed * 216) / BAJA_FP_ONE);
-    uint32_t progress = (uint32_t)(((int64_t)sim->player_s * 100) /
-                                   sim->track.total_length);
-    uint32_t revs;
+    /* Race time and leg progress without a single division: the frame counter
+     * converts through two exact reciprocals, and the course length folds into
+     * a scale computed once at reset. */
+    uint32_t frames = sim->race_frames > 13000U ? 13000U : sim->race_frames;
+    uint16_t hundredths = divide_by_three((uint16_t)(frames * 5U));
+    uint16_t seconds = divide_by_ten(divide_by_ten(hundredths));
+    uint16_t minutes = divide_by_three((uint16_t)(divide_by_ten(seconds) >> 1));
+    uint16_t speed = (uint16_t)((sim->speed * 216) / BAJA_FP_ONE);
+    uint16_t progress = (uint16_t)baja_fp_to_int(
+        baja_fp_mul(sim->player_s, game->progress_scale));
+    uint16_t revs;
 
     put_text(game, 1, 1, 0, "POSITION");
     put_uint(game, 2, 2, SHADE_AMBER, sim->position, 1, 1);
@@ -366,20 +408,23 @@ static void draw_hud(BajanewGame *game)
     put_text(game, 4, 5, 0, "%");
 
     put_text(game, 17, 1, 0, "TIME");
-    put_uint(game, 15, 2, SHADE_AMBER, seconds / 60U, 1, 1);
+    put_uint(game, 15, 2, SHADE_AMBER, minutes, 1, 1);
     put_text(game, 16, 2, SHADE_AMBER, "'");
-    put_uint(game, 17, 2, SHADE_AMBER, seconds % 60U, 2, 1);
+    put_uint(game, 17, 2, SHADE_AMBER, (uint16_t)(seconds - (uint16_t)(minutes * 60U)), 2, 1);
     put_text(game, 19, 2, SHADE_AMBER, "\"");
-    put_uint(game, 20, 2, SHADE_AMBER, hundredths % 100U, 2, 1);
+    put_uint(game, 20, 2, SHADE_AMBER, (uint16_t)(hundredths - (uint16_t)(seconds * 100U)), 2, 1);
 
     put_text(game, 31, 1, 0, "BEST LEG");
     if (game->best_frames != 0U) {
-        uint32_t best = (game->best_frames * 100U) / 60U;
-        put_uint(game, 32, 2, 0, best / 6000U, 1, 1);
+        uint16_t best = divide_by_three((uint16_t)(
+            (game->best_frames > 13000U ? 13000U : game->best_frames) * 5U));
+        uint16_t best_seconds = divide_by_ten(divide_by_ten(best));
+        uint16_t best_minutes = divide_by_three((uint16_t)(divide_by_ten(best_seconds) >> 1));
+        put_uint(game, 32, 2, 0, best_minutes, 1, 1);
         put_text(game, 33, 2, 0, "'");
-        put_uint(game, 34, 2, 0, (best / 100U) % 60U, 2, 1);
+        put_uint(game, 34, 2, 0, (uint16_t)(best_seconds - (uint16_t)(best_minutes * 60U)), 2, 1);
         put_text(game, 36, 2, 0, "\"");
-        put_uint(game, 37, 2, 0, best % 100U, 2, 1);
+        put_uint(game, 37, 2, 0, (uint16_t)(best - (uint16_t)(best_seconds * 100U)), 2, 1);
     } else {
         put_text(game, 32, 2, 0, "-'--\"--");
     }
@@ -389,7 +434,7 @@ static void draw_hud(BajanewGame *game)
     put_text(game, 5, 25, 0, "KMH");
     put_text(game, 1, 27, 0, "GEAR");
     put_uint(game, 6, 27, SHADE_AMBER, sim->gear, 1, 1);
-    revs = (uint32_t)((sim->speed * 8) / BAJA_FP_ONE);
+    revs = (uint16_t)((sim->speed * 8) / BAJA_FP_ONE);
     if (revs > 6U) revs = 6U;
     put_bar(game, 1, 26, 6, (uint8_t)(revs * 8U + 4U));
 
@@ -413,10 +458,12 @@ static void draw_race(BajanewGame *game, uint8_t with_actors)
     if (level >= 5U) return;
     baja_view_init(&game->sim, &view);
     (void)baja_project_bands(&game->sim, bands);
+    STAGE(4);
     if (level >= 4U) return;
     draw_backdrop(game, bands);
     if (level >= 3U) return;
     draw_road(game, bands);
+    STAGE(5);
     if (level >= 2U) return;
     draw_scenery(game, &view);
     if (level >= 1U) return;
@@ -434,6 +481,7 @@ static void draw_frame(BajanewGame *game)
     if (level >= 7U) return;
     clear_next(game);
     ng_renderer_begin(&game->renderer);
+    STAGE(3);
     if (level >= 6U) {
         game->last_render = ng_renderer_flush(&game->renderer);
         flush_fix(game);
@@ -502,8 +550,11 @@ static void draw_frame(BajanewGame *game)
         break;
     }
 
+    STAGE(6);
     game->last_render = ng_renderer_flush(&game->renderer);
+    STAGE(7);
     flush_fix(game);
+    STAGE(8);
 }
 
 void bajanew_game_init(BajanewGame *game)
@@ -514,6 +565,9 @@ void bajanew_game_init(BajanewGame *game)
     ng_renderer_init(&game->renderer);
     game->frame = 0;
     game->sky_pan = 0;
+    /* Hundred percent of the course as a 16.16 scale, so the HUD never divides
+     * by the track length. */
+    game->progress_scale = baja_fp_div(baja_fp_from_int(100), game->sim.track.total_length);
     game->fix_dirty = 0xffffffffUL;
     game->fix_written = 0;
     game->best_frames = 0;
@@ -544,8 +598,16 @@ void bajanew_game_tick(BajanewGame *game, NgPad pad)
 {
     uint8_t was_racing;
     if (game->initialized == 0U) return;
+    STAGE(1);
     was_racing = (uint8_t)(game->sim.phase == BAJA_PHASE_RACING);
-    baja_sim_step(&game->sim, map_input(pad));
+    {
+        uint8_t input = map_input(pad);
+        uint8_t step;
+        for (step = 0; step < BAJANEW_SIM_STEPS_PER_FRAME; ++step) {
+            baja_sim_step(&game->sim, input);
+        }
+    }
+    STAGE(2);
     if (was_racing && game->sim.phase == BAJA_PHASE_FINISHED) {
         uint32_t frames = game->sim.race_frames;
         if (frames > 65535U) frames = 65535U;

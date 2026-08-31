@@ -97,6 +97,7 @@ static void update_telemetry(void)
 
 void ng_target_main(void)
 {
+    uint32_t deadline;
     clear_telemetry();
     ng_system_init();
     ng_system_set_user_mode(1);
@@ -111,9 +112,15 @@ void ng_target_main(void)
     ng_telemetry.magic = NG_TELEMETRY_MAGIC;
     ng_platform_enable_interrupts();
 
+    deadline = ng_vblank_counter + BAJANEW_FIELDS_PER_FRAME;
     for (;;) {
         NgPad pad;
-        ng_platform_wait_vblank();
+        /* Pace on the vblank counter rather than counting waits: a frame that
+         * runs long must not push the next one a whole field further out. */
+        while ((int32_t)(ng_vblank_counter - deadline) < 0) {
+            ng_platform_wait_vblank();
+        }
+        deadline = ng_vblank_counter + BAJANEW_FIELDS_PER_FRAME;
         (void)ng_raster_activate(&ng_raster, ng_timing_profile(NG_VIDEO_NTSC), raster_event);
         pad = ng_platform_read_pad(1);
         bajanew_game_tick(&ng_game, pad);
