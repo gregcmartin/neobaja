@@ -5,33 +5,80 @@
 #define FP_RATIO(n, d) ((BajaFp)(((int32_t)(n) * BAJA_FP_ONE) / (d)))
 
 #define SPLASH_FRAMES 300u
-#define COUNTDOWN_FRAMES 180u
-#define SEGMENT_LENGTH FP_RATIO(20, 1)
-#define ROAD_EDGE FP_RATIO(1, 1)
-#define SHOULDER_EDGE FP_RATIO(6, 5)
-#define WORLD_ROAD_HALF FP_RATIO(4, 1)
-#define MAX_LATERAL FP_RATIO(3, 2)
+#define COUNTDOWN_FRAMES 210u
 
-#define ROAD_SPEED_CAP FP_RATIO(5, 2)
-#define DIRT_SPEED_CAP FP_RATIO(29, 20)
-#define DRIVE_BASE FP_RATIO(3, 500)
-#define COAST_BASE FP_RATIO(3, 1000)
-#define BRAKE_BASE FP_RATIO(3, 125)
-#define DIRT_DRAG FP_RATIO(3, 1000)
+/* World units are metres.  The road is eight metres across, the camera rides
+ * three metres above the surface, and the projection uses a 160 unit focal
+ * length so the near edge of the funnel lands on the bottom scanline. */
+#define SEGMENT_LENGTH FP_RATIO(9, 1)
+#define WORLD_ROAD_HALF FP_RATIO(4, 1)
+#define CAMERA_HEIGHT FP_RATIO(3, 1)
+
+#define ROAD_EDGE FP_RATIO(78, 100)
+#define SHOULDER_EDGE FP_RATIO(105, 100)
+#define MAX_LATERAL FP_RATIO(2, 1)
+
+#define ROAD_SPEED_CAP FP_RATIO(75, 100)
+#define DIRT_SPEED_CAP FP_RATIO(42, 100)
+#define DRIVE_BASE FP_RATIO(4, 1000)
+#define COAST_BASE FP_RATIO(8, 10000)
+#define BRAKE_BASE FP_RATIO(8, 1000)
+#define DIRT_DRAG FP_RATIO(12, 10000)
 
 #define STEER_INPUT_RATE FP_RATIO(1, 10)
 #define STEER_RETURN_RATE FP_RATIO(7, 50)
-#define STEER_BASE_RESPONSE FP_RATIO(3, 250)
-#define STEER_SPEED_RESPONSE FP_RATIO(1, 100)
+#define STEER_BASE_RESPONSE FP_RATIO(8, 1000)
+#define STEER_SPEED_RESPONSE FP_RATIO(22, 1000)
+#define CURVE_PULL FP_RATIO(1, 45)
 
-#define VEHICLE_HALF_LENGTH FP_RATIO(6, 5)
-#define VEHICLE_HALF_WIDTH FP_RATIO(11, 100)
+#define VEHICLE_HALF_LENGTH FP_RATIO(5, 2)
+#define VEHICLE_HALF_WIDTH FP_RATIO(3, 10)
+
+/* Surface texture repeats every sixteen metres, so the phase of a band is a
+ * shift of its world position.  Two variants are enough to read as motion. */
+#define STRIPE_SHIFT (BAJA_FP_SHIFT + 4)
 
 typedef struct TrackPiece {
     int16_t count;
     int16_t curve_milli;
     int16_t grade_milli;
 } TrackPiece;
+
+const int16_t baja_band_dy[BAJA_ROAD_BANDS + 1] = {
+    2, 3, 4, 6, 8, 12, 17, 24,
+    34, 41, 48, 58, 69, 79, 88, 98,
+    108, 119, 130, 140
+};
+
+const int16_t baja_band_half_width[BAJA_ROAD_BANDS] = {
+    3, 5, 7, 9, 13, 19, 27, 39,
+    50, 59, 71, 85, 99, 111, 124, 137,
+    151, 166, 180
+};
+
+/* depth = camera_height * focal / dy_mid */
+static const BajaFp band_depth_fp[BAJA_ROAD_BANDS] = {
+    12582912, 8987794, 6291456, 4493897, 3145728, 2169468,
+    1534501, 1084734, 838861, 706905, 593534, 495390,
+    425098, 376734, 338250, 305410, 277157, 252669,
+    233017
+};
+
+/* screen pixels per world unit at the middle of each band */
+static const BajaFp band_scale_fp[BAJA_ROAD_BANDS] = {
+    54613, 76459, 109227, 152917, 218453, 316757,
+    447829, 633515, 819200, 972117, 1157803, 1387179,
+    1616555, 1824085, 2031616, 2250069, 2479445, 2719744,
+    2949120
+};
+
+/* screen pixels per world unit at each band boundary */
+static const BajaFp band_edge_scale_fp[BAJA_ROAD_BANDS + 1] = {
+    43691, 65536, 87381, 131072, 174763, 262144,
+    371371, 524288, 742741, 895659, 1048576, 1267029,
+    1507328, 1725781, 1922389, 2140843, 2359296, 2599595,
+    2839893, 3058347
+};
 
 static void zero_bytes(void *memory, uint32_t bytes)
 {
@@ -92,17 +139,42 @@ static BajaFp smoothstep(BajaFp t)
     return baja_fp_mul(t2, (3 * BAJA_FP_ONE) - (2 * t));
 }
 
+/* Deterministic value noise over course distance.  It never advances on its
+ * own, so a parked vehicle cannot be shaken into moving. */
+static int32_t course_noise(BajaFp s, uint32_t salt)
+{
+    uint32_t n = (uint32_t)(s >> 14) + (salt * 0x9e3779b9UL);
+    n ^= n >> 15;
+    n *= 0x85ebca6bUL;
+    n ^= n >> 13;
+    n *= 0xc2b2ae35UL;
+    n ^= n >> 16;
+    return (int32_t)((n >> 20) & 0x1ffU) - 256;
+}
+
 void baja_track_init_cooperative(BajaTrack *track, BajaServiceHook service_hook)
 {
+    /* Ensenada: a fast coastal opening, a pair of cliff-side bends, a crest,
+     * then a technical descent into the finish straight. */
     static const TrackPiece pieces[] = {
-        {48, 0, 0},
-        {48, 3, 1},
-        {48, -2, 0},
-        {48, -4, -1},
-        {48, 0, 2},
-        {48, 5, 0},
-        {48, -3, -2},
-        {48, 0, 0}
+        {20, 0, 0},
+        {22, 340, 40},
+        {16, 0, 120},
+        {14, -560, -180},
+        {20, -260, -60},
+        {18, 0, 0},
+        {22, 520, 30},
+        {16, -180, 160},
+        {14, 0, -260},
+        {24, -420, -40},
+        {18, 260, 0},
+        {16, -300, 90},
+        {20, 420, -120},
+        {22, -160, 0},
+        {18, 0, 60},
+        {24, 300, -40},
+        {20, -380, 0},
+        {24, 0, 0}
     };
     BajaFp heading = 0;
     BajaFp current_curve = 0;
@@ -135,6 +207,14 @@ void baja_track_init_cooperative(BajaTrack *track, BajaServiceHook service_hook)
             if (service_hook != NULL && (segment & 7U) == 0U) service_hook();
         }
     }
+    /* Any unclaimed tail runs straight and level so the finish reads clearly. */
+    while (segment < BAJA_TRACK_SEGMENTS) {
+        track->curvature[segment] = 0;
+        track->grade[segment] = 0;
+        track->center_x[segment + 1] = track->center_x[segment] + heading;
+        track->height[segment + 1] = track->height[segment];
+        ++segment;
+    }
 }
 
 void baja_track_init(BajaTrack *track)
@@ -166,40 +246,133 @@ void baja_track_sample(const BajaTrack *track, BajaFp s, BajaFp *x,
     if (curve != NULL) *curve = track->curvature[segment];
 }
 
+BajaFp baja_track_heading(const BajaTrack *track, BajaFp s)
+{
+    int32_t segment;
+    if (s < 0) s = 0;
+    if (s >= track->total_length) s = track->total_length - 1;
+    segment = s / track->segment_length;
+    if (segment >= BAJA_TRACK_SEGMENTS) segment = BAJA_TRACK_SEGMENTS - 1;
+    return track->center_x[segment + 1] - track->center_x[segment];
+}
+
+/* The camera looks along the road, not along a fixed world axis.  Everything
+ * the renderer sees is therefore measured against the tangent taken at the
+ * player: only real curvature and real grade bend the view.  Without this the
+ * accumulated heading would drag the whole course sideways under the car. */
+void baja_track_frame_init(const BajaTrack *track, BajaFp base_s, BajaTrackFrame *frame)
+{
+    int32_t segment;
+    if (frame == NULL) return;
+    if (base_s < 0) base_s = 0;
+    if (base_s >= track->total_length) base_s = track->total_length - 1;
+    segment = base_s / track->segment_length;
+    if (segment >= BAJA_TRACK_SEGMENTS) segment = BAJA_TRACK_SEGMENTS - 1;
+    frame->base_s = base_s;
+    baja_track_sample(track, base_s, &frame->base_x, &frame->base_y, NULL);
+    frame->heading = track->center_x[segment + 1] - track->center_x[segment];
+    frame->grade = track->height[segment + 1] - track->height[segment];
+}
+
+void baja_track_frame_sample(const BajaTrack *track, const BajaTrackFrame *frame,
+                             BajaFp s, BajaFp *lateral, BajaFp *rise)
+{
+    BajaFp x = 0;
+    BajaFp y = 0;
+    BajaFp segments;
+
+    if (s >= track->total_length) s = track->total_length - 1;
+    baja_track_sample(track, s, &x, &y, NULL);
+    segments = baja_fp_div(s - frame->base_s, track->segment_length);
+    if (lateral != NULL) {
+        *lateral = x - frame->base_x - baja_fp_mul(frame->heading, segments);
+    }
+    if (rise != NULL) {
+        *rise = y - frame->base_y - baja_fp_mul(frame->grade, segments);
+    }
+}
+
+static void reset_scenery(BajaSim *sim)
+{
+    static const uint8_t left_kinds[] = {
+        BAJA_SCENERY_PALM, BAJA_SCENERY_ROCK_PALE, BAJA_SCENERY_BUSH,
+        BAJA_SCENERY_ROCK_GREY, BAJA_SCENERY_FLAG, BAJA_SCENERY_AGAVE
+    };
+    static const uint8_t right_kinds[] = {
+        BAJA_SCENERY_CACTUS, BAJA_SCENERY_ROCK_GREY, BAJA_SCENERY_CROWD,
+        BAJA_SCENERY_AGAVE, BAJA_SCENERY_ROCK_PALE, BAJA_SCENERY_BUSH
+    };
+    BajaFp spacing = baja_fp_div(sim->track.total_length,
+                                 baja_fp_from_int(BAJA_SCENERY_COUNT));
+    uint16_t i;
+
+    for (i = 0; i < BAJA_SCENERY_COUNT; ++i) {
+        BajaScenery *item = &sim->scenery[i];
+        int32_t jitter = course_noise(spacing * (BajaFp)i, 7U + i);
+        BajaFp offset = FP_RATIO(3, 2) + ((BajaFp)(jitter + 256) * 6);
+        BajaFp curve;
+        item->s = spacing * (BajaFp)i + baja_fp_from_int(20);
+        baja_track_sample(&sim->track, item->s, NULL, NULL, &curve);
+        if ((i & 1U) != 0U) {
+            item->e = offset;
+            item->kind = right_kinds[i % (uint16_t)(sizeof(right_kinds))];
+        } else {
+            item->e = -offset;
+            item->kind = left_kinds[i % (uint16_t)(sizeof(left_kinds))];
+        }
+        /* Chevrons mark the outside of a real bend so the player can read it
+         * before arriving. */
+        if (curve > FP_RATIO(15, 100)) {
+            item->e = -(FP_RATIO(13, 10));
+            item->kind = BAJA_SCENERY_CHEVRON;
+        } else if (curve < -FP_RATIO(15, 100)) {
+            item->e = FP_RATIO(13, 10);
+            item->kind = BAJA_SCENERY_CHEVRON;
+        }
+        item->reserved[0] = 0;
+        item->reserved[1] = 0;
+        item->reserved[2] = 0;
+    }
+}
+
 static void reset_rivals(BajaSim *sim)
 {
-    BajaRival *evasive = &sim->rivals[0];
-    BajaRival *blocker = &sim->rivals[1];
+    static const BajaFp start_s[BAJA_RIVAL_COUNT] = {
+        FP_RATIO(70, 1), FP_RATIO(130, 1), FP_RATIO(205, 1)
+    };
+    static const BajaFp start_e[BAJA_RIVAL_COUNT] = {
+        FP_RATIO(-45, 100), FP_RATIO(40, 100), FP_RATIO(-10, 100)
+    };
+    static const BajaFp pace[BAJA_RIVAL_COUNT] = {
+        FP_RATIO(66, 100), FP_RATIO(62, 100), FP_RATIO(69, 100)
+    };
+    static const uint8_t profiles[BAJA_RIVAL_COUNT] = {0, 1, 0};
+    uint8_t i;
 
     zero_bytes(sim->rivals, (uint32_t)sizeof(sim->rivals));
-
-    evasive->s = baja_fp_from_int(58);
-    evasive->e = FP_RATIO(-7, 20);
-    evasive->target_e = evasive->e;
-    evasive->speed = FP_RATIO(39, 20);
-    evasive->preferred_speed = FP_RATIO(43, 20);
-    evasive->profile = 0;
-    evasive->was_ahead = 1;
-    evasive->active = 1;
-
-    blocker->s = baja_fp_from_int(112);
-    blocker->e = FP_RATIO(2, 5);
-    blocker->target_e = blocker->e;
-    blocker->speed = FP_RATIO(21, 10);
-    blocker->preferred_speed = FP_RATIO(23, 10);
-    blocker->profile = 1;
-    blocker->was_ahead = 1;
-    blocker->active = 1;
+    for (i = 0; i < BAJA_RIVAL_COUNT; ++i) {
+        BajaRival *rival = &sim->rivals[i];
+        rival->s = start_s[i];
+        rival->e = start_e[i];
+        rival->target_e = start_e[i];
+        rival->speed = baja_fp_mul(pace[i], FP_RATIO(9, 10));
+        rival->preferred_speed = pace[i];
+        rival->profile = profiles[i];
+        rival->was_ahead = 1;
+        rival->active = 1;
+    }
 }
 
 void baja_sim_init_cooperative(BajaSim *sim, BajaServiceHook service_hook)
 {
     zero_bytes(sim, (uint32_t)sizeof(*sim));
     baja_track_init_cooperative(&sim->track, service_hook);
+    reset_scenery(sim);
     sim->phase = BAJA_PHASE_SPLASH;
     sim->driver = BAJA_DRIVER_MAX;
     sim->surface = BAJA_SURFACE_ROAD;
     sim->position = BAJA_RIVAL_COUNT + 1;
+    sim->gear = 1;
     reset_rivals(sim);
 }
 
@@ -208,22 +381,32 @@ void baja_sim_init(BajaSim *sim)
     baja_sim_init_cooperative(sim, NULL);
 }
 
-void baja_sim_begin_race(BajaSim *sim)
+static void reset_run(BajaSim *sim)
 {
     sim->player_s = 0;
     sim->player_e = 0;
     sim->speed = 0;
     sim->steer = 0;
+    sim->bounce = 0;
+    sim->bounce_rate = 0;
     sim->surface = BAJA_SURFACE_ROAD;
     sim->position = BAJA_RIVAL_COUNT + 1;
     sim->collision_cooldown = 0;
+    sim->rough_timer = 0;
     sim->collision_event = 0;
     sim->dust_event = 0;
     sim->collisions = 0;
     sim->overtakes = 0;
+    sim->race_frames = 0;
+    sim->gear = 1;
+    reset_rivals(sim);
+}
+
+void baja_sim_begin_race(BajaSim *sim)
+{
+    reset_run(sim);
     sim->phase = BAJA_PHASE_RACING;
     sim->phase_frame = 0;
-    reset_rivals(sim);
 }
 
 static void update_surface(BajaSim *sim)
@@ -232,37 +415,35 @@ static void update_surface(BajaSim *sim)
     if (lateral <= ROAD_EDGE) sim->surface = BAJA_SURFACE_ROAD;
     else if (lateral <= SHOULDER_EDGE) sim->surface = BAJA_SURFACE_SHOULDER;
     else sim->surface = BAJA_SURFACE_DIRT;
-    sim->dust_event = (uint8_t)(sim->surface != BAJA_SURFACE_ROAD && sim->speed > FP_RATIO(1, 5));
 }
 
 static void update_player(BajaSim *sim, uint8_t input)
 {
     BajaFp speed_cap;
-    BajaFp drag;
     BajaFp target_steer = 0;
     BajaFp speed_ratio;
     BajaFp lateral_response;
     BajaFp curve = 0;
     BajaFp curve_force;
+    BajaFp roughness;
+    int32_t noise;
 
     update_surface(sim);
     speed_cap = sim->surface == BAJA_SURFACE_DIRT ? DIRT_SPEED_CAP : ROAD_SPEED_CAP;
 
     if ((input & BAJA_INPUT_THROTTLE) != 0 && (input & BAJA_INPUT_BRAKE) == 0) {
         BajaFp headroom = speed_cap - sim->speed;
-        if (headroom > 0) sim->speed += DRIVE_BASE + (headroom >> 8);
+        if (headroom > 0) sim->speed += DRIVE_BASE + (headroom >> 6);
     } else {
-        drag = COAST_BASE + (sim->speed >> 10);
-        sim->speed -= drag;
+        sim->speed -= COAST_BASE + (sim->speed >> 9);
     }
-
     if ((input & BAJA_INPUT_BRAKE) != 0) {
-        sim->speed -= BRAKE_BASE + (sim->speed >> 8);
+        sim->speed -= BRAKE_BASE + (sim->speed >> 6);
     }
     if (sim->surface == BAJA_SURFACE_SHOULDER) {
         sim->speed -= DIRT_DRAG >> 1;
     } else if (sim->surface == BAJA_SURFACE_DIRT) {
-        sim->speed -= DIRT_DRAG + (sim->speed >> 9);
+        sim->speed -= DIRT_DRAG + (sim->speed >> 7);
     }
     sim->speed = fp_clamp(sim->speed, 0, speed_cap);
 
@@ -275,16 +456,39 @@ static void update_player(BajaSim *sim, uint8_t input)
                              target_steer == 0 ? STEER_RETURN_RATE : STEER_INPUT_RATE);
 
     speed_ratio = baja_fp_div(sim->speed, ROAD_SPEED_CAP);
-    lateral_response = STEER_BASE_RESPONSE + baja_fp_mul(STEER_SPEED_RESPONSE, speed_ratio);
-    if (sim->surface == BAJA_SURFACE_DIRT) lateral_response = baja_fp_mul(lateral_response, FP_RATIO(3, 4));
+    lateral_response = STEER_BASE_RESPONSE +
+                       baja_fp_mul(STEER_SPEED_RESPONSE, speed_ratio);
+    if (sim->surface == BAJA_SURFACE_DIRT) {
+        lateral_response = baja_fp_mul(lateral_response, FP_RATIO(7, 10));
+    }
     sim->player_e += baja_fp_mul(sim->steer, lateral_response);
 
+    /* Centrifugal push uses the local curvature, so a constant bend produces a
+     * constant force the player can hold against. */
     baja_track_sample(&sim->track, sim->player_s, NULL, NULL, &curve);
     curve_force = baja_fp_mul(speed_ratio, speed_ratio);
     curve_force = baja_fp_mul(curve_force, curve);
-    curve_force = baja_fp_mul(curve_force, FP_RATIO(1, 2));
+    curve_force = baja_fp_mul(curve_force, CURVE_PULL);
     sim->player_e -= curve_force;
     sim->player_e = fp_clamp(sim->player_e, -MAX_LATERAL, MAX_LATERAL);
+
+    /* Suspension travel is read from the course, never from wall time. */
+    roughness = sim->surface == BAJA_SURFACE_ROAD ? FP_RATIO(1, 40) : FP_RATIO(9, 100);
+    if (sim->surface == BAJA_SURFACE_SHOULDER) roughness = FP_RATIO(5, 100);
+    noise = course_noise(sim->player_s, 3U);
+    sim->bounce_rate = baja_fp_mul(roughness, speed_ratio) * noise / 256;
+    sim->bounce += sim->bounce_rate;
+    sim->bounce = baja_fp_mul(sim->bounce, FP_RATIO(3, 5));
+    sim->bounce = fp_clamp(sim->bounce, -FP_RATIO(1, 2), FP_RATIO(1, 2));
+
+    sim->dust_event = (uint8_t)(sim->speed > FP_RATIO(1, 10) &&
+                                (sim->surface != BAJA_SURFACE_ROAD ||
+                                 sim->speed > baja_fp_mul(ROAD_SPEED_CAP, FP_RATIO(1, 2))));
+    if (sim->surface != BAJA_SURFACE_ROAD && sim->speed > FP_RATIO(1, 5)) {
+        if (sim->rough_timer < 60U) ++sim->rough_timer;
+    } else if (sim->rough_timer > 0U) {
+        --sim->rough_timer;
+    }
 
     sim->player_s += sim->speed;
     if (sim->player_s >= sim->track.total_length) {
@@ -294,30 +498,40 @@ static void update_player(BajaSim *sim, uint8_t input)
         sim->phase_frame = 0;
     }
     update_surface(sim);
+
+    {
+        int32_t gear = baja_fp_to_int(baja_fp_mul(speed_ratio, baja_fp_from_int(5))) + 1;
+        if (gear < 1) gear = 1;
+        if (gear > 5) gear = 5;
+        sim->gear = (uint8_t)gear;
+    }
 }
 
 static void choose_rival_target(BajaSim *sim, BajaRival *rival)
 {
     BajaFp gap = rival->s - sim->player_s;
     BajaFp lateral_gap = rival->e - sim->player_e;
+    int32_t wander = course_noise(rival->s, 11U + rival->profile);
 
     if (rival->profile == 0) {
-        if (gap > 0 && gap < baja_fp_from_int(52) && fp_abs(lateral_gap) < FP_RATIO(9, 20)) {
-            rival->target_e = sim->player_e <= 0 ? FP_RATIO(13, 20) : FP_RATIO(-13, 20);
+        /* Evasive: protects momentum and moves to the open side. */
+        if (gap > 0 && gap < baja_fp_from_int(26) &&
+            fp_abs(lateral_gap) < FP_RATIO(45, 100)) {
+            rival->target_e = sim->player_e <= 0 ? FP_RATIO(60, 100) : FP_RATIO(-60, 100);
         } else {
-            rival->target_e = ((rival->s / baja_fp_from_int(240)) & 1) != 0 ?
-                              FP_RATIO(9, 20) : FP_RATIO(-9, 20);
+            rival->target_e = ((BajaFp)wander * 3) / 2;
         }
         rival->decision_timer = 74;
     } else {
-        if (gap > baja_fp_from_int(8) && gap < baja_fp_from_int(70)) {
-            rival->target_e = fp_clamp(sim->player_e, FP_RATIO(-3, 4), FP_RATIO(3, 4));
+        /* Blocker: shadows the player inside a bounded window only. */
+        if (gap > baja_fp_from_int(4) && gap < baja_fp_from_int(34)) {
+            rival->target_e = fp_clamp(sim->player_e, FP_RATIO(-70, 100), FP_RATIO(70, 100));
         } else {
-            rival->target_e = ((rival->s / baja_fp_from_int(180)) & 1) != 0 ?
-                              FP_RATIO(-1, 4) : FP_RATIO(1, 2);
+            rival->target_e = ((BajaFp)wander * 2);
         }
-        rival->decision_timer = 49;
+        rival->decision_timer = 46;
     }
+    rival->target_e = fp_clamp(rival->target_e, FP_RATIO(-75, 100), FP_RATIO(75, 100));
 }
 
 static void update_rival(BajaSim *sim, BajaRival *rival)
@@ -325,6 +539,7 @@ static void update_rival(BajaSim *sim, BajaRival *rival)
     BajaFp gap;
     BajaFp target_speed;
     BajaFp lane_rate;
+    BajaFp curve = 0;
 
     if (!rival->active) return;
     if (rival->collision_cooldown > 0) --rival->collision_cooldown;
@@ -333,23 +548,31 @@ static void update_rival(BajaSim *sim, BajaRival *rival)
 
     gap = rival->s - sim->player_s;
     target_speed = rival->preferred_speed;
-    if (rival->profile == 0 && gap > 0 && gap < baja_fp_from_int(45)) {
-        target_speed += FP_RATIO(1, 10);
+    if (rival->profile == 0 && gap > 0 && gap < baja_fp_from_int(22)) {
+        target_speed += FP_RATIO(4, 100);
     }
-    if (rival->profile == 1 && gap > 0 && gap < baja_fp_from_int(36)) {
-        target_speed -= FP_RATIO(3, 20);
+    if (rival->profile == 1 && gap > 0 && gap < baja_fp_from_int(18)) {
+        target_speed -= FP_RATIO(5, 100);
     }
+    /* Rivals lose time in bends exactly like the player does. */
+    baja_track_sample(&sim->track, rival->s, NULL, NULL, &curve);
+    target_speed -= baja_fp_mul(fp_abs(curve), FP_RATIO(6, 100));
+    if (target_speed < FP_RATIO(2, 10)) target_speed = FP_RATIO(2, 10);
+
     rival->speed = fp_approach(rival->speed, target_speed,
-                               rival->speed < target_speed ? FP_RATIO(1, 800) : FP_RATIO(1, 500));
-    lane_rate = rival->profile == 0 ? FP_RATIO(1, 175) : FP_RATIO(1, 230);
+                               rival->speed < target_speed ?
+                               FP_RATIO(1, 2000) : FP_RATIO(1, 1200));
+    lane_rate = rival->profile == 0 ? FP_RATIO(1, 150) : FP_RATIO(1, 200);
     rival->e = fp_approach(rival->e, rival->target_e, lane_rate);
-    rival->e = fp_clamp(rival->e, FP_RATIO(-4, 5), FP_RATIO(4, 5));
+    rival->e -= baja_fp_mul(baja_fp_mul(curve, CURVE_PULL), FP_RATIO(7, 10));
+    rival->e = fp_clamp(rival->e, FP_RATIO(-95, 100), FP_RATIO(95, 100));
     rival->s += rival->speed;
+    if (rival->s > sim->track.total_length) rival->s = sim->track.total_length;
 
     if (rival->was_ahead && rival->s < sim->player_s) {
         rival->was_ahead = 0;
         ++sim->overtakes;
-    } else if (!rival->was_ahead && rival->s > sim->player_s + baja_fp_from_int(5)) {
+    } else if (!rival->was_ahead && rival->s > sim->player_s + baja_fp_from_int(4)) {
         rival->was_ahead = 1;
     }
 }
@@ -373,14 +596,17 @@ static void check_collisions(BajaSim *sim)
         de = fp_abs(rival->e - sim->player_e);
         if (ds >= (VEHICLE_HALF_LENGTH * 2) || de >= (VEHICLE_HALF_WIDTH * 2)) continue;
 
-        contact_speed = baja_fp_mul(rival->speed, FP_RATIO(17, 20));
-        sim->speed = baja_fp_mul(sim->speed, FP_RATIO(11, 20));
+        /* Contact scrubs speed toward the rival's pace and pushes the player
+         * off the contact side without taking control away. */
+        contact_speed = baja_fp_mul(rival->speed, FP_RATIO(85, 100));
+        sim->speed = baja_fp_mul(sim->speed, FP_RATIO(72, 100));
         if (sim->speed > contact_speed) sim->speed = contact_speed;
-        if (rival->e >= sim->player_e) sim->player_e -= FP_RATIO(9, 100);
-        else sim->player_e += FP_RATIO(9, 100);
+        if (rival->e >= sim->player_e) sim->player_e -= FP_RATIO(11, 100);
+        else sim->player_e += FP_RATIO(11, 100);
         sim->player_e = fp_clamp(sim->player_e, -MAX_LATERAL, MAX_LATERAL);
-        sim->collision_cooldown = 36;
-        rival->collision_cooldown = 36;
+        rival->speed = baja_fp_mul(rival->speed, FP_RATIO(92, 100));
+        sim->collision_cooldown = 40;
+        rival->collision_cooldown = 40;
         sim->collision_event = 1;
         ++sim->collisions;
         break;
@@ -420,16 +646,13 @@ void baja_sim_step(BajaSim *sim, uint8_t input)
         break;
     case BAJA_PHASE_SELECT:
         if ((pressed & (BAJA_INPUT_LEFT | BAJA_INPUT_RIGHT)) != 0) {
-            sim->driver = (uint8_t)(sim->driver == BAJA_DRIVER_MAX ? BAJA_DRIVER_CRUZ : BAJA_DRIVER_MAX);
+            sim->driver = (uint8_t)(sim->driver == BAJA_DRIVER_MAX ?
+                                    BAJA_DRIVER_CRUZ : BAJA_DRIVER_MAX);
         }
         if ((pressed & BAJA_INPUT_START) != 0) {
+            reset_run(sim);
             sim->phase = BAJA_PHASE_COUNTDOWN;
             sim->phase_frame = 0;
-            sim->speed = 0;
-            sim->player_s = 0;
-            sim->player_e = 0;
-            sim->steer = 0;
-            reset_rivals(sim);
         }
         break;
     case BAJA_PHASE_COUNTDOWN:
@@ -440,6 +663,7 @@ void baja_sim_step(BajaSim *sim, uint8_t input)
         break;
     case BAJA_PHASE_RACING: {
         uint8_t i;
+        ++sim->race_frames;
         update_player(sim, input);
         for (i = 0; i < BAJA_RIVAL_COUNT; ++i) update_rival(sim, &sim->rivals[i]);
         check_collisions(sim);
@@ -447,16 +671,10 @@ void baja_sim_step(BajaSim *sim, uint8_t input)
         break;
     }
     case BAJA_PHASE_FINISHED:
-        if ((pressed & BAJA_INPUT_START) != 0) {
+        if ((pressed & BAJA_INPUT_START) != 0 && sim->phase_frame > 60U) {
+            reset_run(sim);
             sim->phase = BAJA_PHASE_COUNTDOWN;
             sim->phase_frame = 0;
-            sim->speed = 0;
-            sim->player_s = 0;
-            sim->player_e = 0;
-            sim->steer = 0;
-            sim->collisions = 0;
-            sim->overtakes = 0;
-            reset_rivals(sim);
         }
         break;
     default:
@@ -466,104 +684,113 @@ void baja_sim_step(BajaSim *sim, uint8_t input)
     sim->previous_input = input;
 }
 
-uint8_t baja_project_road(const BajaSim *sim, BajaRoadSample *samples,
-                          uint8_t capacity)
+uint8_t baja_project_bands(const BajaSim *sim, BajaRoadBand *bands)
 {
-    const int16_t screen_center = 160;
-    const int16_t horizon = 72;
-    const BajaFp focal = baja_fp_from_int(640);
-    const BajaFp camera_height = baja_fp_from_int(3);
-    BajaFp camera_x;
-    BajaFp camera_y;
-    uint8_t count = capacity < BAJA_ROAD_SAMPLE_MAX ? capacity : BAJA_ROAD_SAMPLE_MAX;
+    BajaTrackFrame frame;
+    BajaFp camera_lateral;
+    BajaFp camera_rise;
+    int16_t edge_y[BAJA_ROAD_BANDS + 1];
+    int16_t limit;
     uint8_t i;
-    int16_t nearest_visible_y = 224;
+    int16_t b;
 
-    if (samples == NULL || count == 0) return 0;
-    baja_track_sample(&sim->track, sim->player_s, &camera_x, &camera_y, NULL);
-    camera_x += baja_fp_mul(sim->player_e, WORLD_ROAD_HALF);
+    if (bands == NULL) return 0;
+    baja_track_frame_init(&sim->track, sim->player_s, &frame);
+    camera_lateral = baja_fp_mul(sim->player_e, WORLD_ROAD_HALF);
+    camera_rise = CAMERA_HEIGHT + sim->bounce;
 
-    for (i = 0; i < count; ++i) {
-        int32_t depth_units = 8 + ((int32_t)i * (int32_t)i);
-        BajaFp depth = baja_fp_from_int(depth_units);
-        BajaFp world_s = sim->player_s + depth;
-        BajaFp road_x;
-        BajaFp road_y;
-        BajaFp scale;
-        BajaFp center_offset;
-        BajaFp projected_y;
-        BajaFp projected_width;
-
-        if (world_s >= sim->track.total_length) world_s = sim->track.total_length - 1;
-        baja_track_sample(&sim->track, world_s, &road_x, &road_y, NULL);
-        scale = baja_fp_div(focal, depth);
-        center_offset = baja_fp_mul(road_x - camera_x, scale);
-        projected_y = baja_fp_mul((camera_y + camera_height) - road_y, scale);
-        projected_width = baja_fp_mul(WORLD_ROAD_HALF, scale);
-
-        samples[i].screen_x = (int16_t)(screen_center + baja_fp_to_int(center_offset));
-        samples[i].screen_y = (int16_t)(horizon + baja_fp_to_int(projected_y));
-        if (samples[i].screen_y > 223) samples[i].screen_y = 223;
-        samples[i].half_width = (int16_t)baja_fp_to_int(projected_width);
-        if (samples[i].half_width > 176) samples[i].half_width = 176;
-        if (samples[i].half_width < 1) samples[i].half_width = 1;
-        samples[i].depth = (uint16_t)depth_units;
-        samples[i].segment = (uint16_t)(world_s / sim->track.segment_length);
-        samples[i].shade = (uint8_t)((samples[i].segment >> 1) & 1);
-        samples[i].visible = 0;
+    for (i = 0; i <= BAJA_ROAD_BANDS; ++i) {
+        BajaFp depth;
+        BajaFp rise = 0;
+        if (i == 0) {
+            depth = baja_fp_mul(band_depth_fp[0], FP_RATIO(11, 10));
+        } else if (i == BAJA_ROAD_BANDS) {
+            depth = baja_fp_mul(band_depth_fp[BAJA_ROAD_BANDS - 1], FP_RATIO(9, 10));
+        } else {
+            depth = (band_depth_fp[i - 1] + band_depth_fp[i]) / 2;
+        }
+        baja_track_frame_sample(&sim->track, &frame, sim->player_s + depth, NULL, &rise);
+        edge_y[i] = (int16_t)(BAJA_HORIZON_Y +
+                              baja_fp_to_int(baja_fp_mul(camera_rise - rise,
+                                                         band_edge_scale_fp[i])));
     }
 
-    for (i = 0; i < count; ++i) {
-        BajaRoadSample *sample = &samples[i];
-        if (sample->screen_y < horizon || sample->screen_y >= nearest_visible_y) continue;
-        sample->visible = 1;
-        nearest_visible_y = sample->screen_y;
+    limit = BAJA_SCREEN_HEIGHT;
+    for (b = BAJA_ROAD_BANDS - 1; b >= 0; --b) {
+        BajaRoadBand *band = &bands[b];
+        BajaFp lateral = 0;
+        int16_t top = edge_y[b];
+        int16_t bottom = edge_y[b + 1];
+
+        band->reserved = 0;
+        if (bottom > limit) bottom = limit;
+        if (top < 0) top = 0;
+        if (top >= bottom || bottom <= 0) {
+            band->visible = 0;
+            band->height = 0;
+            band->top_y = (int16_t)BAJA_SCREEN_HEIGHT;
+            band->center_x = BAJA_SCREEN_CENTER;
+            band->phase = 0;
+            continue;
+        }
+        baja_track_frame_sample(&sim->track, &frame,
+                                sim->player_s + band_depth_fp[b], &lateral, NULL);
+        band->center_x = (int16_t)(BAJA_SCREEN_CENTER +
+                                   baja_fp_to_int(baja_fp_mul(lateral - camera_lateral,
+                                                              band_scale_fp[b])));
+        band->top_y = top;
+        band->height = (uint8_t)((bottom - top) > 255 ? 255 : (bottom - top));
+        band->phase = (uint8_t)(((uint32_t)(sim->player_s + band_depth_fp[b]) >>
+                                 STRIPE_SHIFT) & 1U);
+        band->visible = 1;
+        limit = top;
     }
-    return count;
+    return BAJA_ROAD_BANDS;
 }
 
 void baja_project_object(const BajaSim *sim, BajaFp object_s, BajaFp object_e,
                          BajaObjectProjection *projection)
 {
-    const int16_t screen_center = 160;
-    const int16_t horizon = 72;
-    const BajaFp focal = baja_fp_from_int(640);
-    const BajaFp camera_height = baja_fp_from_int(3);
+    BajaTrackFrame frame;
     BajaFp depth;
-    BajaFp camera_x;
-    BajaFp camera_y;
-    BajaFp object_x;
-    BajaFp object_y;
+    BajaFp camera_lateral;
+    BajaFp camera_rise;
+    BajaFp lateral = 0;
+    BajaFp rise = 0;
     BajaFp scale;
-    BajaFp screen_offset;
-    BajaFp screen_drop;
     int32_t depth_units;
-    int32_t zoom;
+    uint8_t band;
 
     if (projection == NULL) return;
     zero_bytes(projection, (uint32_t)sizeof(*projection));
+    projection->band = BAJA_ROAD_BANDS - 1;
     depth = object_s - sim->player_s;
-    if (depth <= baja_fp_from_int(2) || depth >= baja_fp_from_int(700)) return;
+    if (depth <= band_depth_fp[BAJA_ROAD_BANDS - 1] || depth >= baja_fp_from_int(260)) {
+        return;
+    }
 
-    baja_track_sample(&sim->track, sim->player_s, &camera_x, &camera_y, NULL);
-    camera_x += baja_fp_mul(sim->player_e, WORLD_ROAD_HALF);
-    baja_track_sample(&sim->track, object_s, &object_x, &object_y, NULL);
-    object_x += baja_fp_mul(object_e, WORLD_ROAD_HALF);
-    scale = baja_fp_div(focal, depth);
-    screen_offset = baja_fp_mul(object_x - camera_x, scale);
-    screen_drop = baja_fp_mul((camera_y + camera_height) - object_y, scale);
+    baja_track_frame_init(&sim->track, sim->player_s, &frame);
+    baja_track_frame_sample(&sim->track, &frame, object_s, &lateral, &rise);
+    lateral += baja_fp_mul(object_e, WORLD_ROAD_HALF);
+    camera_lateral = baja_fp_mul(sim->player_e, WORLD_ROAD_HALF);
+    camera_rise = CAMERA_HEIGHT + sim->bounce;
 
-    projection->screen_x = (int16_t)(screen_center + baja_fp_to_int(screen_offset));
-    projection->screen_y = (int16_t)(horizon + baja_fp_to_int(screen_drop));
+    /* One shared projection: screen pixels per world unit at this depth. */
+    scale = baja_fp_div(baja_fp_from_int(160), depth);
+    projection->screen_x = (int16_t)(BAJA_SCREEN_CENTER +
+                                     baja_fp_to_int(baja_fp_mul(lateral - camera_lateral,
+                                                                scale)));
+    projection->ground_y = (int16_t)(BAJA_HORIZON_Y +
+                                     baja_fp_to_int(baja_fp_mul(camera_rise - rise, scale)));
     depth_units = baja_fp_to_int(depth);
-    projection->depth = (uint16_t)depth_units;
-    zoom = (20 * 15) / depth_units;
-    if (zoom > 15) zoom = 15;
-    if (zoom < 1) zoom = 1;
-    projection->zoom_x = (uint8_t)zoom;
-    projection->zoom_y = (uint8_t)(zoom * 17);
-    projection->visible = (uint8_t)(projection->screen_x > -64 &&
-                                    projection->screen_x < 384 &&
-                                    projection->screen_y >= horizon &&
-                                    projection->screen_y < 240);
+    projection->depth = (uint16_t)(depth_units < 0 ? 0 : depth_units);
+    projection->scale_q8 = (uint16_t)fp_clamp(scale >> 8, 0, 65535);
+
+    band = BAJA_ROAD_BANDS - 1;
+    while (band > 0 && depth > band_depth_fp[band]) --band;
+    projection->band = band;
+    projection->visible = (uint8_t)(projection->screen_x > -96 &&
+                                    projection->screen_x < 416 &&
+                                    projection->ground_y > BAJA_HORIZON_Y - 8 &&
+                                    projection->ground_y < BAJA_SCREEN_HEIGHT + 64);
 }
