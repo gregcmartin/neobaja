@@ -7,3 +7,8 @@
 *.log
 __pycache__/
 *.pyc
+
+# MAME writes these next to the invoking makefile
+/native/cfg/
+/native/nvram/
+/native/snap/
