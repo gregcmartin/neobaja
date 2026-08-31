@@ -48,9 +48,16 @@ end
 local script = {
     {620, 628, 16}, {700, 708, 16},
     {820, 6000, 4},
-    {1300, 1400, 4 | 2}, {1800, 1900, 4 | 1}, {2300, 2360, 8},
-    {2900, 3060, 4 | 2}, {3600, 3760, 4 | 1},
+    {2300, 2360, 8},
 }
+-- Between the scripted moments, steer toward the centre of the road so the
+-- captures show the game being driven rather than ploughing through scrub.
+local function centring_steer()
+    local e = space:read_i32(0x10004c)
+    if e > 4096 then return 1 end
+    if e < -4096 then return 2 end
+    return 0
+end
 local captures = {300, 660, 740, 900, 1100, 1350, 1600, 2000, 2500, 3000, 3500, 4200, 5000}
 
 emu.print_info(string.format("BAJANEW_CAPTURE_LOADED left=%d right=%d a=%d b=%d start=%d",
@@ -61,6 +68,7 @@ capture_sub = emu.add_machine_frame_notifier(function()
     for _, entry in ipairs(script) do
         if frames >= entry[1] and frames <= entry[2] then mask = mask | entry[3] end
     end
+    if space:read_u8(0x100078) == 4 then mask = mask | centring_steer() end
     apply(mask)
 
     for index, at in ipairs(captures) do
