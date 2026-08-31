@@ -34,10 +34,6 @@
 #define VEHICLE_HALF_LENGTH FP_RATIO(5, 2)
 #define VEHICLE_HALF_WIDTH FP_RATIO(3, 10)
 
-/* Surface texture repeats every sixteen metres, so the phase of a band is a
- * shift of its world position.  Two variants are enough to read as motion. */
-#define STRIPE_SHIFT (BAJA_FP_SHIFT + 4)
-
 typedef struct TrackPiece {
     int16_t count;
     int16_t curve_milli;
@@ -45,39 +41,42 @@ typedef struct TrackPiece {
 } TrackPiece;
 
 const int16_t baja_band_dy[BAJA_ROAD_BANDS + 1] = {
-    2, 3, 4, 6, 8, 12, 17, 24,
-    34, 41, 48, 58, 69, 79, 88, 98,
-    108, 119, 130, 140
+    2, 5, 8, 12, 17, 24, 34, 41, 48,
+    58, 69, 79, 88, 98, 108, 119, 130, 140
 };
 
 const int16_t baja_band_half_width[BAJA_ROAD_BANDS] = {
-    3, 5, 7, 9, 13, 19, 27, 39,
-    50, 59, 71, 85, 99, 111, 124, 137,
-    151, 166, 180
+    5, 9, 13, 19, 27, 39, 50, 59, 71,
+    85, 99, 111, 124, 137, 151, 166, 180
+};
+
+/* Surface phase wavelength per band, as a fixed-point shift.  It grows with
+ * depth so the pattern keeps a roughly constant size on screen instead of
+ * aliasing into flicker; the nearest bands opt out entirely. */
+const uint8_t baja_band_stripe_shift[BAJA_ROAD_BANDS] = {
+    26, 24, 23, 22, 21, 20, 19, 19, 19,
+    19, 19, 19, 0, 0, 0, 0, 0
 };
 
 /* depth = camera_height * focal / dy_mid */
 static const BajaFp band_depth_fp[BAJA_ROAD_BANDS] = {
-    12582912, 8987794, 6291456, 4493897, 3145728, 2169468,
-    1534501, 1084734, 838861, 706905, 593534, 495390,
-    425098, 376734, 338250, 305410, 277157, 252669,
-    233017
+    8987794, 4839582, 3145728, 2169468, 1534501, 1084734,
+    838861, 706905, 593534, 495390, 425098, 376734,
+    338250, 305410, 277157, 252669, 233017
 };
 
 /* screen pixels per world unit at the middle of each band */
 static const BajaFp band_scale_fp[BAJA_ROAD_BANDS] = {
-    54613, 76459, 109227, 152917, 218453, 316757,
-    447829, 633515, 819200, 972117, 1157803, 1387179,
-    1616555, 1824085, 2031616, 2250069, 2479445, 2719744,
-    2949120
+    76459, 141995, 218453, 316757, 447829, 633515,
+    819200, 972117, 1157803, 1387179, 1616555, 1824085,
+    2031616, 2250069, 2479445, 2719744, 2949120
 };
 
 /* screen pixels per world unit at each band boundary */
 static const BajaFp band_edge_scale_fp[BAJA_ROAD_BANDS + 1] = {
-    43691, 65536, 87381, 131072, 174763, 262144,
-    371371, 524288, 742741, 895659, 1048576, 1267029,
-    1507328, 1725781, 1922389, 2140843, 2359296, 2599595,
-    2839893, 3058347
+    43691, 109227, 174763, 262144, 371371, 524288,
+    742741, 895659, 1048576, 1267029, 1507328, 1725781,
+    1922389, 2140843, 2359296, 2599595, 2839893, 3058347
 };
 
 static void zero_bytes(void *memory, uint32_t bytes)
@@ -157,24 +156,27 @@ void baja_track_init_cooperative(BajaTrack *track, BajaServiceHook service_hook)
     /* Ensenada: a fast coastal opening, a pair of cliff-side bends, a crest,
      * then a technical descent into the finish straight. */
     static const TrackPiece pieces[] = {
-        {20, 0, 0},
-        {22, 340, 40},
-        {16, 0, 120},
-        {14, -560, -180},
-        {20, -260, -60},
         {18, 0, 0},
-        {22, 520, 30},
-        {16, -180, 160},
-        {14, 0, -260},
-        {24, -420, -40},
-        {18, 260, 0},
-        {16, -300, 90},
-        {20, 420, -120},
-        {22, -160, 0},
-        {18, 0, 60},
-        {24, 300, -40},
-        {20, -380, 0},
-        {24, 0, 0}
+        {20, 320, 300},
+        {12, 0, 900},
+        {10, -420, -700},
+        {18, -300, -1100},
+        {14, 0, -200},
+        {20, 500, 200},
+        {12, -200, 1200},
+        {10, 0, -900},
+        {22, -450, -300},
+        {16, 240, 400},
+        {14, -320, 1000},
+        {10, 400, -1200},
+        {20, 180, -400},
+        {16, -260, 300},
+        {18, 0, 0},
+        {22, 300, -200},
+        {18, -380, 200},
+        {20, 200, 500},
+        {24, 0, -300},
+        {26, 0, 0}
     };
     BajaFp heading = 0;
     BajaFp current_curve = 0;
@@ -740,8 +742,9 @@ uint8_t baja_project_bands(const BajaSim *sim, BajaRoadBand *bands)
                                                               band_scale_fp[b])));
         band->top_y = top;
         band->height = (uint8_t)((bottom - top) > 255 ? 255 : (bottom - top));
-        band->phase = (uint8_t)(((uint32_t)(sim->player_s + band_depth_fp[b]) >>
-                                 STRIPE_SHIFT) & 1U);
+        band->phase = baja_band_stripe_shift[b] == 0U ? 0U :
+                      (uint8_t)(((uint32_t)(sim->player_s + band_depth_fp[b]) >>
+                                 baja_band_stripe_shift[b]) & 1U);
         band->visible = 1;
         limit = top;
     }

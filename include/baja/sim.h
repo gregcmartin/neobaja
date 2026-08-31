@@ -15,7 +15,7 @@
 #define BAJA_SCREEN_HEIGHT 224
 #define BAJA_SCREEN_CENTER 160
 #define BAJA_HORIZON_Y 84
-#define BAJA_ROAD_BANDS 19
+#define BAJA_ROAD_BANDS 17
 
 typedef int32_t BajaFp;
 typedef void (*BajaServiceHook)(void);
@@ -176,6 +176,9 @@ void baja_sim_begin_race(BajaSim *sim);
 /* Fixed funnel geometry, shared by the projection and the strip generator. */
 extern const int16_t baja_band_dy[BAJA_ROAD_BANDS + 1];
 extern const int16_t baja_band_half_width[BAJA_ROAD_BANDS];
+/* Zero means the band is too close for a readable surface phase: a metre of
+ * road crosses it in well under a frame, so it carries one blurred variant. */
+extern const uint8_t baja_band_stripe_shift[BAJA_ROAD_BANDS];
 
 uint8_t baja_project_bands(const BajaSim *sim, BajaRoadBand *bands);
 void baja_project_object(const BajaSim *sim, BajaFp object_s, BajaFp object_e,
