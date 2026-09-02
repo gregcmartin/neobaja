@@ -48,6 +48,9 @@ mame-keyboard:
 mame-controls:
 	$(MAKE) -C native mame-controls MAME_BIOS_DIR="$(MAME_BIOS_DIR)" MAME="$(MAME)"
 
+mame-profile:
+	$(MAKE) -C native mame-profile MAME_BIOS_DIR="$(MAME_BIOS_DIR)" MAME="$(MAME)" LEVEL="$(LEVEL)"
+
 play:
 	$(MAKE) -C native play MAME_BIOS_DIR="$(MAME_BIOS_DIR)" MAME="$(MAME)"
 

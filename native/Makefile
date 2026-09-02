@@ -10,6 +10,8 @@ HOST_CC ?= cc
 M68K_CC ?= m68k-elf-gcc
 M68K_OBJCOPY ?= m68k-elf-objcopy
 M68K_SIZE ?= m68k-elf-size
+M68K_NM ?= m68k-elf-nm
+LEVEL ?= 0
 MAME ?= mame
 MAME_BIOS_DIR ?=
 
@@ -45,7 +47,7 @@ TARGET_ELF := $(BUILD)/m68k/bajanew.elf
 TARGET_RAW := $(BUILD)/m68k/bajanew.p
 ROM_ZIP := $(ROMDIR)/puzzledp.zip
 
-.PHONY: all assets host rom verify renderer-check mame-smoke mame-keyboard mame-controls play clean
+.PHONY: all assets host rom verify renderer-check mame-smoke mame-keyboard mame-controls mame-profile play clean
 
 all: host rom verify
 
@@ -101,6 +103,15 @@ mame-controls: verify
 		--script $(ROOT)/tools/mame_bajanew_controls.lua \
 		--screenshot $(BUILD)/evidence/bajanew-controls.png \
 		--output $(BUILD)/evidence/bajanew-controls.json
+
+# Price each stage of the frame in 68000 cycles while racing.  LEVEL peels
+# layers off the scene (see bajanew_render_level in game.c).
+mame-profile: $(ROM_ZIP)
+	@test -n "$(MAME_BIOS_DIR)" || (echo "Set MAME_BIOS_DIR to the directory containing neogeo.zip" && exit 2)
+	BAJANEW_STAGE_ADDR=0x$$($(M68K_NM) $(TARGET_ELF) | awk '/ bajanew_stage$$/{print $$1}') \
+	BAJANEW_LEVEL=$(LEVEL) $(MAME) puzzledp -rompath "$(abspath $(ROMDIR));$(abspath $(MAME_BIOS_DIR))" \
+		-bios euro -skip_gameinfo -sound none -video none -nothrottle -seconds_to_run 90 \
+		-autoboot_script $(ROOT)/tools/mame_stages.lua 2>&1 | grep -E "^STAGE"
 
 play: verify
 	@test -n "$(MAME_BIOS_DIR)" || (echo "Set MAME_BIOS_DIR to the directory containing neogeo.zip" && exit 2)

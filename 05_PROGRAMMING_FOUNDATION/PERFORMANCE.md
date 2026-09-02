@@ -1,5 +1,9 @@
 # What the 68000 can afford
 
+`make mame-profile MAME_BIOS_DIR=/path/to/bios [LEVEL=n]` prints the cost of
+each stage of the racing frame in 68000 cycles; `LEVEL` peels layers off the
+scene the way `bajanew_render_level` does.
+
 Every number here was measured on the real cartridge in MAME. The game writes a
 stage number to `bajanew_stage` at each step of its frame; a MAME script taps
 that address and turns the gaps into 68000 cycles, which is the only way to see
