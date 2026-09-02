@@ -2,7 +2,7 @@ ROOT := ..
 FORGE68 := $(ROOT)/sdk/forge68
 BUILD := $(ROOT)/build/native
 GEN := $(ROOT)/build/assets/generated
-AUDIO_GEN := $(FORGE68)/build/generated
+AUDIO := $(ROOT)/build/audio
 ROMDIR := $(BUILD)/roms
 
 PYTHON ?= python3
@@ -11,6 +11,9 @@ M68K_CC ?= m68k-elf-gcc
 M68K_OBJCOPY ?= m68k-elf-objcopy
 M68K_SIZE ?= m68k-elf-size
 M68K_NM ?= m68k-elf-nm
+Z80_AS ?= sdasz80
+Z80_LD ?= sdldz80
+Z80_BIN ?= makebin
 LEVEL ?= 0
 MAME ?= mame
 MAME_BIOS_DIR ?=
@@ -47,17 +50,33 @@ TARGET_ELF := $(BUILD)/m68k/bajanew.elf
 TARGET_RAW := $(BUILD)/m68k/bajanew.p
 ROM_ZIP := $(ROMDIR)/puzzledp.zip
 
-.PHONY: all assets host rom verify renderer-check mame-smoke mame-keyboard mame-controls mame-profile play clean
+.PHONY: all assets audio host rom verify renderer-check mame-smoke mame-keyboard mame-controls mame-profile play clean
 
 all: host rom verify
 
-# BAJANEW compiles its own approved artwork; only the audio driver and V-ROM
-# still come from the SDK build.
+# BAJANEW compiles its own approved artwork, its own Z80 driver and its own
+# V-ROM content.
 assets:
 	@mkdir -p $(GEN)
 	$(PYTHON) $(ROOT)/tools/build_assets.py
 	@$(PYTHON) $(FORGE68)/tools/ngasset.py $(ROOT)/assets/manifest.json --output $(GEN) > $(GEN)/asset_compile.json
-	$(MAKE) -C $(FORGE68) audio PYTHON=$(PYTHON)
+
+# Samples and the V-ROM, then the songs and tables the driver includes, then
+# the driver itself.  The assembler resolves the include from its working
+# directory, which is where ngsong.py writes songdata.s.
+$(AUDIO)/gen/audio_report.json: $(ROOT)/tools/make_audio.py $(FORGE68)/tools/ngaudio.py
+	$(PYTHON) $(ROOT)/tools/make_audio.py
+
+$(AUDIO)/songdata.s: $(ROOT)/tools/ngsong.py $(AUDIO)/gen/audio_report.json
+	$(PYTHON) $(ROOT)/tools/ngsong.py
+
+$(AUDIO)/m1.bin: $(ROOT)/native/audio/driver.s $(AUDIO)/songdata.s
+	@mkdir -p $(AUDIO)/z80
+	cd $(AUDIO) && $(Z80_AS) -plosgff -o z80/bajanew_audio.rel $(abspath $(ROOT)/native/audio/driver.s)
+	cd $(AUDIO) && $(Z80_LD) -n -i -m -w z80/bajanew_audio z80/bajanew_audio.rel
+	$(Z80_BIN) -s 131072 $(AUDIO)/z80/bajanew_audio.ihx $@
+
+audio: $(AUDIO)/m1.bin
 
 host: $(HOST_BINARY)
 	@mkdir -p $(BUILD)/evidence
@@ -74,7 +93,7 @@ renderer-check: | assets
 verify: $(ROM_ZIP) host renderer-check
 	$(PYTHON) $(ROOT)/tools/verify_rom.py --rom-dir $(ROMDIR) \
 		--elf $(TARGET_ELF) --asset-report $(GEN)/asset_report.json \
-		--audio-report $(AUDIO_GEN)/audio/audio_report.json \
+		--audio-report $(AUDIO)/gen/audio_report.json \
 		--render-report $(BUILD)/evidence/bajanew-host.json \
 		--size-tool $(M68K_SIZE)
 
@@ -181,11 +200,11 @@ $(TARGET_ELF): $(TARGET_CRT) $(TARGET_OBJECTS) $(ROOT)/native/link.ld
 $(TARGET_RAW): $(TARGET_ELF)
 	$(M68K_OBJCOPY) -O binary -S $< $@
 
-$(ROM_ZIP): $(TARGET_RAW) | assets
+$(ROM_ZIP): $(TARGET_RAW) $(AUDIO)/m1.bin | assets
 	@mkdir -p $(ROMDIR)
 	$(PYTHON) $(FORGE68)/tools/rompack.py --p-raw $(TARGET_RAW) \
-		--s1 $(GEN)/s1.bin --m1 $(FORGE68)/build/m68k/m1.bin \
-		--v1 $(AUDIO_GEN)/audio/v1.bin --c1 $(GEN)/c1.bin --c2 $(GEN)/c2.bin \
+		--s1 $(GEN)/s1.bin --m1 $(AUDIO)/m1.bin \
+		--v1 $(AUDIO)/gen/v1.bin --c1 $(GEN)/c1.bin --c2 $(GEN)/c2.bin \
 		--output $(ROMDIR)
 
 -include $(HOST_OBJECTS:.o=.d) $(TARGET_OBJECTS:.o=.d)

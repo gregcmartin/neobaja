@@ -38,7 +38,8 @@ approved artwork under `art/`: a twenty two band projected road on the SDK's
 strip layers, a two layer parallax coast, 380 roadside props with crowds,
 chevrons, signs and gantries, rivals that keep the leg a race, crest jumps,
 roadside hazards, a shadowed HUD with 16x16 numerals and a route minimap, a
-typographic title and a results panel.  The display holds a locked 30 Hz with
+painted title and a results panel, and its own Z80 sound driver with an
+original theme and a pitch-tracked engine.  The display holds a locked 30 Hz with
 the simulation at its designed 60 Hz.  Greg's five-minute unscripted MAME
 session remains the release gate; see `TODO.md` for what is open.
 

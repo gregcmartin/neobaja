@@ -59,6 +59,12 @@ typedef struct BajanewGame {
     /* A contact or crash call-out stays up long enough to be read. */
     uint8_t message_kind;
     uint8_t message_timer;
+    /* Sound: what the driver was last told, and effects waiting to be sent. */
+    uint8_t audio_engine_step;
+    uint8_t audio_music;
+    uint8_t audio_pending;
+    uint8_t audio_phase;
+    uint16_t audio_air_timer;
     uint32_t frame;
     int16_t sky_pan;
     int16_t ground_pan;
@@ -77,6 +83,9 @@ typedef struct BajanewGame {
 
 void bajanew_game_init(BajanewGame *game);
 void bajanew_game_tick(BajanewGame *game, NgPad pad);
+/* The next byte for the sound driver, or zero.  Called once per frame after
+ * the tick; effects first, then music changes, then engine pitch. */
+uint8_t bajanew_game_audio(BajanewGame *game);
 void bajanew_game_set_autoplay(BajanewGame *game, uint8_t enabled);
 
 #endif

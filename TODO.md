@@ -48,8 +48,10 @@
 - [ ] 60 Hz needs about 35,000 more cycles a frame.  The general renderer's
   object path is the largest item; give objects fixed slot runs once the
   scene's object count is settled.
-- [ ] Audio is still the Forge68 SDK's driver and V-ROM content, not BAJANEW
-  audio.  Audio direction is an open design decision.
+- [x] Sound: BAJANEW's own Z80 driver with a Timer-B sequencer, the
+  "Pacific Run" theme, a pitch-tracked engine loop and effect samples.  See
+  `05_PROGRAMMING_FOUNDATION/AUDIO.md`.  Mix balance and the tune itself await
+  Greg's ear.
 - [ ] Expose BAJANEW's game-specific state through the enhanced Forge68 MCP
   host; do not count the SDK demo host as game evidence.
 - [x] Greg's unscripted MAME play gate, 2026-09-02: "amazing finally for the

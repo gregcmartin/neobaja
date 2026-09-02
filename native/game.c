@@ -851,6 +851,11 @@ void bajanew_game_init(BajanewGame *game)
     game->scenery_cursor = 0;
     game->message_kind = 0;
     game->message_timer = 0;
+    game->audio_engine_step = 0;
+    game->audio_music = 0;
+    game->audio_pending = 0;
+    game->audio_phase = 0xffU;
+    game->audio_air_timer = 0;
     game->frame = 0;
     game->sky_pan = 0;
     game->ground_pan = 0;
@@ -873,6 +878,98 @@ void bajanew_game_init(BajanewGame *game)
     ng_platform_backdrop(0x1119U);
     ng_fix_clear();
     draw_frame(game);
+}
+
+/* ----------------------------------------------------------------- sound -- */
+
+/* Driver command bytes; see native/audio/driver.s. */
+#define AUDIO_FX_CONTACT 0x10U
+#define AUDIO_FX_CRASH 0x11U
+#define AUDIO_FX_SKID 0x12U
+#define AUDIO_FX_LAND 0x13U
+#define AUDIO_FX_BEEP 0x14U
+#define AUDIO_FX_GO 0x15U
+#define AUDIO_MUSIC_STOP 0x20U
+#define AUDIO_MUSIC_ENSENADA 0x21U
+#define AUDIO_ENGINE_OFF 0x30U
+#define AUDIO_ENGINE_BASE 0x31U
+#define AUDIO_ENGINE_STEPS 63U
+
+/* Engine pitch from the simulation: revs climb through each gear and drop at
+ * the shift, flare in the air, and wobble on rough ground. */
+static uint8_t engine_step(const BajanewGame *game)
+{
+    const BajaSim *sim = &game->sim;
+    uint32_t ratio_q8 = (uint32_t)((sim->speed * 256) / (BAJA_FP_ONE * 3 / 4));   /* 0..256 */
+    uint32_t within;
+    uint32_t step;
+    if (ratio_q8 > 256U) ratio_q8 = 256U;
+    if (sim->speed < BAJA_FP_ONE / 40) return 3U;
+    /* Five gears: how far into the current one. */
+    within = (ratio_q8 * 5U) - (uint32_t)(sim->gear - 1U) * 256U;
+    if (within > 256U) within = 256U;
+    step = 8U + (uint32_t)(sim->gear - 1U) * 3U + (within * 34U >> 8);
+    if (sim->air_timer > 0U) step += 8U;
+    if (sim->surface == BAJA_SURFACE_DIRT && ((game->frame >> 2) & 1U)) step += 2U;
+    if (step > AUDIO_ENGINE_STEPS - 1U) step = AUDIO_ENGINE_STEPS - 1U;
+    return (uint8_t)step;
+}
+
+uint8_t bajanew_game_audio(BajanewGame *game)
+{
+    const BajaSim *sim = &game->sim;
+    uint8_t phase = sim->phase;
+    uint8_t want_music;
+    uint8_t want_engine;
+
+    /* Events from this frame's simulation steps. */
+    if (sim->hazard_event == BAJA_HAZARD_SOLID) game->audio_pending |= 0x02U;
+    else if (sim->hazard_event != 0U) game->audio_pending |= 0x04U;
+    if (sim->collision_event != 0U) game->audio_pending |= 0x01U;
+    if (game->audio_air_timer != 0U && sim->air_timer == 0U) game->audio_pending |= 0x08U;
+    game->audio_air_timer = sim->air_timer;
+    if (phase == BAJA_PHASE_COUNTDOWN) {
+        uint32_t f = sim->phase_frame;
+        if (f < 2U || (f >= 60U && f < 62U) || (f >= 120U && f < 122U)) game->audio_pending |= 0x10U;
+        if (f >= 180U && f < 182U) game->audio_pending |= 0x20U;
+    }
+    if (phase != game->audio_phase) {
+        game->audio_phase = phase;
+        if (phase == BAJA_PHASE_FINISHED) game->audio_pending |= 0x20U;
+    }
+
+    if (game->audio_pending & 0x02U) { game->audio_pending &= (uint8_t)~0x02U; return AUDIO_FX_CRASH; }
+    if (game->audio_pending & 0x01U) { game->audio_pending &= (uint8_t)~0x01U; return AUDIO_FX_CONTACT; }
+    if (game->audio_pending & 0x20U) { game->audio_pending &= (uint8_t)~0x20U; return AUDIO_FX_GO; }
+    if (game->audio_pending & 0x10U) { game->audio_pending &= (uint8_t)~0x10U; return AUDIO_FX_BEEP; }
+    if (game->audio_pending & 0x08U) { game->audio_pending &= (uint8_t)~0x08U; return AUDIO_FX_LAND; }
+    if (game->audio_pending & 0x04U) { game->audio_pending &= (uint8_t)~0x04U; return AUDIO_FX_SKID; }
+
+    /* Music from the moment the cartridge is up; the engine from the
+     * countdown to the flag. */
+    want_music = 1U;
+    (void)phase;
+    if (want_music != game->audio_music) {
+        game->audio_music = want_music;
+        return want_music ? AUDIO_MUSIC_ENSENADA : AUDIO_MUSIC_STOP;
+    }
+    want_engine = (uint8_t)(phase == BAJA_PHASE_COUNTDOWN || phase == BAJA_PHASE_RACING ||
+                            phase == BAJA_PHASE_FINISHED);
+    if (!want_engine) {
+        if (game->audio_engine_step != 0U) {
+            game->audio_engine_step = 0;
+            return AUDIO_ENGINE_OFF;
+        }
+        return 0;
+    }
+    {
+        uint8_t step = (uint8_t)(engine_step(game) + 1U);
+        if (step != game->audio_engine_step) {
+            game->audio_engine_step = step;
+            return (uint8_t)(AUDIO_ENGINE_BASE + step - 1U);
+        }
+    }
+    return 0;
 }
 
 void bajanew_game_set_autoplay(BajanewGame *game, uint8_t enabled)

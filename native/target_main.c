@@ -102,7 +102,6 @@ void ng_target_main(void)
     /* No mid-screen backdrop change: BAJANEW covers the whole frame with its
      * own layers, and the SDK demo's raster event only ever showed through as
      * black where something was missing. */
-    (void)ng_audio_enqueue(&ng_audio, NG_AUDIO_CMD_PLAY_MUSIC);
     bajanew_game_init(&ng_game);
     update_game_telemetry((NgPad){0, 0, 0});
     bajanew_telemetry.magic = BAJANEW_TELEMETRY_MAGIC;
@@ -121,6 +120,10 @@ void ng_target_main(void)
         (void)ng_raster_activate(&ng_raster, ng_timing_profile(NG_VIDEO_NTSC), 0);
         pad = ng_platform_read_pad(1);
         bajanew_game_tick(&ng_game, pad);
+        {
+            uint8_t command = bajanew_game_audio(&ng_game);
+            if (command != 0U) (void)ng_audio_enqueue(&ng_audio, command);
+        }
         ng_audio_update(&ng_audio);
         update_telemetry();
         update_game_telemetry(pad);
