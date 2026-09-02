@@ -61,8 +61,9 @@ typedef struct BajanewGame {
     int16_t ground_pan;
     /* Aligned so a row can be cleared and compared four cells at a time; the
      * HUD leaves most of every row untouched. */
-    uint8_t fix_shadow[BAJANEW_FIX_ROWS][BAJANEW_FIX_COLUMNS] __attribute__((aligned(4)));
-    uint8_t fix_next[BAJANEW_FIX_ROWS][BAJANEW_FIX_COLUMNS] __attribute__((aligned(4)));
+    /* Cells are 12-bit tile indices: the big numerals live past 255. */
+    uint16_t fix_shadow[BAJANEW_FIX_ROWS][BAJANEW_FIX_COLUMNS] __attribute__((aligned(4)));
+    uint16_t fix_next[BAJANEW_FIX_ROWS][BAJANEW_FIX_COLUMNS] __attribute__((aligned(4)));
     BajaFp progress_scale;
     uint32_t fix_dirty;
     uint32_t fix_written;

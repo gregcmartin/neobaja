@@ -12,10 +12,6 @@
 /* Hardware sprite columns each backdrop layer's window needs: the screen's
  * twenty plus a partial column at each edge. */
 #define BACKDROP_WINDOW 21
-/* Rows 0..27 are the visible 224 lines; the FIX map's last four rows are off
- * screen and are never touched. */
-#define FIX_VISIBLE_ROWS 28
-#define FIX_CELLS (FIX_VISIBLE_ROWS * BAJANEW_FIX_COLUMNS)
 
 /* Draw order among the renderer's objects: sorted by the band they stand on,
  * far to near, then dust, then the player.  The backdrop and the road sit
@@ -64,6 +60,15 @@ static uint8_t map_input(NgPad pad)
 
 /* ------------------------------------------------------------- FIX layer -- */
 
+/* FIX rows 0 and 1 sit above the visible picture and rows 30 and 31 below it,
+ * so the HUD lives in rows 2..29. */
+#define FIX_FIRST_ROW 2
+#define FIX_LAST_ROW 29
+#define FIX_BLANK 0x0020U
+/* Tile codes of the 16x16 numerals, four tiles each, ivory then amber. */
+#define BIG_BASE 0x100U
+#define BIG_AMBER 0x40U
+
 /* Only the rows the HUD actually writes are cleared and compared.  Walking
  * all 1120 cells twice a frame cost the 68000 a measurable slice of its
  * budget for rows that are blank all game. */
@@ -71,12 +76,12 @@ static void clear_next(BajanewGame *game)
 {
     uint32_t dirty = game->fix_dirty;
     uint8_t row;
-    for (row = 0; row < FIX_VISIBLE_ROWS; ++row) {
+    for (row = 0; row < BAJANEW_FIX_ROWS; ++row) {
         if ((dirty & (1UL << row)) != 0UL) {
             uint32_t *cells = (uint32_t *)(void *)&game->fix_next[row][0];
             uint8_t word;
-            for (word = 0; word < BAJANEW_FIX_COLUMNS / 4U; ++word) {
-                cells[word] = 0x20202020UL;
+            for (word = 0; word < BAJANEW_FIX_COLUMNS / 2U; ++word) {
+                cells[word] = 0x00200020UL;
             }
         }
     }
@@ -86,9 +91,9 @@ static void clear_next(BajanewGame *game)
 /* Text helpers resolve the row once and then walk it.  Indexing a two
  * dimensional FIX buffer per character costs the 68000 a 16-bit multiply
  * every time, and the HUD writes a few hundred characters a frame. */
-static uint8_t *fix_row(BajanewGame *game, int16_t row)
+static uint16_t *fix_row(BajanewGame *game, int16_t row)
 {
-    if (row < 0 || row >= FIX_VISIBLE_ROWS) return 0;
+    if (row < FIX_FIRST_ROW || row > FIX_LAST_ROW) return 0;
     game->fix_written |= (uint32_t)1UL << row;
     return &game->fix_next[row][0];
 }
@@ -96,11 +101,42 @@ static uint8_t *fix_row(BajanewGame *game, int16_t row)
 static void put_text(BajanewGame *game, int16_t column, int16_t row,
                      uint8_t shade, const char *text)
 {
-    uint8_t *cells = fix_row(game, row);
+    uint16_t *cells = fix_row(game, row);
     if (cells == 0) return;
     while (*text != '\0' && column < BAJANEW_FIX_COLUMNS) {
-        if (column >= 0) cells[column] = (uint8_t)((uint8_t)*text + shade);
+        if (column >= 0) cells[column] = (uint16_t)((uint8_t)*text + shade);
         ++column;
+        ++text;
+    }
+}
+
+/* Big numerals: digits, the time marks, a point and a slash, two cells wide
+ * and two tall, anchored at their top-left cell. */
+static uint16_t big_code(char ch)
+{
+    static const char big_chars[] = "0123456789'\".:/";
+    uint16_t index = 0;
+    while (big_chars[index] != '\0' && big_chars[index] != ch) ++index;
+    if (big_chars[index] == '\0') return 0;
+    return (uint16_t)(BIG_BASE + index * 4U);
+}
+
+static void put_big(BajanewGame *game, int16_t column, int16_t row,
+                    uint8_t amber, const char *text)
+{
+    uint16_t *top = fix_row(game, row);
+    uint16_t *bottom = fix_row(game, (int16_t)(row + 1));
+    if (top == 0 || bottom == 0) return;
+    while (*text != '\0' && column + 1 < BAJANEW_FIX_COLUMNS) {
+        uint16_t code = big_code(*text);
+        if (code != 0U && column >= 0) {
+            if (amber) code = (uint16_t)(code + BIG_AMBER);
+            top[column] = code;
+            top[column + 1] = (uint16_t)(code + 1U);
+            bottom[column] = (uint16_t)(code + 2U);
+            bottom[column + 1] = (uint16_t)(code + 3U);
+        }
+        column = (int16_t)(column + 2);
         ++text;
     }
 }
@@ -118,34 +154,40 @@ static uint16_t divide_by_three(uint16_t value)
     return (uint16_t)(((uint32_t)value * 43691UL) >> 17);
 }
 
+/* Decimal digits of a value into a buffer, most significant first, blank
+ * padded unless zero padded; the buffer gets a terminator. */
+static void format_uint(char *out, uint16_t value, uint8_t digits, uint8_t pad_zero)
+{
+    uint8_t index;
+    out[digits] = '\0';
+    for (index = 0; index < digits; ++index) {
+        uint16_t next = divide_by_ten(value);
+        char glyph = (char)('0' + (char)(value - (uint16_t)(next * 10U)));
+        if (!pad_zero && index > 0U && value == 0U) glyph = ' ';
+        out[digits - index - 1U] = glyph;
+        value = next;
+    }
+}
+
 static void put_uint(BajanewGame *game, int16_t column, int16_t row, uint8_t shade,
                      uint16_t value, uint8_t digits, uint8_t pad_zero)
 {
-    uint8_t *cells = fix_row(game, row);
-    uint8_t index;
-    if (cells == 0) return;
-    for (index = 0; index < digits; ++index) {
-        int16_t at = (int16_t)(column + (int16_t)(digits - index - 1U));
-        uint16_t next = divide_by_ten(value);
-        uint8_t glyph = (uint8_t)('0' + (uint8_t)(value - (uint16_t)(next * 10U)));
-        if (!pad_zero && index > 0U && value == 0U) glyph = (uint8_t)' ';
-        if (at >= 0 && at < BAJANEW_FIX_COLUMNS) {
-            cells[at] = (uint8_t)(glyph + shade);
-        }
-        value = next;
-    }
+    char text[8];
+    if (digits > 7U) digits = 7U;
+    format_uint(text, value, digits, pad_zero);
+    put_text(game, column, row, shade, text);
 }
 
 static void put_bar(BajanewGame *game, int16_t column, int16_t row,
                     uint8_t cells_wide, uint8_t filled_eighths)
 {
-    uint8_t *cells = fix_row(game, row);
+    uint16_t *cells = fix_row(game, row);
     uint8_t i;
     if (cells == 0) return;
     for (i = 0; i < cells_wide; ++i) {
         uint8_t remaining = filled_eighths > (uint8_t)(i * 8U) ?
                             (uint8_t)(filled_eighths - (uint8_t)(i * 8U)) : 0U;
-        uint8_t glyph = 0x80U;
+        uint16_t glyph = 0x80U;
         int16_t at = (int16_t)(column + (int16_t)i);
         if (remaining >= 8U) glyph = 0x84U;
         else if (remaining >= 6U) glyph = 0x83U;
@@ -162,25 +204,24 @@ static void flush_fix(BajanewGame *game)
     uint32_t dirty = game->fix_dirty | game->fix_written;
     uint8_t row;
 
-    for (row = 0; row < FIX_VISIBLE_ROWS; ++row) {
+    for (row = 0; row < BAJANEW_FIX_ROWS; ++row) {
         uint32_t *shadow_words;
         const uint32_t *next_words;
         uint8_t word;
         if ((dirty & (1UL << row)) == 0UL) continue;
         shadow_words = (uint32_t *)(void *)&game->fix_shadow[row][0];
         next_words = (const uint32_t *)(const void *)&game->fix_next[row][0];
-        /* Four cells at a time: only a group that actually changed is worth
+        /* Two cells at a time: only a pair that actually changed is worth
          * looking at cell by cell. */
-        for (word = 0; word < BAJANEW_FIX_COLUMNS / 4U; ++word) {
+        for (word = 0; word < BAJANEW_FIX_COLUMNS / 2U; ++word) {
             if (shadow_words[word] != next_words[word]) {
-                uint8_t *shadow = &game->fix_shadow[row][word * 4U];
-                const uint8_t *next = &game->fix_next[row][word * 4U];
+                uint16_t *shadow = &game->fix_shadow[row][word * 2U];
+                const uint16_t *next = &game->fix_next[row][word * 2U];
                 uint8_t offset;
-                for (offset = 0; offset < 4U; ++offset) {
+                for (offset = 0; offset < 2U; ++offset) {
                     if (shadow[offset] != next[offset]) {
                         shadow[offset] = next[offset];
-                        ng_fix_putc((uint8_t)(word * 4U + offset), row, 0,
-                                    (char)next[offset]);
+                        ng_fix_put_tile((uint8_t)(word * 2U + offset), row, 0, next[offset]);
                     }
                 }
             }
@@ -389,7 +430,11 @@ static uint8_t behind_crest(const BajaRoadBand *bands, const BajaObjectProjectio
 {
     const BajaRoadBand *band = &bands[projection->band];
     if (!band->visible) return 1;
-    return (uint8_t)(projection->ground_y > band->top_y + (int16_t)band->height + 2);
+    /* The object's own projection and the band edges round differently, and
+     * the gap grows with the band, so the tolerance scales with its height:
+     * tight for the thin far bands where crests actually hide things. */
+    return (uint8_t)(projection->ground_y >
+                     band->top_y + (int16_t)band->height + 3 + (int16_t)(band->height >> 1));
 }
 
 /* How far each kind of prop is drawn, in quarter metres.  Small scrub is a
@@ -496,69 +541,75 @@ static void draw_driver(BajanewGame *game, const NgSpriteFrame *frame,
 
 /* ------------------------------------------------------------------- HUD -- */
 
+static void format_time(char *out, uint32_t frames)
+{
+    /* Race time without a single division: the frame counter converts
+     * through two exact reciprocals. */
+    uint16_t hundredths;
+    uint16_t seconds;
+    uint16_t minutes;
+    if (frames > 13000U) frames = 13000U;
+    hundredths = divide_by_three((uint16_t)(frames * 5U));
+    seconds = divide_by_ten(divide_by_ten(hundredths));
+    minutes = divide_by_three((uint16_t)(divide_by_ten(seconds) >> 1));
+    out[0] = (char)('0' + minutes);
+    out[1] = '\'';
+    format_uint(&out[2], (uint16_t)(seconds - (uint16_t)(minutes * 60U)), 2, 1);
+    out[4] = '"';
+    format_uint(&out[5], (uint16_t)(hundredths - (uint16_t)(seconds * 100U)), 2, 1);
+    out[7] = '\0';
+}
+
+/* Top row: position, race time and best leg; bottom corners: speed with its
+ * rev bar and gear, and the stage with its progress.  Everything sits clear
+ * of the columns the player vehicle occupies. */
 static void draw_hud(BajanewGame *game)
 {
     const BajaSim *sim = &game->sim;
-    /* Race time and leg progress without a single division: the frame counter
-     * converts through two exact reciprocals, and the course length folds into
-     * a scale computed once at reset. */
-    uint32_t frames = sim->race_frames > 13000U ? 13000U : sim->race_frames;
-    uint16_t hundredths = divide_by_three((uint16_t)(frames * 5U));
-    uint16_t seconds = divide_by_ten(divide_by_ten(hundredths));
-    uint16_t minutes = divide_by_three((uint16_t)(divide_by_ten(seconds) >> 1));
+    char text[8];
     uint16_t speed = (uint16_t)((sim->speed * 216) / BAJA_FP_ONE);
     uint16_t progress = (uint16_t)baja_fp_to_int(
         baja_fp_mul(sim->player_s, game->progress_scale));
     uint16_t revs;
+    uint8_t cell;
 
-    put_text(game, 1, 1, 0, "POSITION");
-    put_uint(game, 2, 2, SHADE_AMBER, sim->position, 1, 1);
-    put_text(game, 3, 2, 0, "/");
-    put_uint(game, 4, 2, 0, BAJA_RIVAL_COUNT + 1U, 1, 1);
-    put_text(game, 1, 4, 0, "LEG");
-    put_uint(game, 1, 5, 0, progress, 3, 0);
-    put_text(game, 4, 5, 0, "%");
+    put_text(game, 1, 2, 0, "POS");
+    format_uint(text, sim->position, 1, 1);
+    put_big(game, 1, 3, 1, text);
+    put_text(game, 3, 4, 0, "/4");
 
-    put_text(game, 17, 1, 0, "TIME");
-    put_uint(game, 15, 2, SHADE_AMBER, minutes, 1, 1);
-    put_text(game, 16, 2, SHADE_AMBER, "'");
-    put_uint(game, 17, 2, SHADE_AMBER, (uint16_t)(seconds - (uint16_t)(minutes * 60U)), 2, 1);
-    put_text(game, 19, 2, SHADE_AMBER, "\"");
-    put_uint(game, 20, 2, SHADE_AMBER, (uint16_t)(hundredths - (uint16_t)(seconds * 100U)), 2, 1);
+    put_text(game, 18, 2, 0, "TIME");
+    format_time(text, sim->race_frames);
+    put_big(game, 13, 3, 0, text);
 
-    put_text(game, 31, 1, 0, "BEST LEG");
+    put_text(game, 31, 2, 0, "BEST LEG");
     if (game->best_frames != 0U) {
-        uint16_t best = divide_by_three((uint16_t)(
-            (game->best_frames > 13000U ? 13000U : game->best_frames) * 5U));
-        uint16_t best_seconds = divide_by_ten(divide_by_ten(best));
-        uint16_t best_minutes = divide_by_three((uint16_t)(divide_by_ten(best_seconds) >> 1));
-        put_uint(game, 32, 2, 0, best_minutes, 1, 1);
-        put_text(game, 33, 2, 0, "'");
-        put_uint(game, 34, 2, 0, (uint16_t)(best_seconds - (uint16_t)(best_minutes * 60U)), 2, 1);
-        put_text(game, 36, 2, 0, "\"");
-        put_uint(game, 37, 2, 0, (uint16_t)(best - (uint16_t)(best_seconds * 100U)), 2, 1);
+        format_time(text, game->best_frames);
+        put_text(game, 32, 3, SHADE_AMBER, text);
     } else {
-        put_text(game, 32, 2, 0, "-'--\"--");
+        put_text(game, 32, 3, 0, "-'--\"--");
     }
 
-    /* Both blocks sit outside the columns the player vehicle occupies, so the
-     * driving line stays clear at 1x. */
-    put_text(game, 1, 24, 0, "SPEED");
-    put_uint(game, 1, 25, SHADE_AMBER, speed, 3, 0);
-    put_text(game, 5, 25, 0, "KMH");
+    format_uint(text, speed, 3, 0);
+    put_big(game, 1, 25, 0, text);
+    put_text(game, 7, 26, 0, "KMH");
     revs = (uint16_t)((sim->speed * 8) / BAJA_FP_ONE);
     if (revs > 6U) revs = 6U;
-    put_bar(game, 1, 26, 6, (uint8_t)(revs * 8U + 4U));
-    put_text(game, 1, 27, 0, "GEAR");
-    put_uint(game, 6, 27, SHADE_AMBER, sim->gear, 1, 1);
+    put_bar(game, 1, 27, 6, (uint8_t)(revs * 8U + 4U));
+    put_text(game, 8, 27, 0, "GEAR");
+    put_uint(game, 13, 27, SHADE_AMBER, sim->gear, 1, 1);
 
-    put_text(game, 31, 24, 0, "ENSENADA");
-    put_text(game, 28, 25, SHADE_AMBER, "PACIFIC RUN");
-    put_bar(game, 29, 26, 10, (uint8_t)((progress * 80U) / 100U));
+    put_text(game, 31, 25, 0, "ENSENADA");
+    put_text(game, 28, 26, SHADE_AMBER, "PACIFIC RUN");
+    /* Course progress: a line with the car's marker on it. */
+    put_bar(game, 28, 27, 10, 80);
+    cell = (uint8_t)divide_by_ten(progress);
+    if (cell > 9U) cell = 9U;
+    put_text(game, (int16_t)(28 + cell), 27, 0, "\x88");
 
-    if (sim->surface == BAJA_SURFACE_DIRT) put_text(game, 17, 22, SHADE_AMBER, "OFF ROAD");
-    else if (sim->surface == BAJA_SURFACE_SHOULDER) put_text(game, 18, 22, 0, "EDGE");
-    if (sim->collision_event != 0U) put_text(game, 17, 20, SHADE_AMBER, "CONTACT");
+    if (sim->surface == BAJA_SURFACE_DIRT) put_text(game, 16, 18, SHADE_AMBER, "OFF ROAD");
+    else if (sim->surface == BAJA_SURFACE_SHOULDER) put_text(game, 18, 18, 0, "EDGE");
+    if (sim->collision_event != 0U) put_text(game, 16, 16, SHADE_AMBER, "CONTACT!");
 }
 
 /* ----------------------------------------------------------------- scene -- */
@@ -621,22 +672,22 @@ static void draw_frame(BajanewGame *game)
             put_text(game, 14, 9, SHADE_AMBER, "BAJA OUTRUN");
             put_text(game, 12, 11, 0, "ENSENADA PACIFIC RUN");
             if (((sim->phase_frame >> 5) & 1U) == 0U) {
-                put_text(game, 14, 22, 0, "PRESS START");
+                put_text(game, 14, 24, 0, "PRESS START");
             }
         }
         break;
     case BAJA_PHASE_SELECT: {
         uint8_t is_max = (uint8_t)(sim->driver == BAJA_DRIVER_MAX);
         draw_race(game, 0);
-        put_text(game, 13, 3, 0, "CHOOSE DRIVER");
+        put_text(game, 13, 4, 0, "CHOOSE DRIVER");
         draw_driver(game, &ng_asset_driver_max_frames[0], 84, is_max);
         draw_driver(game, &ng_asset_driver_cruz_frames[0], 236, (uint8_t)!is_max);
-        put_text(game, 8, 24, is_max ? SHADE_AMBER : 0U, "MAX");
-        put_text(game, 6, 25, 0, "AGE 8  NO 2");
-        put_text(game, 27, 24, is_max ? 0U : SHADE_AMBER, "CRUZ");
-        put_text(game, 25, 25, 0, "AGE 6  NO 17");
-        put_text(game, is_max ? 6 : 25, 24, 0, ">");
-        put_text(game, 8, 27, 0, "LEFT RIGHT   START");
+        put_text(game, 8, 25, is_max ? SHADE_AMBER : 0U, "MAX");
+        put_text(game, 6, 26, 0, "AGE 8  NO 2");
+        put_text(game, 27, 25, is_max ? 0U : SHADE_AMBER, "CRUZ");
+        put_text(game, 25, 26, 0, "AGE 6  NO 17");
+        put_text(game, is_max ? 6 : 25, 25, 0, ">");
+        put_text(game, 8, 28, 0, "LEFT RIGHT   START");
         break;
     }
     case BAJA_PHASE_COUNTDOWN: {
@@ -645,7 +696,10 @@ static void draw_frame(BajanewGame *game)
         draw_hud(game);
         if (remaining > 3U) remaining = 3U;
         if (remaining > 0U) {
-            put_uint(game, 19, 12, SHADE_AMBER, remaining, 1, 1);
+            char text[2];
+            text[0] = (char)('0' + remaining);
+            text[1] = '\0';
+            put_big(game, 19, 12, 1, text);
         } else {
             put_text(game, 18, 12, SHADE_AMBER, "GO!");
         }
@@ -742,8 +796,8 @@ void bajanew_game_init(BajanewGame *game)
     game->reserved[2] = 0;
     for (row = 0; row < BAJANEW_FIX_ROWS; ++row) {
         for (column = 0; column < BAJANEW_FIX_COLUMNS; ++column) {
-            game->fix_shadow[row][column] = (uint8_t)' ';
-            game->fix_next[row][column] = (uint8_t)' ';
+            game->fix_shadow[row][column] = FIX_BLANK;
+            game->fix_next[row][column] = FIX_BLANK;
         }
     }
     ng_platform_backdrop(0x1119U);

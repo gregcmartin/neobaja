@@ -376,7 +376,7 @@ static void reset_scenery(BajaSim *sim)
     uint16_t slot = 0;
     uint8_t signs = 0;
 
-    place_scenery(sim, &count, FP_RATIO(4, 1), 0, BAJA_SCENERY_GANTRY_START);
+    place_scenery(sim, &count, FP_RATIO(16, 1), 0, BAJA_SCENERY_GANTRY_START);
     while (s < total - FP_RATIO(24, 1)) {
         int32_t noise = course_noise(s, 7U + slot);
         int32_t pick = course_noise(s, 31U + slot);

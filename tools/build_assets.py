@@ -538,7 +538,7 @@ def build_fix() -> dict:
     SOURCE.mkdir(parents=True, exist_ok=True)
     path = SOURCE / "font.png"
     Image.fromarray(sheet.astype(np.uint8), "RGBA").save(path)
-    return {"glyphs": len(fixfont.GLYPHS) + len(fixfont.BLOCKS),
+    return {"glyphs": len(fixfont.GLYPHS) + len(fixfont.BLOCKS) + len(fixfont.BIG),
             "sha256": sha256(path), "shades": ["ivory", "amber", "cyan"]}
 
 
