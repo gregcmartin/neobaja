@@ -26,7 +26,18 @@
 /* Baseline the selection portraits stand on. */
 #define DRIVER_BASE_Y 190
 
-#define SHADE_AMBER 0x80
+#define SHADE_AMBER 0x80U
+/* Lime digits on the LCD's dark ground, at the third small set. */
+#define SHADE_GREEN 0x200U
+/* Big numeral variants: ivory, amber, blue chrome. */
+#define BIG_IVORY 0U
+#define BIG_AMBER 1U
+#define BIG_BLUE 2U
+/* The tachometer face tiles, six by six from this code. */
+#define GAUGE_TILE_BASE 0x1c0U
+#define GAUGE_COLUMN 1
+#define GAUGE_ROW 22
+#define NEEDLE_FRAMES 24
 
 enum {
     POSE_NEUTRAL = 0,
@@ -67,7 +78,7 @@ static uint8_t map_input(NgPad pad)
 #define FIX_BLANK 0x0020U
 /* Tile codes of the 16x16 numerals, four tiles each, ivory then amber. */
 #define BIG_BASE 0x100U
-#define BIG_AMBER 0x40U
+#define BIG_VARIANT 0x40U
 
 /* Only the rows the HUD actually writes are cleared and compared.  Walking
  * all 1120 cells twice a frame cost the 68000 a measurable slice of its
@@ -99,7 +110,7 @@ static uint16_t *fix_row(BajanewGame *game, int16_t row)
 }
 
 static void put_text(BajanewGame *game, int16_t column, int16_t row,
-                     uint8_t shade, const char *text)
+                     uint16_t shade, const char *text)
 {
     uint16_t *cells = fix_row(game, row);
     if (cells == 0) return;
@@ -122,7 +133,7 @@ static uint16_t big_code(char ch)
 }
 
 static void put_big(BajanewGame *game, int16_t column, int16_t row,
-                    uint8_t amber, const char *text)
+                    uint8_t variant, const char *text)
 {
     uint16_t *top = fix_row(game, row);
     uint16_t *bottom = fix_row(game, (int16_t)(row + 1));
@@ -130,7 +141,7 @@ static void put_big(BajanewGame *game, int16_t column, int16_t row,
     while (*text != '\0' && column + 1 < BAJANEW_FIX_COLUMNS) {
         uint16_t code = big_code(*text);
         if (code != 0U && column >= 0) {
-            if (amber) code = (uint16_t)(code + BIG_AMBER);
+            code = (uint16_t)(code + (uint16_t)variant * BIG_VARIANT);
             top[column] = code;
             top[column + 1] = (uint16_t)(code + 1U);
             bottom[column] = (uint16_t)(code + 2U);
@@ -169,7 +180,7 @@ static void format_uint(char *out, uint16_t value, uint8_t digits, uint8_t pad_z
     }
 }
 
-static void put_uint(BajanewGame *game, int16_t column, int16_t row, uint8_t shade,
+static void put_uint(BajanewGame *game, int16_t column, int16_t row, uint16_t shade,
                      uint16_t value, uint8_t digits, uint8_t pad_zero)
 {
     char text[8];
@@ -194,6 +205,22 @@ static void put_bar(BajanewGame *game, int16_t column, int16_t row,
         else if (remaining >= 4U) glyph = 0x82U;
         else if (remaining >= 2U) glyph = 0x81U;
         if (at >= 0 && at < BAJANEW_FIX_COLUMNS) cells[at] = glyph;
+    }
+}
+
+/* A block of consecutive art tiles, `wide` by `high`, from `base`. */
+static void put_art(BajanewGame *game, int16_t column, int16_t row,
+                    uint8_t wide, uint8_t high, uint16_t base)
+{
+    uint8_t y;
+    for (y = 0; y < high; ++y) {
+        uint16_t *cells = fix_row(game, (int16_t)(row + y));
+        uint8_t x;
+        if (cells == 0) continue;
+        for (x = 0; x < wide; ++x) {
+            int16_t at = (int16_t)(column + x);
+            if (at >= 0 && at < BAJANEW_FIX_COLUMNS) cells[at] = (uint16_t)(base + y * wide + x);
+        }
     }
 }
 
@@ -541,14 +568,23 @@ static void draw_player(BajanewGame *game, const BajaView *view)
     else if (sim->speed < BAJA_FP_ONE / 8) pose = POSE_SETTLED;
 
     /* The player is the nearest thing in the scene and is placed first, so it
-     * takes the top of the pool; its dust puffs sit just behind it. */
+     * takes the top of the pool; the dust plumes roll out behind its rear
+     * wheels, bigger and lower the harder the tyres are working. */
     place(game, &ng_asset_player_frames[pose], x, y, 0x0fU, 0xffU, 0U);
     if (sim->dust_event != 0U || sim->hazard_event != 0U || sim->bounce > BAJA_FP_ONE / 5) {
         uint8_t frame = (uint8_t)((game->frame >> 2) % 3U);
-        place(game, &ng_asset_dust_frames[frame], (int16_t)(x - 36), (int16_t)(y + 2),
+        uint8_t heavy = (uint8_t)(sim->surface != BAJA_SURFACE_ROAD || sim->bounce > BAJA_FP_ONE / 5);
+        int16_t spread = heavy ? 66 : 58;
+        place(game, &ng_asset_plume_frames[frame], (int16_t)(x - spread), (int16_t)(y + 8),
               0x0fU, 0xffU, 0U);
-        place(game, &ng_asset_dust_frames[(frame + 1U) % 3U], (int16_t)(x + 36),
-              (int16_t)(y + 2), 0x0fU, 0xffU, NG_RENDER_FLIP_X);
+        place(game, &ng_asset_plume_frames[(frame + 1U) % 3U], (int16_t)(x + spread),
+              (int16_t)(y + 8), 0x0fU, 0xffU, NG_RENDER_FLIP_X);
+        if (heavy) {
+            place(game, &ng_asset_dust_frames[frame], (int16_t)(x - 20), (int16_t)(y + 6),
+                  0x0fU, 0xffU, 0U);
+            place(game, &ng_asset_dust_frames[(frame + 2U) % 3U], (int16_t)(x + 20),
+                  (int16_t)(y + 6), 0x0fU, 0xffU, NG_RENDER_FLIP_X);
+        }
     }
 }
 
@@ -565,8 +601,8 @@ static void draw_driver(BajanewGame *game, const NgSpriteFrame *frame,
 
 /* ------------------------------------------------------------------- HUD -- */
 
-#define MAP_X 250
-#define MAP_Y 170
+#define MAP_X 254
+#define MAP_Y 158
 
 /* The route from start to finish with the car's dot on it, drawn as sprites
  * over the scene: the pool draws nearest first, so the HUD art goes in before
@@ -610,44 +646,62 @@ static void draw_hud(BajanewGame *game)
     uint16_t speed = (uint16_t)((sim->speed * 216) / BAJA_FP_ONE);
     uint16_t progress = (uint16_t)baja_fp_to_int(
         baja_fp_mul(sim->player_s, game->progress_scale));
-    uint16_t revs;
+    uint32_t ratio_q8;
+    uint32_t within;
+    uint8_t needle;
     uint8_t cell;
 
-    put_text(game, 1, 2, 0, "POS");
+    /* Top left: position and leg progress. */
+    put_text(game, 1, 2, 0, "POSITION");
     format_uint(text, sim->position, 1, 1);
-    put_big(game, 1, 3, 1, text);
+    put_big(game, 1, 3, BIG_AMBER, text);
     put_text(game, 3, 4, 0, "/4");
+    put_text(game, 1, 6, 0, "LEG");
+    put_uint(game, 1, 7, SHADE_AMBER, progress, 3, 0);
+    put_text(game, 4, 7, SHADE_AMBER, "%");
 
+    /* Top centre: the race clock in blue chrome. */
     put_text(game, 18, 2, 0, "TIME");
     format_time(text, sim->race_frames);
-    put_big(game, 13, 3, 0, text);
+    put_big(game, 13, 3, BIG_BLUE, text);
 
+    /* Top right: best leg in LCD green. */
     put_text(game, 31, 2, 0, "BEST LEG");
     if (game->best_frames != 0U) {
         format_time(text, game->best_frames);
-        put_text(game, 32, 3, SHADE_AMBER, text);
+        put_text(game, 32, 3, SHADE_GREEN, text);
     } else {
-        put_text(game, 32, 3, 0, "-'--\"--");
+        put_text(game, 32, 3, SHADE_GREEN, "-'--\"--");
     }
 
+    /* Bottom left: the tachometer with its needle, the LCD speed, the gear. */
+    put_art(game, GAUGE_COLUMN, GAUGE_ROW, 6, 6, GAUGE_TILE_BASE);
+    ratio_q8 = (uint32_t)((sim->speed * 256) / (BAJA_FP_ONE * 3 / 4));
+    if (ratio_q8 > 256U) ratio_q8 = 256U;
+    within = (ratio_q8 * 5U) - (uint32_t)(sim->gear - 1U) * 256U;
+    if (within > 256U) within = 256U;
+    needle = (uint8_t)(3U + ((within * 19U) >> 8));
+    if (sim->speed < BAJA_FP_ONE / 40) needle = 1U;
+    if (sim->air_timer > 0U) needle = (uint8_t)(needle + 2U);
+    if (needle >= NEEDLE_FRAMES) needle = NEEDLE_FRAMES - 1U;
+    place(game, &ng_asset_needle_frames[needle],
+          (int16_t)(GAUGE_COLUMN * 8 + 24), (int16_t)((GAUGE_ROW - 2) * 8 + 24),
+          0x0fU, 0xffU, 0U);
     format_uint(text, speed, 3, 0);
-    put_big(game, 1, 25, 0, text);
-    put_text(game, 7, 26, 0, "KMH");
-    revs = (uint16_t)((sim->speed * 8) / BAJA_FP_ONE);
-    if (revs > 6U) revs = 6U;
-    put_bar(game, 1, 27, 6, (uint8_t)(revs * 8U + 4U));
-    put_text(game, 8, 27, 0, "GEAR");
-    put_uint(game, 13, 27, SHADE_AMBER, sim->gear, 1, 1);
+    put_text(game, 1, 28, SHADE_GREEN, text);
+    put_text(game, 4, 28, SHADE_GREEN, " KMH");
+    put_text(game, 1, 29, 0, "AT");
+    put_uint(game, 4, 29, SHADE_AMBER, sim->gear, 1, 1);
 
-    put_text(game, 31, 25, 0, "ENSENADA");
-    put_text(game, 28, 26, SHADE_AMBER, "PACIFIC RUN");
-    /* Course progress: a line with the car's marker on it, and the route map
-     * above the stage name with the car's dot on it. */
-    put_bar(game, 28, 27, 10, 80);
+    /* Bottom right: the route, the stage and the leg's progress. */
+    draw_minimap(game, progress);
+    put_text(game, 30, 27, 0, "STAGE");
+    put_big(game, 36, 26, BIG_BLUE, "1");
+    put_text(game, 28, 28, SHADE_AMBER, "PACIFIC RUN");
+    put_bar(game, 28, 29, 10, 80);
     cell = (uint8_t)divide_by_ten(progress);
     if (cell > 9U) cell = 9U;
-    put_text(game, (int16_t)(28 + cell), 27, 0, "\x88");
-    draw_minimap(game, progress);
+    put_text(game, (int16_t)(28 + cell), 29, 0, "\x88");
 
     if (sim->surface == BAJA_SURFACE_DIRT) put_text(game, 16, 18, SHADE_AMBER, "OFF ROAD");
     else if (sim->surface == BAJA_SURFACE_SHOULDER) put_text(game, 18, 18, 0, "EDGE");
@@ -754,7 +808,7 @@ static void draw_frame(BajanewGame *game)
             char text[2];
             text[0] = (char)('0' + remaining);
             text[1] = '\0';
-            put_big(game, 19, 14, 1, text);
+            put_big(game, 19, 14, BIG_AMBER, text);
         } else {
             put_text(game, 18, 15, SHADE_AMBER, "GO!");
         }
@@ -773,11 +827,11 @@ static void draw_frame(BajanewGame *game)
         put_text(game, 14, 8, SHADE_AMBER, "LEG COMPLETE");
         put_text(game, 12, 10, 0, "POSITION");
         format_uint(text, sim->position, 1, 1);
-        put_big(game, 22, 10, 1, text);
+        put_big(game, 22, 10, BIG_AMBER, text);
         put_text(game, 24, 11, 0, "/4");
         put_text(game, 12, 13, 0, "TIME");
         format_time(text, sim->race_frames);
-        put_big(game, 16, 12, 0, text);
+        put_big(game, 16, 12, BIG_BLUE, text);
         put_text(game, 12, 15, 0, "CONTACTS");
         put_uint(game, 22, 15, SHADE_AMBER, (uint16_t)sim->collisions, 2, 0);
         put_text(game, 12, 16, 0, "CRASHES");

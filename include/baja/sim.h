@@ -18,10 +18,10 @@
 #define BAJA_SCREEN_HEIGHT 224
 #define BAJA_SCREEN_CENTER 160
 #define BAJA_HORIZON_Y 84
-#define BAJA_ROAD_BANDS 22
+#define BAJA_ROAD_BANDS 19
 /* Screen pixels per world unit at the player's berth, 8.8 fixed, and how far
  * across the road the camera follows the player, in 256ths. */
-#define BAJA_PLAYER_SCALE_Q8 11029
+#define BAJA_PLAYER_SCALE_Q8 14182
 #define BAJA_CAMERA_TRACK_Q8 154
 
 #if defined(__GNUC__)

@@ -88,22 +88,44 @@ SHADE_IVORY = 1
 SHADE_AMBER = 2
 SHADE_CYAN = 3
 SHADE_SHADOW = 6
+SHADE_LIME = 11
+SHADE_LCD = 10
 AMBER_OFFSET = 0x80
+# A third small set in LCD green on the LCD's dark ground, at GREEN_BASE +
+# the ASCII code, for the speed readout and lap times.
+GREEN_BASE = 0x200
 # Big numerals: two tiles wide and two tall, at tile codes from BIG_BASE in
 # ivory and from BIG_BASE + BIG_AMBER_OFFSET in amber.  A char's four tiles
 # are top-left, top-right, bottom-left, bottom-right.
 BIG_BASE = 0x100
 BIG_AMBER_OFFSET = 0x40
+BIG_BLUE_OFFSET = 0x80
 BIG_CHARS = "0123456789'\".:/"
+# Hand-placed HUD art tiles (the tachometer face) live from here.
+ART_BASE = 0x1c0
 
 # Palette entries are written into the sheet as flat marker colours; the
 # compiler maps them to the declared FIX palette by exact index.
-MARKERS = {
-    SHADE_IVORY: (0xF2, 0xED, 0xDF),
-    SHADE_AMBER: (0xFF, 0xC1, 0x32),
-    SHADE_CYAN: (0x63, 0xDC, 0xEF),
-    SHADE_SHADOW: (0x12, 0x14, 0x1F),
-}
+# The FIX palette: entry index -> colour.  Shared by every HUD tile.
+FIX_PALETTE = [
+    (0xF2, 0xED, 0xDF),  # 1 ivory
+    (0xFF, 0xC1, 0x32),  # 2 amber
+    (0x63, 0xDC, 0xEF),  # 3 cyan
+    (0xFF, 0x5B, 0x45),  # 4 red
+    (0x7B, 0xDF, 0x86),  # 5 green
+    (0x12, 0x14, 0x1F),  # 6 shadow
+    (0xFF, 0xFF, 0xFF),  # 7 white
+    (0x9A, 0xA0, 0xB4),  # 8 grey
+    (0x2A, 0x24, 0x40),  # 9 navy
+    (0x16, 0x35, 0x1C),  # 10 lcd ground
+    (0xB8, 0xFF, 0x6A),  # 11 lime
+    (0x8F, 0xD0, 0xFF),  # 12 blue light
+    (0x2F, 0x6F, 0xE0),  # 13 blue
+    (0x12, 0x30, 0x7A),  # 14 blue dark
+    (0xF4, 0xE0, 0x4A),  # 15 yellow
+]
+MARKERS = {index + 1: colour for index, colour in enumerate(FIX_PALETTE)}
+BLUE_RAMP = (7, 7, 7, 12, 12, 12, 12, 12, 13, 13, 13, 13, 13, 13, 14, 14)
 
 # 16x16 numerals for the HUD's position, time and speed.  Chunky, upright,
 # with the counters open enough to read at arcade distance.
@@ -171,11 +193,12 @@ BIG: dict[str, tuple[str, ...]] = {
 }
 
 
-SHEET_TILES = 512
+SHEET_TILES = 640
 
 
 def _paint(sheet: np.ndarray, x0: int, y0: int, rows: tuple[str, ...], shade: int,
-           shadow: bool) -> None:
+           shadow: bool, ramp: tuple[int, ...] | None = None, ground: int | None = None,
+           outline: bool = False) -> None:
     """Paint a glyph at a pixel position, with a one pixel drop shadow.
 
     The shadow is what keeps the HUD readable over bright sky and pale dirt
@@ -184,6 +207,21 @@ def _paint(sheet: np.ndarray, x0: int, y0: int, rows: tuple[str, ...], shade: in
     colour = MARKERS[shade]
     dark = MARKERS[SHADE_SHADOW]
     height, width = len(rows), max(len(r) for r in rows)
+    if ground is not None:
+        g = MARKERS[ground]
+        sheet[y0:y0 + 8, x0:x0 + 8] = (g[0], g[1], g[2], 255)
+    if outline:
+        # A dark ring on every side, so chrome numerals read over a sky of
+        # the same blue.  Clipped at the cell edge, which the glyphs avoid.
+        for y, row in enumerate(rows):
+            for x, pixel in enumerate(row):
+                if pixel == ".":
+                    continue
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        yy, xx = y0 + y + dy, x0 + x + dx
+                        if 0 <= yy < sheet.shape[0] and 0 <= xx < sheet.shape[1]:
+                            sheet[yy, xx] = (dark[0], dark[1], dark[2], 255)
     if shadow:
         for y, row in enumerate(rows):
             for x, pixel in enumerate(row):
@@ -192,44 +230,56 @@ def _paint(sheet: np.ndarray, x0: int, y0: int, rows: tuple[str, ...], shade: in
                     if yy < sheet.shape[0] and xx < sheet.shape[1]:
                         sheet[yy, xx] = (dark[0], dark[1], dark[2], 255)
     for y, row in enumerate(rows):
+        face = MARKERS[ramp[min(len(ramp) - 1, y)]] if ramp else colour
         for x, pixel in enumerate(row):
             if pixel != ".":
-                sheet[y0 + y, x0 + x] = (colour[0], colour[1], colour[2], 255)
+                sheet[y0 + y, x0 + x] = (face[0], face[1], face[2], 255)
     del height, width
 
 
-def _blit(sheet: np.ndarray, code: int, rows: tuple[str, ...], shade: int) -> None:
+def _blit(sheet: np.ndarray, code: int, rows: tuple[str, ...], shade: int,
+          ground: int | None = None) -> None:
     if not 0 <= code < SHEET_TILES:
         raise SystemExit(f"glyph code {code} is outside the FIX table")
     cell_x, cell_y = (code % 16) * 8, (code // 16) * 8
     # Confine an 8x8 glyph's shadow to its own cell.
     cell = np.zeros((8, 8, 4), dtype=np.int32)
-    _paint(cell, 0, 0, rows, shade, shade != SHADE_CYAN)
+    _paint(cell, 0, 0, rows, shade, shade != SHADE_CYAN, ground=ground)
     sheet[cell_y:cell_y + 8, cell_x:cell_x + 8] = cell
 
 
-def _blit_big(sheet: np.ndarray, base: int, rows: tuple[str, ...], shade: int) -> None:
+def _blit_big(sheet: np.ndarray, base: int, rows: tuple[str, ...], shade: int,
+              ramp: tuple[int, ...] | None = None) -> None:
     """A 16x16 glyph as four consecutive tiles: TL, TR, BL, BR."""
     cell = np.zeros((16, 16, 4), dtype=np.int32)
-    _paint(cell, 0, 0, rows, shade, True)
+    _paint(cell, 0, 0, rows, shade, True, ramp=ramp, outline=True)
     for quadrant, (qy, qx) in enumerate([(0, 0), (0, 8), (8, 0), (8, 8)]):
         code = base + quadrant
         cell_x, cell_y = (code % 16) * 8, (code // 16) * 8
         sheet[cell_y:cell_y + 8, cell_x:cell_x + 8] = cell[qy:qy + 8, qx:qx + 8]
 
 
-def build_sheet() -> np.ndarray:
-    """Return the 128x256 RGBA FIX source: 512 tiles in a 16 wide grid."""
+def build_sheet(art: dict[int, np.ndarray] | None = None) -> np.ndarray:
+    """Return the 128x320 RGBA FIX source: 640 tiles in a 16 wide grid.
+
+    `art` maps a tile code to an 8x8 RGBA tile already on the FIX palette,
+    for HUD artwork such as the tachometer face."""
     sheet = np.zeros((SHEET_TILES // 16 * 8, 128, 4), dtype=np.int32)
     for character, rows in GLYPHS.items():
         code = ord(character)
         _blit(sheet, code, rows, SHADE_IVORY)
         _blit(sheet, code + AMBER_OFFSET, rows, SHADE_AMBER)
+        _blit(sheet, code + GREEN_BASE, rows, SHADE_LIME, ground=SHADE_LCD)
     for character, rows in BLOCKS.items():
         _blit(sheet, ord(character), rows, SHADE_CYAN)
     for index, character in enumerate(BIG_CHARS):
         _blit_big(sheet, BIG_BASE + index * 4, BIG[character], SHADE_IVORY)
         _blit_big(sheet, BIG_BASE + BIG_AMBER_OFFSET + index * 4, BIG[character], SHADE_AMBER)
+        _blit_big(sheet, BIG_BASE + BIG_BLUE_OFFSET + index * 4, BIG[character], SHADE_IVORY,
+                  ramp=BLUE_RAMP)
+    for code, tile in (art or {}).items():
+        cell_x, cell_y = (code % 16) * 8, (code // 16) * 8
+        sheet[cell_y:cell_y + 8, cell_x:cell_x + 8] = tile
     return sheet
 
 

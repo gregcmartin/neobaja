@@ -18,28 +18,33 @@ import numpy as np
 from PIL import Image
 
 from bajaart import (FUNNEL_K, PLATE_K, PLATE_VX, PLATE_VY, RAW, ROAD_PHASES,
-                     ROOT, STRIP_U_SPAN, TEX_LEN_M, TEX_U_SPAN, TEX_W, VERGE_U,
-                     band_tables)
+                     ROAD_PLATE, ROOT, STRIP_U_SPAN, TEX_LEN_M, TEX_U_SPAN, TEX_W,
+                     VERGE_U, band_tables)
 
-PLATE = "ensenada-full-environment.png"
+PLATE = ROAD_PLATE
+ENVIRONMENT_PLATE = "ensenada-full-environment.png"
 
 # The plate's own near row and the depth it stands for.  Everything else is
 # derived, so the rectification is one fit with no hidden constants.
-PLATE_DY_NEAR = 660.0
+PLATE_DY_NEAR = 792.0
 PLATE_NEAR_DEPTH = 3.5
 PLATE_DEPTH_C = PLATE_DY_NEAR * PLATE_NEAR_DEPTH
 # Lateral reach available before a sample leaves the plate.
-PLATE_HALF_REACH = 735.0
+PLATE_HALF_REACH = 570.0
 # Length blended across the wrap so the texture tiles without a visible seam.
 WRAP_BLEND_M = 4.0
 # No pixel of the road surface may fall below this luminance, and anything
 # already flat black becomes dirt rather than being scaled up from nothing.
-SHADOW_FLOOR = 48.0
-SHADOW_TONE = (62.0, 40.0, 20.0)
+SHADOW_FLOOR = 90.0
+SHADOW_TONE = (70.0, 46.0, 26.0)
 
 
 def _plate() -> np.ndarray:
-    return np.array(Image.open(RAW / PLATE).convert("RGB")).astype(np.float64)
+    if PLATE.startswith("grok:"):
+        path = ROOT / "art/raw/grok" / PLATE[5:]
+    else:
+        path = RAW / PLATE
+    return np.array(Image.open(path).convert("RGB")).astype(np.float64)
 
 
 def rectify_road_texture(rows: int = 384) -> tuple[np.ndarray, np.ndarray]:
@@ -81,11 +86,11 @@ def rectify_road_texture(rows: int = 384) -> tuple[np.ndarray, np.ndarray]:
     # blocks; a sunlit Baja road has no true black in it anyway.  Hue is kept
     # and only the level is raised.
     luminance = texture.sum(axis=2) / 3.0
-    lift = np.where(luminance < SHADOW_FLOOR,
-                    SHADOW_FLOOR / np.maximum(luminance, 1.0), 1.0)
-    texture *= lift[:, :, None]
-    flat = luminance < 6.0
-    texture[flat] = np.array(SHADOW_TONE, dtype=np.float64)
+    # Blend toward the shadow tone rather than scaling: scaling a near-black
+    # pixel with a faint blue cast turns it saturated blue.
+    weight = np.clip((SHADOW_FLOOR - luminance) / SHADOW_FLOOR, 0.0, 1.0)[:, :, None]
+    tone = np.array(SHADOW_TONE, dtype=np.float64)[None, None, :]
+    texture = texture * (1.0 - weight) + tone * weight
     np.clip(texture, 0, 255, out=texture)
 
     # Cross-fade the tail back over the head so v wraps cleanly.
@@ -105,7 +110,10 @@ def strip_geometry() -> list[dict]:
     for b in range(len(half)):
         dy0, dy1 = dy[b], dy[b + 1]
         rows = dy1 - dy0
-        width = int(round(2.0 * STRIP_U_SPAN * FUNNEL_K * dy1))
+        # Near bands carry the full verge with its rocks; middle bands stack
+        # on the same scanlines and keep a narrower one.
+        span = STRIP_U_SPAN if dy1 >= 48 else STRIP_U_SPAN * 0.82
+        width = int(round(2.0 * span * FUNNEL_K * dy1))
         width = max(32, min(640, (width + 15) // 16 * 16))
         # Author tall enough that a downhill stretch never opens a seam.
         height = max(16, (int(round(rows * 1.9)) + 15) // 16 * 16)

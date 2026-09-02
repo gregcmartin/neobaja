@@ -8,6 +8,7 @@ compiler performs an exact index lookup and the conversion is reproducible.
 from __future__ import annotations
 
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -20,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fixfont
 import grok_props
 import road_strips
-from bajaart import (ASSETS, FUNNEL_K, HORIZON_Y, RAW, ROOT, SOURCE, TEX_U_SPAN,
+from bajaart import (ASSETS, ENV_K, ENV_VX, ENV_VY, FUNNEL_K, HORIZON_Y, RAW, ROOT, SOURCE, TEX_U_SPAN,
                      TEX_W, band_tables, box_resize, hard_alpha, hex_rgb, load_rgba,
                      neo_quantise, neo_word, pick_palette, save_sheet, sha256,
                      write_json)
@@ -32,7 +33,7 @@ SPLASH_SOURCE = ROOT / "02_REFERENCE_LIBRARY/developer-splash/devsplashlogo.jpg"
 # The frame of every vehicle sheet spans this much world width, so one shared
 # projection sizes the player and the rivals identically.
 VEHICLE_FRAME_M = 2.6
-PLAYER_FRAME = (112, 96)
+PLAYER_FRAME = (144, 112)
 RIVAL_LODS = [(96, 96), (64, 64), (32, 32), (16, 16)]
 
 SCREEN_W, SCREEN_H = 320, 224
@@ -107,8 +108,16 @@ BOARD_ACCENT = (200, 40, 30)
 DUST_CELLS = [(1, 3), (2, 3)]
 DUST_FRAME = (32, 32)
 DUST_WORLD_M = 3.6
+# The big plume behind the player's wheels: the Grok Build dust cloud, cut
+# clear of the tyre the generator added, in three sizes as an animation.
+PLUME_FRAME = (64, 64)
+PLUME_PALETTE_INDEX = 25
 
-FIX_PALETTE = ["#F2EDDF", "#FFC132", "#63DCEF", "#FF5B45", "#7BDF86", "#12141F"]
+FIX_PALETTE = ["#%02X%02X%02X" % c for c in fixfont.FIX_PALETTE]
+GAUGE_TILES = (6, 6)       # tachometer face, 48x48
+NEEDLE_FRAME = (32, 32)
+NEEDLE_FRAMES = 24
+NEEDLE_PALETTE_INDEX = 26
 
 record: dict = {"sheets": [], "sources": {}}
 
@@ -205,7 +214,7 @@ def palette_words(colours: list[tuple[int, int, int]]) -> list[int]:
 
 def build_road(sprites: list[dict]) -> dict:
     strips, report = road_strips.build_sheets()
-    note_source(road_strips.PLATE)
+    report["plate_source"] = "art/raw/grok/road_plate.jpg"
     palettes = []
     total_columns = 0
     for name, strip, verge, geometry in strips:
@@ -311,20 +320,20 @@ def build_backdrop(sprites: list[dict]) -> dict:
     the real bands.  Neither layer is mirrored end to end: each is simply wide
     enough for its pan.
     """
-    note_source(road_strips.PLATE)
-    plate = load_rgba(road_strips.PLATE)
+    note_source(road_strips.ENVIRONMENT_PLATE)
+    plate = load_rgba(road_strips.ENVIRONMENT_PLATE)
     width = int(round(plate.shape[1] * BACKDROP_SCALE))
     height = int(round(plate.shape[0] * BACKDROP_SCALE))
     fitted = box_resize(plate, width, height).astype(np.float64)
-    vp_x = road_strips.PLATE_VX * BACKDROP_SCALE
-    vp_y = int(round(road_strips.PLATE_VY * BACKDROP_SCALE))
+    vp_x = ENV_VX * BACKDROP_SCALE
+    vp_y = int(round(ENV_VY * BACKDROP_SCALE))
 
     sky_top = vp_y - HORIZON_Y
     sky = fitted[sky_top:sky_top + SKY_H].copy()
     sky[..., 3] = 255.0
 
     ground = fitted[vp_y - GROUND_ABOVE_HORIZON:vp_y - GROUND_ABOVE_HORIZON + GROUND_H].copy()
-    plate_slope = road_strips.PLATE_K
+    plate_slope = ENV_K
     for row in range(GROUND_ABOVE_HORIZON, GROUND_H):
         source = ground[row].copy()
         half = plate_slope * float(row - GROUND_ABOVE_HORIZON) + 2.0
@@ -522,6 +531,16 @@ def build_scenery(sprites: list[dict]) -> dict:
         (fade[..., 3] > 0) & (((np.arange(DUST_FRAME[1])[:, None]
                                 + np.arange(DUST_FRAME[0])[None, :]) % 2) == 0), 255, 0)
     dust_frames.append(fade)
+    plume_raw = grok_props.key_raw("dust_cloud", "checker", "all")
+    plume_raw = plume_raw[:, : int(plume_raw.shape[1] * 0.68)]
+    plumes = []
+    for scale, flip in ((1.0, False), (0.86, True), (0.72, False)):
+        frame = fit_sprite(plume_raw[:, ::-1] if flip else plume_raw, PLUME_FRAME, pad=scale)
+        plumes.append(frame)
+    plume = np.concatenate(plumes, axis=1)
+    sprites.append(emit("plume", plume, PLUME_FRAME, (PLUME_FRAME[0] // 2, PLUME_FRAME[1] - 2),
+                        PLUME_PALETTE_INDEX, pick_palette(plume),
+                        {"source": "art/raw/grok/dust_cloud.jpg"}))
     dust = np.concatenate(dust_frames, axis=1)
     dust_palette = pick_palette(dust)
     sprites.append(emit("dust", dust, DUST_FRAME, (DUST_FRAME[0] // 2, DUST_FRAME[1] - 4),
@@ -531,8 +550,46 @@ def build_scenery(sprites: list[dict]) -> dict:
 
 # --------------------------------------------------------------------- FIX --
 
+def gauge_tiles() -> dict[int, np.ndarray]:
+    """The Grok Build tachometer face, keyed, shrunk to six by six tiles and
+    snapped to the FIX palette; the LCD panel under it is not used."""
+    raw = grok_props.key_raw("gauge_face", "checker_strict", "all")
+    # Keep the dial only: the panel hangs below the circle.
+    dial = raw[: int(raw.shape[0] * 0.73)]
+    art = fit_sprite(dial, (GAUGE_TILES[0] * 8, GAUGE_TILES[1] * 8), pad=1.0)
+    art = quantise_to(art, FIX_PALETTE)
+    tiles = {}
+    for ty in range(GAUGE_TILES[1]):
+        for tx in range(GAUGE_TILES[0]):
+            tiles[fixfont.ART_BASE + ty * GAUGE_TILES[0] + tx] = art[ty * 8:(ty + 1) * 8, tx * 8:(tx + 1) * 8]
+    return tiles
+
+
+def build_needle(sprites: list[dict]) -> dict:
+    """The tachometer needle: one pointer swept through the dial's arc in
+    NEEDLE_FRAMES frames, from rest at the lower left to the red line."""
+    frames = []
+    cx, cy = NEEDLE_FRAME[0] // 2, NEEDLE_FRAME[1] // 2
+    for index in range(NEEDLE_FRAMES):
+        angle = math.radians(225.0 - 270.0 * index / (NEEDLE_FRAMES - 1))
+        frame = np.zeros((NEEDLE_FRAME[1], NEEDLE_FRAME[0], 4), dtype=np.int32)
+        for r in range(-3, 14):
+            x = int(round(cx + math.cos(angle) * r))
+            y = int(round(cy - math.sin(angle) * r))
+            colour = (255, 91, 69) if r >= 10 else (255, 255, 255)
+            for dx, dy in ((0, 0), (1, 0), (0, 1)):
+                if 0 <= x + dx < NEEDLE_FRAME[0] and 0 <= y + dy < NEEDLE_FRAME[1]:
+                    frame[y + dy, x + dx] = (*colour, 255)
+        frame[cy - 1:cy + 2, cx - 1:cx + 2] = (18, 20, 31, 255)
+        frames.append(frame)
+    sheet = np.concatenate(frames, axis=1)
+    palette = ["#FFFFFF", "#FF5B45", "#12141F"]
+    sprites.append(emit("needle", sheet, NEEDLE_FRAME, (cx, cy), NEEDLE_PALETTE_INDEX, palette))
+    return {"frames": NEEDLE_FRAMES}
+
+
 def build_fix() -> dict:
-    sheet = fixfont.build_sheet()
+    sheet = fixfont.build_sheet(gauge_tiles())
     SOURCE.mkdir(parents=True, exist_ok=True)
     path = SOURCE / "font.png"
     Image.fromarray(sheet.astype(np.uint8), "RGBA").save(path)
@@ -754,6 +811,7 @@ def main() -> None:
     scenery = build_scenery(sprites)
     logo = build_logo(sprites)
     course_map = build_map(sprites)
+    needle = build_needle(sprites)
     fix = build_fix()
 
     manifest = {
@@ -779,7 +837,7 @@ def main() -> None:
     write_json(ROOT / "build/assets/CONVERSION.json", {
         "road": road, "backdrop": backdrop, "splash": splash, "drivers": drivers,
         "player": player, "rivals": rivals,
-        "scenery": scenery, "logo": logo, "course_map": course_map, "fix": fix,
+        "scenery": scenery, "logo": logo, "course_map": course_map, "needle": needle, "fix": fix,
         "sources": record["sources"], "sheets": record["sheets"],
     })
     columns = road["on_screen_columns"]

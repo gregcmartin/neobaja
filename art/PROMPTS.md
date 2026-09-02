@@ -161,3 +161,30 @@ lying across them, seen from the front at ground level.
 A small original pixel-art icon of a wooden Baja race tyre stack, transparent
 background.  This was the first headless generation test and shipped as the
 tyre-stack prop.
+
+## Road plate (`road_plate.jpg`, 4:3)
+
+A straight rutted dirt racing road seen from a low rear chase camera,
+vanishing exactly at the centre of the image, filling the bottom of the frame:
+deep dark tyre ruts and grooves running toward the horizon, scattered stones,
+loose sand, high contrast between sunlit crests and shadowed ruts, both
+shoulders lined with rough rocks, boulders and dry scrub in a continuous rocky
+berm, flat sandy desert ground beyond the shoulders, no vehicles, no sky detail
+needed, no signs, no words.  Rectified into the road strips by
+`tools/road_strips.py` (vanishing point 576,72; 0.45 half-width pixels per
+row).
+
+## Dust cloud (`dust_cloud.jpg`, 1:1)
+
+A single thick billowing cloud of tan desert dust kicked up by an off-road
+tyre, dense and opaque in the middle with soft ragged edges and a few flying
+pebbles, seen from the side.  The generator added a tyre at the right; the
+converter keeps the left 68 percent.
+
+## Tachometer face (`gauge_face.jpg`, 1:1)
+
+An arcade racing game tachometer dial face: a round dark gauge with a white
+rim, tick marks from 0 to 10 around the left and top, the last quarter of the
+arc painted red, no needle, plus a small rectangular LCD readout panel below it
+with a dark green screen and no digits.  The dial becomes six by six FIX tiles
+on the HUD palette; the panel is not used.

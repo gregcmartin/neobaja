@@ -24,10 +24,10 @@ FOCAL = 160.0
 ROAD_HALF = 4.0
 DEPTH_C = CAM_HEIGHT * FOCAL          # depth = DEPTH_C / dy
 
-FAR_BANDS = 15                        # geometric bands from DY_MIN to NEAR_DY
+FAR_BANDS = 12                        # geometric bands from DY_MIN to NEAR_DY
 DY_MIN = 2.0
 NEAR_DY = 48                          # where the strips reach full screen width
-NEAR_ROWS = 12                        # cap on a near band's height in rows
+NEAR_ROWS = 13                        # cap on a near band's height in rows
 # Metres of road across which one surface phase holds.  Never shorter than a
 # band's own depth span, or the band would carry more than one phase at once.
 MIN_HALF_WAVE_M = 8.0

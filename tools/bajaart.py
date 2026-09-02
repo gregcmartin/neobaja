@@ -28,9 +28,13 @@ ROAD_HALF = 4.0
 # Screen pixels of road half width per row below the horizon.
 FUNNEL_K = ROAD_HALF / CAM_HEIGHT
 
-# Ground-plane fit of the approved Ensenada environment plate.  The road
-# vanishes at VP and one road half width spans PLATE_K pixels per row.
-PLATE_VX, PLATE_VY, PLATE_K = 740.0, 383.0, 0.78
+# Ground-plane fit of the road plate the strips are rectified from: the Grok
+# Build rutted road (art/raw/grok/road_plate.jpg).  The road vanishes at VP
+# and one road half width spans PLATE_K pixels per row.
+ROAD_PLATE = "grok:road_plate.jpg"
+PLATE_VX, PLATE_VY, PLATE_K = 576.0, 72.0, 0.45
+# Fit of the approved Ensenada environment plate, still the backdrop source.
+ENV_VX, ENV_VY, ENV_K = 740.0, 383.0, 0.78
 
 # Rectified road texture: lateral span in road half widths, and the length of
 # one repeat in metres.
@@ -41,7 +45,7 @@ ROAD_PHASES = 2
 # Lateral reach of a band strip in road half widths.  Beyond it the static
 # ground layer shows, so this is the trade between streaming verge and the
 # hardware sprite columns the near bands cost.
-STRIP_U_SPAN = 1.6
+STRIP_U_SPAN = 1.75
 # Road pixels further out than this fraction of the half width are verge, and
 # get their own palette entries so the surface phase can stream them.
 VERGE_U = 0.95

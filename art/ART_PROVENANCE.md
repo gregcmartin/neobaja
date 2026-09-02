@@ -45,7 +45,7 @@ example package. Its local notice is in `third_party/unscii/README.md`.
 ## Grok Build additions (2026-09-02)
 
 Greg widened the art boundary on 2026-09-02 to allow his Grok Build account.
-Fourteen raws under `art/raw/grok/` were generated headlessly (grok-4.6, Imagine
+Seventeen raws under `art/raw/grok/` were generated headlessly (grok-4.6, Imagine
 `image_gen`) from the text prompts in `art/PROMPTS.md`; no reference image,
 mockup or screenshot was supplied to the generator.  They are kept exactly as
 the tool saved them and hashed in `art/raw/grok/SHA256SUMS`.
@@ -59,3 +59,9 @@ onto a flat magenta field (`*_keyed.jpg`, prompt in `art/PROMPTS.md`) and
 keyed from that.  The billboard face
 and the arch banner are lettered with the game's own bitmap typeface.  The
 rival buggy is cut once and shrunk to four levels of detail.
+
+The road strips are rectified from the Grok Build road plate rather than the
+environment plate since 2026-09-02; the environment plate remains the backdrop
+source.  The tachometer face is converted into FIX tiles on the fifteen colour
+HUD palette; its needle is drawn by `tools/build_assets.py` as a rotating
+pointer, a UI element rather than illustration.

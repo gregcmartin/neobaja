@@ -131,6 +131,10 @@ def key_raw(name: str, background: str, seeds: str = "all") -> np.ndarray:
     height, width, _ = rgb.shape
     if background == "checker":
         candidate = _checker(rgb) | _border_colours(rgb)
+    elif background == "checker_strict":
+        # The subject reaches the image edge, so the edge's own colours must
+        # not be taken for background: the checkerboard greys only.
+        candidate = _checker(rgb)
     elif background == "magenta":
         candidate = _magenta(rgb)
     else:
@@ -142,7 +146,7 @@ def key_raw(name: str, background: str, seeds: str = "all") -> np.ndarray:
     else:
         points += [(y, 0) for y in range(0, height // 2, 8)] + [(y, width - 1) for y in range(0, height // 2, 8)]
     background_mask = _flood(candidate, points)
-    if background == "checker":
+    if background in ("checker", "checker_strict"):
         # A painted shadow tints the checkerboard under a subject; the loose
         # test admits those pockets and the two-tone rule keeps body panels.
         loose = (rgb.min(axis=2) >= 120) & ((rgb.max(axis=2) - rgb.min(axis=2)) <= 48)
