@@ -512,6 +512,7 @@ static void draw_player(BajanewGame *game, const BajaView *view)
     uint8_t pose = POSE_NEUTRAL;
 
     if (sim->bounce < -(BAJA_FP_ONE / 5)) pose = POSE_AIR;
+    else if (sim->bounce > BAJA_FP_ONE / 5) pose = POSE_SETTLED;
     else if (sim->steer < -(BAJA_FP_ONE / 3)) pose = POSE_LEFT;
     else if (sim->steer > (BAJA_FP_ONE / 3)) pose = POSE_RIGHT;
     else if (sim->speed < BAJA_FP_ONE / 8) pose = POSE_SETTLED;
@@ -519,7 +520,7 @@ static void draw_player(BajanewGame *game, const BajaView *view)
     /* The player is the nearest thing in the scene and is placed first, so it
      * takes the top of the pool; its dust puffs sit just behind it. */
     place(game, &ng_asset_player_frames[pose], x, y, 0x0fU, 0xffU, 0U);
-    if (sim->dust_event != 0U) {
+    if (sim->dust_event != 0U || sim->hazard_event != 0U || sim->bounce > BAJA_FP_ONE / 5) {
         uint8_t frame = (uint8_t)((game->frame >> 2) % 3U);
         place(game, &ng_asset_dust_frames[frame], (int16_t)(x - 36), (int16_t)(y + 2),
               0x0fU, 0xffU, 0U);
@@ -609,7 +610,17 @@ static void draw_hud(BajanewGame *game)
 
     if (sim->surface == BAJA_SURFACE_DIRT) put_text(game, 16, 18, SHADE_AMBER, "OFF ROAD");
     else if (sim->surface == BAJA_SURFACE_SHOULDER) put_text(game, 18, 18, 0, "EDGE");
-    if (sim->collision_event != 0U) put_text(game, 16, 16, SHADE_AMBER, "CONTACT!");
+
+    /* Call-outs latch for half a second: a one frame event is invisible. */
+    if (sim->hazard_event == BAJA_HAZARD_SOLID) { game->message_kind = 1; game->message_timer = 30; }
+    else if (sim->collision_event != 0U) { game->message_kind = 2; game->message_timer = 30; }
+    else if (sim->hazard_event != 0U) { game->message_kind = 3; game->message_timer = 20; }
+    if (game->message_timer > 0U) {
+        --game->message_timer;
+        if (game->message_kind == 1U) put_text(game, 17, 16, SHADE_AMBER, "CRASH!");
+        else if (game->message_kind == 2U) put_text(game, 16, 16, SHADE_AMBER, "CONTACT!");
+        else put_text(game, 17, 16, 0, "SCRUB!");
+    }
 }
 
 /* ----------------------------------------------------------------- scene -- */
@@ -781,6 +792,8 @@ void bajanew_game_init(BajanewGame *game)
     game->item_count = 0;
     game->strip_words = 0;
     game->scenery_cursor = 0;
+    game->message_kind = 0;
+    game->message_timer = 0;
     game->frame = 0;
     game->sky_pan = 0;
     game->ground_pan = 0;

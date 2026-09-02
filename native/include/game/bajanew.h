@@ -56,6 +56,9 @@ typedef struct BajanewGame {
     uint16_t strip_words;
     uint16_t road_slots;
     uint16_t scenery_cursor;
+    /* A contact or crash call-out stays up long enough to be read. */
+    uint8_t message_kind;
+    uint8_t message_timer;
     uint32_t frame;
     int16_t sky_pan;
     int16_t ground_pan;

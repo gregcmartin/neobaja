@@ -129,6 +129,12 @@ typedef struct BajaSim {
     uint32_t overtakes;
     uint16_t collision_cooldown;
     uint16_t rough_timer;
+    /* Airborne frames left after a crest, and the height the jump reached. */
+    uint16_t air_timer;
+    BajaFp air_height;
+    uint16_t hazard_cooldown;
+    uint16_t scenery_cursor;
+    uint32_t hazards;
     uint8_t phase;
     uint8_t driver;
     uint8_t surface;
@@ -137,7 +143,21 @@ typedef struct BajaSim {
     uint8_t collision_event;
     uint8_t dust_event;
     uint8_t gear;
+    /* Set on the frame the player strikes a roadside prop. */
+    uint8_t hazard_event;
+    /* Set on the frame the player leaves the ground over a crest. */
+    uint8_t jump_event;
+    uint8_t reserved[2];
 } BajaSim;
+
+/* Which props stop a vehicle, which merely slow it, and which are open. */
+typedef enum BajaHazard {
+    BAJA_HAZARD_NONE = 0,
+    BAJA_HAZARD_SOFT,
+    BAJA_HAZARD_SOLID
+} BajaHazard;
+
+BajaHazard baja_scenery_hazard(uint8_t kind);
 
 /* One horizontal slice of the projected road.  A band owns a fixed depth
  * interval, so its width never changes; only its row, centre, and surface

@@ -35,6 +35,14 @@
 
 #define VEHICLE_HALF_LENGTH FP_RATIO(5, 2)
 #define VEHICLE_HALF_WIDTH FP_RATIO(3, 10)
+/* A crest throws the vehicle when the grade ahead drops this much per segment
+ * relative to the grade under it, at more than half of top speed. */
+#define CREST_DROP FP_RATIO(9, 100)
+#define CREST_SPEED FP_RATIO(55, 100)
+#define AIR_FRAMES 22u
+/* Roadside props reach this far across and along the course when struck. */
+#define HAZARD_REACH FP_RATIO(38, 100)
+#define HAZARD_LENGTH FP_RATIO(3, 1)
 /* Screen pixels of camera shake per world unit of suspension travel. */
 #define SHAKE_PIXELS FP_RATIO(26, 1)
 /* Pixels from centre beyond which the player's berth is compressed. */
@@ -328,6 +336,28 @@ void baja_track_frame_sample(const BajaTrack *track, const BajaTrackFrame *frame
     }
 }
 
+BajaHazard baja_scenery_hazard(uint8_t kind)
+{
+    switch ((BajaSceneryKind)kind) {
+    case BAJA_SCENERY_ROCK_PALE:
+    case BAJA_SCENERY_ROCK_GREY:
+    case BAJA_SCENERY_PALM:
+    case BAJA_SCENERY_CACTUS:
+    case BAJA_SCENERY_CHEVRON:
+    case BAJA_SCENERY_CROWD:
+    case BAJA_SCENERY_SIGN_ENSENADA:
+    case BAJA_SCENERY_SIGN_PACIFIC:
+    case BAJA_SCENERY_SIGN_BAJA:
+        return BAJA_HAZARD_SOLID;
+    case BAJA_SCENERY_AGAVE:
+    case BAJA_SCENERY_BUSH:
+    case BAJA_SCENERY_FLAG:
+        return BAJA_HAZARD_SOFT;
+    default:
+        return BAJA_HAZARD_NONE;
+    }
+}
+
 /* Append a prop, keeping the list strictly ordered by course distance so the
  * renderer can window it with one cursor. */
 static void place_scenery(BajaSim *sim, uint16_t *count, BajaFp s, BajaFp e, uint8_t kind)
@@ -491,8 +521,15 @@ static void reset_run(BajaSim *sim)
     sim->position = BAJA_RIVAL_COUNT + 1;
     sim->collision_cooldown = 0;
     sim->rough_timer = 0;
+    sim->air_timer = 0;
+    sim->air_height = 0;
+    sim->hazard_cooldown = 0;
+    sim->scenery_cursor = 0;
+    sim->hazards = 0;
     sim->collision_event = 0;
     sim->dust_event = 0;
+    sim->hazard_event = 0;
+    sim->jump_event = 0;
     sim->collisions = 0;
     sim->overtakes = 0;
     sim->race_frames = 0;
@@ -560,6 +597,7 @@ static void update_player(BajaSim *sim, uint8_t input)
     if (sim->surface == BAJA_SURFACE_DIRT) {
         lateral_response = baja_fp_mul(lateral_response, FP_RATIO(7, 10));
     }
+    if (sim->air_timer > 0U) lateral_response >>= 2;
     sim->player_e += baja_fp_mul(sim->steer, lateral_response);
 
     /* Centrifugal push uses the local curvature, so a constant bend produces a
@@ -579,6 +617,34 @@ static void update_player(BajaSim *sim, uint8_t input)
     sim->bounce += sim->bounce_rate;
     sim->bounce = baja_fp_mul(sim->bounce, FP_RATIO(3, 5));
     sim->bounce = fp_clamp(sim->bounce, -FP_RATIO(1, 2), FP_RATIO(1, 2));
+
+    /* A crest at speed throws the vehicle: the grade ahead falls away under
+     * it, it flies for a moment with the steering gone light, and lands on
+     * compressed suspension in a burst of dust. */
+    if (sim->air_timer > 0U) {
+        --sim->air_timer;
+        sim->bounce = -baja_fp_mul(sim->air_height,
+                                   FP_RATIO((int32_t)sim->air_timer, AIR_FRAMES));
+        if (sim->air_timer == 0U) {
+            sim->bounce = FP_RATIO(3, 10);
+            sim->bounce_rate = FP_RATIO(1, 10);
+            sim->speed -= sim->speed >> 4;
+        }
+    } else if (speed_ratio > CREST_SPEED) {
+        BajaFp grade_here = 0;
+        BajaFp grade_ahead = 0;
+        int32_t segment = (int32_t)(sim->player_s >> BAJA_SEGMENT_SHIFT);
+        if (segment < BAJA_TRACK_SEGMENTS - 2) {
+            grade_here = sim->track.grade[segment];
+            grade_ahead = sim->track.grade[segment + 1];
+        }
+        if (grade_here > 0 && grade_here - grade_ahead > CREST_DROP) {
+            sim->air_timer = AIR_FRAMES;
+            sim->air_height = baja_fp_mul(grade_here, FP_RATIO(6, 10)) +
+                              baja_fp_mul(speed_ratio, FP_RATIO(2, 10));
+            sim->jump_event = 1;
+        }
+    }
 
     sim->dust_event = (uint8_t)(sim->speed > FP_RATIO(1, 10) &&
                                 (sim->surface != BAJA_SURFACE_ROAD ||
@@ -712,6 +778,51 @@ static void check_collisions(BajaSim *sim)
     }
 }
 
+/* Roadside props are real.  Off the road the player can strike them: a solid
+ * one stops the vehicle almost dead and shoves it back toward the road, a soft
+ * one scrubs speed.  The course list is ordered, so a cursor finds the props
+ * alongside the player without a search. */
+static void check_hazards(BajaSim *sim)
+{
+    uint16_t i;
+    sim->hazard_event = 0;
+    if (sim->hazard_cooldown > 0U) {
+        --sim->hazard_cooldown;
+        return;
+    }
+    if (sim->scenery_cursor > 0U &&
+        sim->scenery[sim->scenery_cursor - 1U].s >= sim->player_s - HAZARD_LENGTH) {
+        sim->scenery_cursor = 0;
+    }
+    while (sim->scenery_cursor < BAJA_SCENERY_COUNT &&
+           sim->scenery[sim->scenery_cursor].s < sim->player_s - HAZARD_LENGTH) {
+        ++sim->scenery_cursor;
+    }
+    for (i = sim->scenery_cursor; i < BAJA_SCENERY_COUNT; ++i) {
+        const BajaScenery *item = &sim->scenery[i];
+        BajaHazard hazard;
+        if (item->s > sim->player_s + HAZARD_LENGTH) break;
+        if (fp_abs(item->e - sim->player_e) >= HAZARD_REACH) continue;
+        hazard = baja_scenery_hazard(item->kind);
+        if (hazard == BAJA_HAZARD_NONE) continue;
+        if (hazard == BAJA_HAZARD_SOLID) {
+            sim->speed = baja_fp_mul(sim->speed, FP_RATIO(30, 100));
+            sim->player_e += item->e > 0 ? -FP_RATIO(25, 100) : FP_RATIO(25, 100);
+            sim->bounce = FP_RATIO(4, 10);
+            sim->bounce_rate = -FP_RATIO(1, 10);
+            sim->hazard_cooldown = 45;
+        } else {
+            sim->speed = baja_fp_mul(sim->speed, FP_RATIO(70, 100));
+            sim->bounce = FP_RATIO(15, 100);
+            sim->hazard_cooldown = 20;
+        }
+        sim->player_e = fp_clamp(sim->player_e, -MAX_LATERAL, MAX_LATERAL);
+        sim->hazard_event = (uint8_t)hazard;
+        ++sim->hazards;
+        break;
+    }
+}
+
 static void update_position(BajaSim *sim)
 {
     uint8_t position = 1;
@@ -729,6 +840,8 @@ void baja_sim_step(BajaSim *sim, uint8_t input)
     ++sim->phase_frame;
     sim->collision_event = 0;
     sim->dust_event = 0;
+    sim->hazard_event = 0;
+    sim->jump_event = 0;
 
     switch ((BajaPhase)sim->phase) {
     case BAJA_PHASE_SPLASH:
@@ -766,6 +879,7 @@ void baja_sim_step(BajaSim *sim, uint8_t input)
         update_player(sim, input);
         for (i = 0; i < BAJA_RIVAL_COUNT; ++i) update_rival(sim, &sim->rivals[i]);
         check_collisions(sim);
+        check_hazards(sim);
         update_position(sim);
         break;
     }

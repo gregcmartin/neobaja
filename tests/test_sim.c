@@ -442,6 +442,86 @@ static void test_scenery_sits_off_the_racing_line(void)
     ++checks;
 }
 
+/* A crest at speed throws the vehicle into the air and it lands on
+ * compressed suspension; the same crest at a crawl does not. */
+static void test_crests_launch_the_vehicle(void)
+{
+    BajaSim sim;
+    int i;
+    int jumped = 0;
+    int airborne_frames = 0;
+    BajaFp lowest = 0;
+
+    race_at_speed(&sim, 60);
+    for (i = 0; i < 7000 && sim.phase == BAJA_PHASE_RACING; ++i) {
+        drive_frames(&sim, 1);
+        if (sim.jump_event) ++jumped;
+        if (sim.air_timer > 0U) {
+            ++airborne_frames;
+            if (sim.bounce < lowest) lowest = sim.bounce;
+        }
+    }
+    REQUIRE(jumped >= 2);
+    REQUIRE(airborne_frames > jumped * 10);
+    REQUIRE(lowest < -(BAJA_FP_ONE / 5));
+
+    /* Crawling over the course never leaves the ground. */
+    baja_sim_init(&sim);
+    baja_sim_begin_race(&sim);
+    jumped = 0;
+    for (i = 0; i < 4000; ++i) {
+        uint8_t input = sim.speed > BAJA_FP_ONE / 5 ? 0U : BAJA_INPUT_THROTTLE;
+        baja_sim_step(&sim, input);
+        if (sim.jump_event) ++jumped;
+    }
+    REQUIRE(jumped == 0);
+    ++checks;
+}
+
+/* Driving off the road into a rock stops the vehicle and shoves it back;
+ * staying on the road never touches a prop. */
+static void test_roadside_props_are_hazards(void)
+{
+    BajaSim sim;
+    int i;
+    uint16_t target = 0;
+    BajaFp before;
+
+    race_at_speed(&sim, 300);
+    /* Hold the racing line: no prop is ever struck. */
+    for (i = 0; i < 1500; ++i) drive_frames(&sim, 1);
+    REQUIRE(sim.hazards == 0);
+
+    /* Find the next solid prop and steer onto it. */
+    for (i = 0; i < BAJA_SCENERY_COUNT; ++i) {
+        if (sim.scenery[i].s > sim.player_s + baja_fp_from_int(40) &&
+            baja_scenery_hazard(sim.scenery[i].kind) == BAJA_HAZARD_SOLID) {
+            target = (uint16_t)i;
+            break;
+        }
+    }
+    REQUIRE(target != 0U);
+    for (i = 0; i < 3000 && sim.hazards == 0; ++i) {
+        uint8_t input = BAJA_INPUT_THROTTLE;
+        BajaFp want = sim.scenery[target].e;
+        if (sim.player_e < want - BAJA_FP_ONE / 32) input |= BAJA_INPUT_RIGHT;
+        else if (sim.player_e > want + BAJA_FP_ONE / 32) input |= BAJA_INPUT_LEFT;
+        before = sim.speed;
+        baja_sim_step(&sim, input);
+        if (sim.hazard_event) {
+            REQUIRE(sim.hazard_event == BAJA_HAZARD_SOLID);
+            REQUIRE(sim.speed < before / 2);
+            REQUIRE(sim.player_s > sim.scenery[target].s - baja_fp_from_int(6));
+        }
+    }
+    REQUIRE(sim.hazards == 1);
+    /* The player keeps control: throttle still builds speed afterwards. */
+    for (i = 0; i < 120; ++i) drive_frames(&sim, 1);
+    REQUIRE(sim.speed > BAJA_FP_ONE / 4);
+    REQUIRE(baja_scenery_hazard(BAJA_SCENERY_GANTRY_START) == BAJA_HAZARD_NONE);
+    ++checks;
+}
+
 int main(void)
 {
     test_menus_wait_for_input();
@@ -458,6 +538,8 @@ int main(void)
     test_race_lifecycle_and_restart();
     test_deterministic_replay();
     test_scenery_sits_off_the_racing_line();
+    test_crests_launch_the_vehicle();
+    test_roadside_props_are_hazards();
     printf("PASS: %d deterministic gameplay and projection tests\n", checks);
     return 0;
 }
