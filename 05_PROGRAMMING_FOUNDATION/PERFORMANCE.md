@@ -94,7 +94,45 @@ The SDK's own `test_wide_object_reuse` pins the write counts: a chained
 sixteen column object costs zero words when nothing moved, one when it slid,
 one per column when it resized, and a full rebuild when its frame changed.
 
+## The strip layer road (2026-09-02)
+
+The road and backdrop no longer go through the general renderer at all.  A
+band is a sticky chain of hardware sprites in a fixed run of slots, and the
+SDK's strip layer writes only the words that changed: three for a band that
+moved, a tile map per column when its window slides across a sixteen pixel
+boundary, and sixteen palette words when its surface phase flips.  That let
+the road grow from eight bands to twenty two, with the near bands capped at
+twelve rows so a strip's inability to shear stays under a few pixels, and it
+took the renderer flush from 140,000 cycles to under 40,000.
+
+Racing, in 68000 cycles, with the twenty two band road:
+
+| Stage | Cycles |
+| --- | ---: |
+| simulation step (two steps) | 19,600 |
+| FIX clear and renderer begin | 6,000 |
+| view and road band projection | 35,200 |
+| backdrop and road strips | 61,300 |
+| scenery, rivals, player submit | 49,800 |
+| renderer flush | 39,300 |
+| FIX flush | 10,800 |
+| **total** | **~222,000** |
+
+The projection walks the segments ahead once per frame and interpolates each
+band boundary with single 16 by 16 multiplies.  The strips' cost is almost all
+per-band glue: a placement that changes nothing still costs about 900 cycles,
+and the surrounding loop about as much again, because that is what 16-bit C
+costs on this machine.
+
 ## What would buy the next field
+
+60 Hz now needs about 35,000 cycles.  The general renderer's object path is
+the largest remaining item at roughly 870 cycles per column; giving each
+object a fixed run of slots the way the road has would remove the sort and
+the run bookkeeping.  That is worth doing once the scene's object count is
+settled, not before.
+
+## Earlier: what would have bought the next field
 
 60 Hz needs the frame under about 180,000 cycles, which is another 125,000.
 The flush is still the largest item at roughly 140,000, and about 50 of the

@@ -24,14 +24,16 @@
   and method are in `05_PROGRAMMING_FOUNDATION/PERFORMANCE.md`; the flush's
   equivalence to the unoptimised path is checked by `make renderer-check`.
 
+- [x] Road rebuilt on the SDK's strip layers: twenty two bands, per-band
+  palettes carrying the surface phase and depth haze, camera tracking the
+  player at sixty percent so the near bands' shear error stays under a few
+  pixels, and a two layer parallax backdrop cut from one scaling of the plate.
+
 ## Open before Greg's five-minute play gate
 
-- [ ] Road band count is eight, still chosen partly for frame rate.  The
-  lateral step at a band boundary reaches roughly 26 px when the player is at
-  the road edge.  Ten bands cost 2.13 vblanks and were backed out.
-- [ ] 60 Hz would need about another 125,000 cycles a frame.  The flush is
-  still the largest item; precomputing each frame's SCB1 words at asset compile
-  time is the next thing worth measuring.
+- [ ] 60 Hz needs about 35,000 more cycles a frame.  The general renderer's
+  object path is the largest item; give objects fixed slot runs once the
+  scene's object count is settled.
 - [ ] The HUD's lower row overlaps the player vehicle; recompose once the play
   area is settled.
 - [ ] Scenery still reads dark at 1x at long range; the chevron sign in

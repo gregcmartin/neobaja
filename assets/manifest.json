@@ -2,7 +2,7 @@
   "art_policy": {
     "mode": "bajanew_approved_originals",
     "native_resolution": "320x224",
-    "note": "AGENTS.md forbids reviving Grok; the approved OpenAI raws under art/ and the hand-authored FIX glyphs are the only shipping sources.",
+    "note": "The approved raws under art/ and the hand-authored FIX glyphs are the shipping sources; any new art is generated with Greg's Grok Build account and retained raw under art/.",
     "resampling": "area_average_downscale_then_exact_palette_index"
   },
   "c_rom_bytes_per_chip": 1048576,
@@ -22,41 +22,39 @@
       "clips": [
         {
           "durations": [
-            8,
-            8
-          ],
-          "frames": [
-            0,
             1
           ],
+          "frames": [
+            0
+          ],
           "loop": true,
-          "name": "all"
+          "name": "still"
         }
       ],
       "frame_height": 16,
-      "frame_width": 80,
+      "frame_width": 48,
       "name": "road00",
       "origin": [
-        40,
+        24,
         0
       ],
-      "palette": 3,
+      "palette": 32,
       "palette_colors": [
-        "#422910",
-        "#CE8421",
-        "#944A10",
-        "#B56B19",
-        "#EFD694",
-        "#6B2908",
-        "#E6A542",
-        "#A55A19",
-        "#734210",
+        "#CE8429",
+        "#8C4A08",
+        "#B56B21",
+        "#DE943A",
         "#BD7321",
-        "#DEB563",
+        "#A55A10",
+        "#D68C31",
+        "#BD7B29",
+        "#EF9C31",
+        "#734A21",
+        "#4A3110",
+        "#9C6321",
         "#523A10",
         "#845A29",
-        "#DE9431",
-        "#AD8442"
+        "#CE8C31"
       ],
       "source": "source/road00.png"
     },
@@ -64,41 +62,39 @@
       "clips": [
         {
           "durations": [
-            8,
-            8
-          ],
-          "frames": [
-            0,
             1
           ],
+          "frames": [
+            0
+          ],
           "loop": true,
-          "name": "all"
+          "name": "still"
         }
       ],
       "frame_height": 16,
-      "frame_width": 96,
+      "frame_width": 48,
       "name": "road01",
       "origin": [
-        48,
+        24,
         0
       ],
-      "palette": 3,
+      "palette": 33,
       "palette_colors": [
-        "#422910",
-        "#CE8421",
-        "#944A10",
-        "#B56B19",
-        "#EFD694",
-        "#6B2908",
-        "#E6A542",
-        "#A55A19",
-        "#734210",
+        "#CE8429",
+        "#9C5210",
+        "#B56B21",
+        "#C57B21",
+        "#D68C31",
+        "#EF9C31",
+        "#AD6319",
         "#BD7321",
-        "#DEB563",
+        "#9C5A19",
         "#523A10",
-        "#845A29",
-        "#DE9431",
-        "#AD8442"
+        "#C57B29",
+        "#7B5221",
+        "#6B4A19",
+        "#422910",
+        "#9C6321"
       ],
       "source": "source/road01.png"
     },
@@ -106,41 +102,39 @@
       "clips": [
         {
           "durations": [
-            8,
-            8
-          ],
-          "frames": [
-            0,
             1
           ],
+          "frames": [
+            0
+          ],
           "loop": true,
-          "name": "all"
+          "name": "still"
         }
       ],
-      "frame_height": 32,
-      "frame_width": 160,
+      "frame_height": 16,
+      "frame_width": 48,
       "name": "road02",
       "origin": [
-        80,
+        24,
         0
       ],
-      "palette": 3,
+      "palette": 34,
       "palette_colors": [
-        "#422910",
-        "#CE8421",
+        "#C57B21",
         "#944A10",
-        "#B56B19",
-        "#EFD694",
-        "#6B2908",
-        "#E6A542",
+        "#D68C31",
+        "#B56B21",
+        "#CE8429",
+        "#EF9429",
         "#A55A19",
-        "#734210",
         "#BD7321",
-        "#DEB563",
-        "#523A10",
-        "#845A29",
-        "#DE9431",
-        "#AD8442"
+        "#C57B29",
+        "#8C5A21",
+        "#4A3110",
+        "#734A19",
+        "#5A3A10",
+        "#E69429",
+        "#2A0000"
       ],
       "source": "source/road02.png"
     },
@@ -148,41 +142,39 @@
       "clips": [
         {
           "durations": [
-            8,
-            8
-          ],
-          "frames": [
-            0,
             1
           ],
+          "frames": [
+            0
+          ],
           "loop": true,
-          "name": "all"
+          "name": "still"
         }
       ],
-      "frame_height": 32,
-      "frame_width": 272,
+      "frame_height": 16,
+      "frame_width": 48,
       "name": "road03",
       "origin": [
-        136,
+        24,
         0
       ],
-      "palette": 3,
+      "palette": 35,
       "palette_colors": [
-        "#422910",
-        "#CE8421",
-        "#944A10",
-        "#B56B19",
-        "#EFD694",
-        "#6B2908",
-        "#E6A542",
-        "#A55A19",
-        "#734210",
         "#BD7321",
-        "#DEB563",
-        "#523A10",
-        "#845A29",
-        "#DE9431",
-        "#AD8442"
+        "#D68C31",
+        "#944A10",
+        "#AD6319",
+        "#CE8429",
+        "#C57B21",
+        "#E69431",
+        "#B56B21",
+        "#9C5A19",
+        "#5A3A10",
+        "#7B5221",
+        "#C5AD73",
+        "#DE8C29",
+        "#9C5A21",
+        "#2A0000"
       ],
       "source": "source/road03.png"
     },
@@ -190,41 +182,39 @@
       "clips": [
         {
           "durations": [
-            8,
-            8
-          ],
-          "frames": [
-            0,
             1
           ],
+          "frames": [
+            0
+          ],
           "loop": true,
-          "name": "all"
+          "name": "still"
         }
       ],
-      "frame_height": 48,
-      "frame_width": 432,
+      "frame_height": 16,
+      "frame_width": 48,
       "name": "road04",
       "origin": [
-        216,
+        24,
         0
       ],
-      "palette": 3,
+      "palette": 36,
       "palette_colors": [
-        "#422910",
-        "#CE8421",
+        "#CE8429",
         "#944A10",
-        "#B56B19",
-        "#EFD694",
-        "#6B2908",
-        "#E6A542",
+        "#B56B21",
+        "#EF9C31",
+        "#C57B21",
+        "#D68C31",
         "#A55A19",
-        "#734210",
         "#BD7321",
-        "#DEB563",
-        "#523A10",
-        "#845A29",
-        "#DE9431",
-        "#AD8442"
+        "#DE8421",
+        "#945A21",
+        "#DEC594",
+        "#633A10",
+        "#7B4A19",
+        "#AD6B21",
+        "#2A0000"
       ],
       "source": "source/road04.png"
     },
@@ -241,30 +231,30 @@
           "name": "still"
         }
       ],
-      "frame_height": 64,
-      "frame_width": 624,
+      "frame_height": 16,
+      "frame_width": 48,
       "name": "road05",
       "origin": [
-        312,
+        24,
         0
       ],
-      "palette": 3,
+      "palette": 37,
       "palette_colors": [
-        "#422910",
-        "#CE8421",
-        "#944A10",
-        "#B56B19",
-        "#EFD694",
-        "#6B2908",
-        "#E6A542",
-        "#A55A19",
-        "#734210",
+        "#CE8429",
+        "#9C5210",
+        "#B56B21",
+        "#EF9C31",
+        "#C57B21",
+        "#D68C31",
         "#BD7321",
-        "#DEB563",
-        "#523A10",
-        "#845A29",
-        "#DE9431",
-        "#AD8442"
+        "#AD6319",
+        "#8C4A08",
+        "#AD6B21",
+        "#E69429",
+        "#844A19",
+        "#9C5A19",
+        "#6B4219",
+        "#2A0000"
       ],
       "source": "source/road05.png"
     },
@@ -281,30 +271,30 @@
           "name": "still"
         }
       ],
-      "frame_height": 64,
-      "frame_width": 816,
+      "frame_height": 16,
+      "frame_width": 48,
       "name": "road06",
       "origin": [
-        408,
+        24,
         0
       ],
-      "palette": 3,
+      "palette": 38,
       "palette_colors": [
-        "#422910",
-        "#CE8421",
-        "#944A10",
-        "#B56B19",
-        "#EFD694",
-        "#6B2908",
-        "#E6A542",
-        "#A55A19",
-        "#734210",
+        "#CE8429",
+        "#945210",
+        "#B56B21",
+        "#C57B21",
+        "#EF9429",
         "#BD7321",
-        "#DEB563",
-        "#523A10",
-        "#845A29",
-        "#DE9431",
-        "#AD8442"
+        "#D68C31",
+        "#AD6319",
+        "#C57B29",
+        "#9C5A19",
+        "#E69429",
+        "#8C4A10",
+        "#A56321",
+        "#270000",
+        "#2A0000"
       ],
       "source": "source/road06.png"
     },
@@ -321,30 +311,30 @@
           "name": "still"
         }
       ],
-      "frame_height": 48,
-      "frame_width": 896,
+      "frame_height": 16,
+      "frame_width": 64,
       "name": "road07",
       "origin": [
-        448,
+        32,
         0
       ],
-      "palette": 3,
+      "palette": 39,
       "palette_colors": [
-        "#422910",
-        "#CE8421",
-        "#944A10",
-        "#B56B19",
-        "#EFD694",
-        "#6B2908",
-        "#E6A542",
-        "#A55A19",
-        "#734210",
+        "#C57B21",
+        "#944A08",
+        "#D68C31",
+        "#AD6B19",
+        "#CE8429",
         "#BD7321",
-        "#DEB563",
-        "#523A10",
-        "#845A29",
-        "#DE9431",
-        "#AD8442"
+        "#EF9C31",
+        "#DE943A",
+        "#9C5A19",
+        "#AD6B21",
+        "#844A19",
+        "#9C5A21",
+        "#DE8C21",
+        "#270000",
+        "#2A0000"
       ],
       "source": "source/road07.png"
     },
@@ -361,32 +351,632 @@
           "name": "still"
         }
       ],
-      "frame_height": 176,
-      "frame_width": 640,
-      "name": "backdrop",
+      "frame_height": 16,
+      "frame_width": 80,
+      "name": "road08",
+      "origin": [
+        40,
+        0
+      ],
+      "palette": 40,
+      "palette_colors": [
+        "#CE8429",
+        "#945210",
+        "#B56B21",
+        "#C57B21",
+        "#EF9C31",
+        "#D68C31",
+        "#BD7321",
+        "#C57B29",
+        "#AD6319",
+        "#AD6B21",
+        "#E69429",
+        "#7B4A10",
+        "#945A19",
+        "#270000",
+        "#2A0000"
+      ],
+      "source": "source/road08.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 96,
+      "name": "road09",
+      "origin": [
+        48,
+        0
+      ],
+      "palette": 41,
+      "palette_colors": [
+        "#CE8429",
+        "#9C5210",
+        "#B56B21",
+        "#E69C3A",
+        "#C57B21",
+        "#D68C31",
+        "#BD7321",
+        "#C57B29",
+        "#E68C21",
+        "#AD6B21",
+        "#EF9C31",
+        "#8C4A19",
+        "#9C5A19",
+        "#9C6331",
+        "#2A0000"
+      ],
+      "source": "source/road09.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 112,
+      "name": "road10",
+      "origin": [
+        56,
+        0
+      ],
+      "palette": 42,
+      "palette_colors": [
+        "#BD7321",
+        "#D68C31",
+        "#944A10",
+        "#A56319",
+        "#CE8429",
+        "#C57B21",
+        "#B56B19",
+        "#EF9C31",
+        "#E69429",
+        "#844A10",
+        "#9C5A19",
+        "#AD6B21",
+        "#240000",
+        "#270000",
+        "#2A0000"
+      ],
+      "source": "source/road10.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 144,
+      "name": "road11",
+      "origin": [
+        72,
+        0
+      ],
+      "palette": 43,
+      "palette_colors": [
+        "#CE8429",
+        "#944A08",
+        "#DE943A",
+        "#B56B19",
+        "#D68C31",
+        "#C57B21",
+        "#BD7321",
+        "#A55A19",
+        "#F7AD3A",
+        "#AD6B21",
+        "#EF9C3A",
+        "#734210",
+        "#945219",
+        "#9C6321",
+        "#2A0000"
+      ],
+      "source": "source/road11.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 176,
+      "name": "road12",
+      "origin": [
+        88,
+        0
+      ],
+      "palette": 44,
+      "palette_colors": [
+        "#BD7321",
+        "#8C4208",
+        "#DE943A",
+        "#CE8429",
+        "#9C5210",
+        "#AD6319",
+        "#D68C31",
+        "#C57B21",
+        "#B56B19",
+        "#945210",
+        "#AD6B21",
+        "#E69431",
+        "#D68429",
+        "#6B3A10",
+        "#2A0000"
+      ],
+      "source": "source/road12.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 208,
+      "name": "road13",
+      "origin": [
+        104,
+        0
+      ],
+      "palette": 45,
+      "palette_colors": [
+        "#D68C31",
+        "#944A08",
+        "#B56B19",
+        "#C57B21",
+        "#CE8429",
+        "#E6A542",
+        "#A55A10",
+        "#DE943A",
+        "#BD7321",
+        "#AD6B21",
+        "#EFA53A",
+        "#7B3A08",
+        "#945219",
+        "#CE8C31",
+        "#2A0000"
+      ],
+      "source": "source/road13.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 256,
+      "name": "road14",
+      "origin": [
+        128,
+        0
+      ],
+      "palette": 46,
+      "palette_colors": [
+        "#D68C31",
+        "#8C4208",
+        "#B56B19",
+        "#C57B21",
+        "#EFA542",
+        "#DE943A",
+        "#CE8429",
+        "#A55A10",
+        "#BD7321",
+        "#A56319",
+        "#6B3108",
+        "#EFA53A",
+        "#8C4A10",
+        "#B57321",
+        "#2A0000"
+      ],
+      "source": "source/road14.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 304,
+      "name": "road15",
+      "origin": [
+        152,
+        0
+      ],
+      "palette": 47,
+      "palette_colors": [
+        "#D68C31",
+        "#8C4A08",
+        "#B56B19",
+        "#C57B21",
+        "#E6AD52",
+        "#A55A10",
+        "#DE943A",
+        "#CE8429",
+        "#7B3108",
+        "#AD6B19",
+        "#BD7B21",
+        "#7B3A08",
+        "#945210",
+        "#EFA53A",
+        "#2A0000"
+      ],
+      "source": "source/road15.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 352,
+      "name": "road16",
+      "origin": [
+        176,
+        0
+      ],
+      "palette": 48,
+      "palette_colors": [
+        "#DE943A",
+        "#844208",
+        "#B56319",
+        "#CE8421",
+        "#9C5210",
+        "#733100",
+        "#BD7321",
+        "#EFAD4A",
+        "#D68C31",
+        "#D68429",
+        "#945210",
+        "#E69C3A",
+        "#AD6319",
+        "#7B3A08",
+        "#2A0000"
+      ],
+      "source": "source/road16.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 416,
+      "name": "road17",
+      "origin": [
+        208,
+        0
+      ],
+      "palette": 49,
+      "palette_colors": [
+        "#BD7319",
+        "#6B2900",
+        "#DE9431",
+        "#944A08",
+        "#AD6310",
+        "#D68421",
+        "#EFBD63",
+        "#E6A542",
+        "#844208",
+        "#E69C3A",
+        "#A55A10",
+        "#BD6B19",
+        "#733100",
+        "#8C4A08",
+        "#D68429"
+      ],
+      "source": "source/road17.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 464,
+      "name": "road18",
+      "origin": [
+        232,
+        0
+      ],
+      "palette": 50,
+      "palette_colors": [
+        "#DE9431",
+        "#6B2900",
+        "#AD5A10",
+        "#CE8421",
+        "#944A08",
+        "#FFDE94",
+        "#F7B55A",
+        "#BD7319",
+        "#E6A542",
+        "#C57B21",
+        "#633108",
+        "#EFCE84",
+        "#8C4A08",
+        "#DE943A",
+        "#AD6310"
+      ],
+      "source": "source/road18.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 512,
+      "name": "road19",
+      "origin": [
+        256,
+        0
+      ],
+      "palette": 51,
+      "palette_colors": [
+        "#CE8429",
+        "#A55A10",
+        "#DE9442",
+        "#BD7321",
+        "#8C4208",
+        "#D68C31",
+        "#B56B19",
+        "#EFAD4A",
+        "#C57B21",
+        "#8C4A10",
+        "#EFC57B",
+        "#DE8C21",
+        "#AD6B21",
+        "#6B3A08",
+        "#D69C4A"
+      ],
+      "source": "source/road19.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 560,
+      "name": "road20",
+      "origin": [
+        280,
+        0
+      ],
+      "palette": 52,
+      "palette_colors": [
+        "#C57B21",
+        "#944A10",
+        "#E69C3A",
+        "#AD6319",
+        "#D68C29",
+        "#B56B19",
+        "#EFB55A",
+        "#843A08",
+        "#A55A10",
+        "#945210",
+        "#E6AD4A",
+        "#BD7321",
+        "#A56319",
+        "#733A08",
+        "#DE8C31"
+      ],
+      "source": "source/road20.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 608,
+      "name": "road21",
+      "origin": [
+        304,
+        0
+      ],
+      "palette": 53,
+      "palette_colors": [
+        "#C57321",
+        "#8C4208",
+        "#DE943A",
+        "#A55210",
+        "#D68429",
+        "#F7C573",
+        "#F7AD4A",
+        "#733100",
+        "#B56B10",
+        "#BD6B19",
+        "#6B3100",
+        "#8C4A08",
+        "#EFAD4A",
+        "#D68C29",
+        "#A55A10"
+      ],
+      "source": "source/road21.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 80,
+      "frame_width": 528,
+      "name": "sky",
       "origin": [
         0,
         0
       ],
       "palette": 1,
       "palette_colors": [
-        "#086BEF",
-        "#C5A56B",
-        "#5AB5F7",
-        "#292110",
-        "#004294",
-        "#198CF7",
-        "#BDE6F7",
-        "#945A21",
-        "#C57B29",
-        "#525A6B",
-        "#5A4210",
-        "#3A94EF",
-        "#84CEF7",
-        "#1063AD",
-        "#4A73AD"
+        "#00429C",
+        "#7BCEFF",
+        "#211908",
+        "#3A7BE6",
+        "#B58C42",
+        "#4A4A63",
+        "#C5EFF7",
+        "#848494",
+        "#3A6BBD",
+        "#846321",
+        "#0852BD",
+        "#3A5294",
+        "#D6B584",
+        "#523A10",
+        "#63B5F7"
       ],
-      "source": "source/backdrop.png"
+      "source": "source/sky.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 112,
+      "frame_width": 528,
+      "name": "ground",
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 2,
+      "palette_colors": [
+        "#004A94",
+        "#B57321",
+        "#100800",
+        "#6B4210",
+        "#BDE6EF",
+        "#E6C57B",
+        "#3A3A31",
+        "#4A2908",
+        "#945219",
+        "#42BDD6",
+        "#0884AD",
+        "#CE944A",
+        "#94946B",
+        "#292108",
+        "#7B6B3A"
+      ],
+      "source": "source/ground.png"
     },
     {
       "clips": [

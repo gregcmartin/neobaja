@@ -7,35 +7,30 @@
  * width as a rival's, at the depth that makes the two match when they touch.
  */
 #define PLAYER_GROUND_Y 213
-#define PLAYER_SCALE_Q8 11029
-#define PLAYER_CENTER_X 160
+#define PLAYER_SCALE_Q8 BAJA_PLAYER_SCALE_Q8
 
-#define BACKDROP_SPAN 640
-#define BACKDROP_MARGIN ((BACKDROP_SPAN - BAJA_SCREEN_WIDTH) / 2)
+/* Hardware sprite columns each backdrop layer's window needs: the screen's
+ * twenty plus a partial column at each edge. */
+#define BACKDROP_WINDOW 21
 /* Rows 0..27 are the visible 224 lines; the FIX map's last four rows are off
  * screen and are never touched. */
 #define FIX_VISIBLE_ROWS 28
 #define FIX_CELLS (FIX_VISIBLE_ROWS * BAJANEW_FIX_COLUMNS)
 
-/* Draw order: backdrop, the whole road far-to-near, then the world objects
- * still sorted by depth among themselves.
- *
- * Objects used to be interleaved between the bands they stand on, which is
- * strictly more correct but put a moving object in the middle of the sprite
- * table: whenever one changed band, every road band after it shifted to a new
- * hardware sprite and had to be rebuilt.  A prop beside the road and the road
- * strips below it do not overlap on screen, so keeping the road contiguous
- * costs nothing visible and keeps its hardware sprites still. */
+/* Draw order among the renderer's objects: sorted by the band they stand on,
+ * far to near, then dust, then the player.  The backdrop and the road sit
+ * below all of them in fixed hardware sprites, so an object is always over the
+ * road; an object the road should hide - one whose feet fall behind a crest -
+ * is simply not drawn. */
 #define PRIORITY_BACKDROP 0
-#define PRIORITY_BAND(b) ((uint8_t)(8U + (uint8_t)(b)))
-#define PRIORITY_ON_BAND(b) ((uint8_t)(100U + (uint8_t)(b)))
+#define PRIORITY_ON_BAND(b) ((uint8_t)(1U + (uint8_t)(b)))
 #define PRIORITY_DUST 200
 #define PRIORITY_PLAYER 204
 
 /* Scenery on screen at once.  The hardware sprite table is the hard limit and
  * the road already claims most of it, so the field is capped rather than left
  * to drop columns at the worst possible moment. */
-#define SCENERY_BUDGET 3
+#define SCENERY_BUDGET 8
 /* Baseline the selection portraits stand on. */
 #define DRIVER_BASE_Y 190
 
@@ -266,17 +261,61 @@ static const BajanewSpriteDef *rival_lod(uint8_t livery, uint16_t pixels)
     return &bajanew_rival[livery][lod];
 }
 
-static void draw_backdrop(BajanewGame *game, const BajaRoadBand *bands)
+/* Register a placed layer's hardware footprint with the renderer's scanline
+ * accounting: every tile row it maps counts against the per-line limit, even
+ * the rows a shrink leaves transparent. */
+static void mark_layer(BajanewGame *game, const NgStripLayer *layer, int16_t y)
 {
-    /* The horizon leans against the bend the road is taking, which is the only
-     * parallax cue available above the funnel. */
-    int16_t target = (int16_t)((BAJA_SCREEN_CENTER - bands[0].center_x) / 2);
-    if (target > BACKDROP_MARGIN) target = BACKDROP_MARGIN;
-    if (target < -BACKDROP_MARGIN) target = -BACKDROP_MARGIN;
-    game->sky_pan += (int16_t)((target - game->sky_pan) / 8);
-    submit(&game->renderer, &ng_asset_backdrop_frames[0],
-           (int16_t)(-BACKDROP_MARGIN + game->sky_pan), 0,
-           PRIORITY_BACKDROP, 0x0fU, 0xffU, 0U);
+    if (layer->head_y_control == 0U) return;
+    ng_renderer_mark_span(&game->renderer, y, (int16_t)(layer->height_rows * 16),
+                          layer->shown_columns);
+}
+
+static int16_t approach_pan(int16_t pan, int16_t target, int16_t limit)
+{
+    if (target > limit) target = limit;
+    if (target < -limit) target = -limit;
+    return (int16_t)(pan + (int16_t)((target - pan) / 8));
+}
+
+static void draw_backdrop(BajanewGame *game, const BajaView *view, const BajaRoadBand *bands)
+{
+    /* The horizon leans against the bend the road is taking, the near ground
+     * twice as far as the sky, which is the only parallax cue above the
+     * funnel. */
+    int16_t offset = (int16_t)(BAJA_SCREEN_CENTER - bands[0].center_x);
+    int16_t ground_y = (int16_t)(bajanew_ground_y + view->shake);
+    int16_t needed = 0;
+    uint8_t b;
+    game->sky_pan = approach_pan(game->sky_pan, (int16_t)(offset / 4), bajanew_sky_pan);
+    game->ground_pan = approach_pan(game->ground_pan, (int16_t)(offset / 2), bajanew_ground_pan);
+    game->strip_words = (uint16_t)(game->strip_words + ng_strip_place(
+        &game->sky, (int16_t)(game->sky_pan - bajanew_backdrop_origin_x),
+        view->shake, 0xffU));
+    mark_layer(game, &game->sky, view->shake);
+    /* The ground only needs to reach the first band wide enough to cover the
+     * screen on its own; every row below that would count against the
+     * scanline limit for nothing. */
+    for (b = 0; b < BAJA_ROAD_BANDS; ++b) {
+        if (bajanew_road_strip[b].window_columns >= BACKDROP_WINDOW && bands[b].visible) {
+            needed = (int16_t)(bands[b].top_y - ground_y);
+            break;
+        }
+    }
+    if (b == BAJA_ROAD_BANDS) needed = (int16_t)(BAJA_SCREEN_HEIGHT - ground_y);
+    ng_strip_set_height(&game->ground, (uint8_t)((needed + 15) >> 4));
+    game->strip_words = (uint16_t)(game->strip_words + ng_strip_place(
+        &game->ground, (int16_t)(game->ground_pan - bajanew_backdrop_origin_x),
+        ground_y, 0xffU));
+    mark_layer(game, &game->ground, ground_y);
+}
+
+static void hide_layers(BajanewGame *game)
+{
+    uint8_t b;
+    (void)ng_strip_hide(&game->sky);
+    (void)ng_strip_hide(&game->ground);
+    for (b = 0; b < BAJA_ROAD_BANDS; ++b) (void)ng_strip_hide(&game->road[b]);
 }
 
 static void draw_road(BajanewGame *game, const BajaRoadBand *bands)
@@ -287,22 +326,47 @@ static void draw_road(BajanewGame *game, const BajaRoadBand *bands)
                     (uint8_t)(bajanew_render_level - 16U) : BAJA_ROAD_BANDS;
     uint8_t b;
     if (limit > BAJA_ROAD_BANDS) limit = BAJA_ROAD_BANDS;
-    for (b = 0; b < limit; ++b) {
+    for (b = 0; b < BAJA_ROAD_BANDS; ++b) {
         const BajaRoadBand *band = &bands[b];
-        uint16_t authored;
-        int32_t zoom_y;
-        if (!band->visible || band->height == 0U) continue;
-        authored = bajanew_road_authored_height[b];
-        zoom_y = (((int32_t)band->height * 256) / authored) - 1;
-        if (zoom_y < 0) zoom_y = 0;
+        const BajanewStripDef *def = &bajanew_road_strip[b];
+        NgStripLayer *layer = &game->road[b];
+        int16_t zoom_y;
+        if (b >= limit || !band->visible || band->height == 0U) {
+            game->strip_words = (uint16_t)(game->strip_words + ng_strip_hide(layer));
+            continue;
+        }
+        /* Shrink from the authored height.  A sprite shrunk below a sixteenth
+         * of its tile rows would read past its tile map and draw a ghost of
+         * itself further down, so the shrink is floored there; the nearer band
+         * covers the few extra rows. */
+        if (def->rows == 1U) zoom_y = (int16_t)(band->height << 4);
+        else if (def->rows == 2U) zoom_y = (int16_t)(band->height << 3);
+        else zoom_y = (int16_t)divide_by_three((uint16_t)(band->height << 4));
+        zoom_y -= 1;
+        if (zoom_y < (int16_t)(def->rows * 8 - 1)) zoom_y = (int16_t)(def->rows * 8 - 1);
         if (zoom_y > 255) zoom_y = 255;
-        submit(&game->renderer, bajanew_road_frames[b][band->phase],
-               band->center_x, band->top_y, PRIORITY_BAND(b),
-               0x0fU, (uint8_t)zoom_y, 0U);
+        if (game->road_phase[b] != band->phase) {
+            ng_platform_palette_load(def->palette, bajanew_road_palette[b][band->phase]);
+            game->road_phase[b] = band->phase;
+        }
+        ng_strip_set_height(layer, (uint8_t)((band->height + 15U) >> 4));
+        game->strip_words = (uint16_t)(game->strip_words + ng_strip_place(
+            layer, (int16_t)(band->center_x - (int16_t)(def->strip_columns * 8U)),
+            band->top_y, (uint8_t)zoom_y));
+        mark_layer(game, layer, band->top_y);
     }
 }
 
-static void draw_scenery(BajanewGame *game, const BajaView *view)
+/* An object stands on the road; if the row its feet project to lies below the
+ * visible bottom of its band, a nearer crest is in front of it. */
+static uint8_t behind_crest(const BajaRoadBand *bands, const BajaObjectProjection *projection)
+{
+    const BajaRoadBand *band = &bands[projection->band];
+    if (!band->visible) return 1;
+    return (uint8_t)(projection->ground_y > band->top_y + (int16_t)band->height + 2);
+}
+
+static void draw_scenery(BajanewGame *game, const BajaView *view, const BajaRoadBand *bands)
 {
     const BajaFp near_edge = game->sim.player_s;
     const BajaFp far_edge = game->sim.player_s + baja_fp_from_int(260);
@@ -317,7 +381,7 @@ static void draw_scenery(BajanewGame *game, const BajaView *view)
         if (item->s > far_edge) break;
         if (drawn >= SCENERY_BUDGET) break;
         baja_project_object_in(&game->sim, view, item->s, item->e, &projection);
-        if (!projection.visible) continue;
+        if (!projection.visible || behind_crest(bands, &projection)) continue;
         submit_world_sprite(game, &bajanew_scenery[item->kind], &projection,
                             PRIORITY_ON_BAND(projection.band),
                             (item->e < 0) ? NG_RENDER_FLIP_X : 0U);
@@ -325,7 +389,7 @@ static void draw_scenery(BajanewGame *game, const BajaView *view)
     }
 }
 
-static void draw_rivals(BajanewGame *game, const BajaView *view)
+static void draw_rivals(BajanewGame *game, const BajaView *view, const BajaRoadBand *bands)
 {
     uint8_t i;
     for (i = 0; i < BAJA_RIVAL_COUNT; ++i) {
@@ -335,7 +399,7 @@ static void draw_rivals(BajanewGame *game, const BajaView *view)
         uint32_t pixels;
         if (!rival->active) continue;
         baja_project_object_in(&game->sim, view, rival->s, rival->e, &projection);
-        if (!projection.visible) continue;
+        if (!projection.visible || behind_crest(bands, &projection)) continue;
         pixels = ((uint32_t)bajanew_rival[0][0].world_width_q8 *
                   (uint32_t)projection.scale_q8) >> 16;
         if (pixels > 255U) pixels = 255U;
@@ -345,12 +409,12 @@ static void draw_rivals(BajanewGame *game, const BajaView *view)
     }
 }
 
-static void draw_player(BajanewGame *game)
+static void draw_player(BajanewGame *game, const BajaView *view)
 {
     const BajaSim *sim = &game->sim;
     int32_t lean = (sim->steer * 12) / BAJA_FP_ONE;
     int32_t lift = (int32_t)((sim->bounce * 24) / BAJA_FP_ONE);
-    int16_t x = (int16_t)(PLAYER_CENTER_X + lean);
+    int16_t x = (int16_t)(view->player_x + lean);
     int16_t y = (int16_t)(PLAYER_GROUND_Y - lift);
     uint8_t pose = POSE_NEUTRAL;
     BajaObjectProjection projection;
@@ -480,19 +544,19 @@ static void draw_race(BajanewGame *game, uint8_t with_actors)
     if (level >= 16U) level = 0U;
     if (level >= 5U) return;
     baja_view_init(&game->sim, &view);
-    (void)baja_project_bands(&game->sim, bands);
+    (void)baja_project_bands_in(&game->sim, &view, bands);
     STAGE(4);
     if (level >= 4U) return;
-    draw_backdrop(game, bands);
+    draw_backdrop(game, &view, bands);
     if (level >= 3U) return;
     draw_road(game, bands);
     STAGE(5);
     if (level >= 2U) return;
-    draw_scenery(game, &view);
+    draw_scenery(game, &view, bands);
     if (level >= 1U) return;
     if (with_actors) {
-        draw_rivals(game, &view);
-        draw_player(game);
+        draw_rivals(game, &view, bands);
+        draw_player(game, &view);
     }
 }
 
@@ -504,6 +568,7 @@ static void draw_frame(BajanewGame *game)
     if (level >= 7U) return;
     clear_next(game);
     ng_renderer_begin(&game->renderer);
+    game->strip_words = 0;
     STAGE(3);
     if (level >= 6U) {
         game->last_render = ng_renderer_flush(&game->renderer);
@@ -515,6 +580,7 @@ static void draw_frame(BajanewGame *game)
     case BAJA_PHASE_SPLASH:
         /* The developer mark stands alone for its five seconds and ignores
          * every input, exactly as the packet requires. */
+        hide_layers(game);
         submit(&game->renderer, &ng_asset_splash_frames[0], 0, 0,
                PRIORITY_BACKDROP, 0x0fU, 0xffU, 0U);
         break;
@@ -583,10 +649,45 @@ void bajanew_game_init(BajanewGame *game)
 {
     uint8_t row;
     uint8_t column;
+    uint16_t slot = 0;
+    uint16_t *words = game->strip_table;
+    uint8_t b;
     baja_sim_init_cooperative(&game->sim, ng_platform_kick_watchdog);
     ng_renderer_init(&game->renderer);
+    ng_assets_load_palettes();
+    /* Sky, ground, then every road band far to near, each in its own run of
+     * hardware sprites; the renderer's objects start above them all. */
+    ng_strip_init(&game->sky, slot, BACKDROP_WINDOW, ng_asset_sky_frames[0].tiles,
+                  ng_asset_sky_frames[0].width_tiles,
+                  (uint8_t)ng_asset_sky_frames[0].height_tiles,
+                  ng_asset_sky_frames[0].palette);
+    ng_strip_build_words(&game->sky, words);
+    words += ng_strip_word_count(&game->sky);
+    slot = (uint16_t)(slot + BACKDROP_WINDOW);
+    ng_strip_init(&game->ground, slot, BACKDROP_WINDOW, ng_asset_ground_frames[0].tiles,
+                  ng_asset_ground_frames[0].width_tiles,
+                  (uint8_t)ng_asset_ground_frames[0].height_tiles,
+                  ng_asset_ground_frames[0].palette);
+    ng_strip_build_words(&game->ground, words);
+    words += ng_strip_word_count(&game->ground);
+    slot = (uint16_t)(slot + BACKDROP_WINDOW);
+    for (b = 0; b < BAJA_ROAD_BANDS; ++b) {
+        const BajanewStripDef *def = &bajanew_road_strip[b];
+        ng_strip_init(&game->road[b], slot, def->window_columns, def->frame->tiles,
+                      def->strip_columns, def->rows, def->palette);
+        ng_strip_build_words(&game->road[b], words);
+        words += ng_strip_word_count(&game->road[b]);
+        ng_platform_kick_watchdog();
+        ng_platform_palette_load(def->palette, bajanew_road_palette[b][0]);
+        game->road_phase[b] = 0;
+        slot = (uint16_t)(slot + def->window_columns);
+    }
+    game->road_slots = slot;
+    ng_renderer_set_first_slot(&game->renderer, slot);
+    game->strip_words = 0;
     game->frame = 0;
     game->sky_pan = 0;
+    game->ground_pan = 0;
     /* Hundred percent of the course as a 16.16 scale, so the HUD never divides
      * by the track length. */
     game->progress_scale = baja_fp_div(baja_fp_from_int(100), game->sim.track.total_length);
@@ -603,7 +704,6 @@ void bajanew_game_init(BajanewGame *game)
             game->fix_next[row][column] = (uint8_t)' ';
         }
     }
-    ng_assets_load_palettes();
     ng_platform_backdrop(0x1119U);
     ng_fix_clear();
     draw_frame(game);

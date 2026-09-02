@@ -236,8 +236,8 @@ static void test_bands_track_curve_and_surface_phase(void)
         REQUIRE(curved[i].center_x <= curved[i - 1].center_x);
     }
 
-    /* The middle distance streams its surface phase; the nearest bands opt
-     * out because a metre of road crosses them in under a frame. */
+    /* Every band streams its surface phase, with the wavelength growing with
+     * depth so the far road does not flicker. */
     previous = curved[3].phase;
     for (i = 0; i < 120; ++i) {
         BajaRoadBand bands[BAJA_ROAD_BANDS];
@@ -251,8 +251,8 @@ static void test_bands_track_curve_and_surface_phase(void)
         }
     }
     REQUIRE(phase_changes >= 2);
-    REQUIRE(baja_band_stripe_shift[0] > baja_band_stripe_shift[3]);
-    REQUIRE(baja_band_stripe_shift[BAJA_ROAD_BANDS - 1] == 0U);
+    REQUIRE(baja_band_stripe_shift[0] > baja_band_stripe_shift[BAJA_ROAD_BANDS - 1]);
+    for (i = 0; i < BAJA_ROAD_BANDS; ++i) REQUIRE(baja_band_stripe_shift[i] > 0U);
     ++checks;
 }
 

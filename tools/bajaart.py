@@ -38,6 +38,13 @@ TEX_U_SPAN = 2.6
 TEX_LEN_M = 8.0
 TEX_W, TEX_H = 512, 64
 ROAD_PHASES = 2
+# Lateral reach of a band strip in road half widths.  Beyond it the static
+# ground layer shows, so this is the trade between streaming verge and the
+# hardware sprite columns the near bands cost.
+STRIP_U_SPAN = 1.6
+# Road pixels further out than this fraction of the half width are verge, and
+# get their own palette entries so the surface phase can stream them.
+VERGE_U = 0.95
 
 
 def sha256(path: Path) -> str:
@@ -154,6 +161,19 @@ def pick_palette(rgba: np.ndarray, count: int = 15, weight: np.ndarray | None = 
         if key not in seen:
             seen.append(key)
     return ["#%02X%02X%02X" % c for c in seen]
+
+
+def neo_word(rgb: tuple[int, int, int]) -> int:
+    """Pack an 8-bit colour into the Neo Geo palette word, as the SDK compiler does."""
+    r5 = (rgb[0] * 31 + 127) // 255
+    g5 = (rgb[1] * 31 + 127) // 255
+    b5 = (rgb[2] * 31 + 127) // 255
+    return (((r5 & 1) << 14) | ((g5 & 1) << 13) | ((b5 & 1) << 12)
+            | ((r5 >> 1) << 8) | ((g5 >> 1) << 4) | (b5 >> 1))
+
+
+def hex_rgb(colour: str) -> tuple[int, int, int]:
+    return tuple(int(colour[i:i + 2], 16) for i in (1, 3, 5))  # type: ignore[return-value]
 
 
 def save_sheet(rgba: np.ndarray, name: str) -> Path:

@@ -5,6 +5,7 @@
 #include "game/bajanew_assets.h"
 #include "ng/input.h"
 #include "ng/renderer.h"
+#include "ng/strip.h"
 
 #define BAJANEW_FIX_COLUMNS 40
 #define BAJANEW_FIX_ROWS 32
@@ -23,8 +24,18 @@ typedef struct BajanewGame {
     BajaSim sim;
     NgRenderer renderer;
     NgRenderStats last_render;
+    /* The backdrop and the road own fixed hardware sprites beneath everything
+     * the renderer places, so a frame costs them only the words that moved. */
+    NgStripLayer sky;
+    NgStripLayer ground;
+    NgStripLayer road[BAJA_ROAD_BANDS];
+    uint16_t strip_table[BAJANEW_STRIP_WORDS];
+    uint8_t road_phase[BAJA_ROAD_BANDS];
+    uint16_t strip_words;
+    uint16_t road_slots;
     uint32_t frame;
     int16_t sky_pan;
+    int16_t ground_pan;
     /* Aligned so a row can be cleared and compared four cells at a time; the
      * HUD leaves most of every row untouched. */
     uint8_t fix_shadow[BAJANEW_FIX_ROWS][BAJANEW_FIX_COLUMNS] __attribute__((aligned(4)));

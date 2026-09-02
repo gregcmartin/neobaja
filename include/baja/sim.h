@@ -18,7 +18,11 @@
 #define BAJA_SCREEN_HEIGHT 224
 #define BAJA_SCREEN_CENTER 160
 #define BAJA_HORIZON_Y 84
-#define BAJA_ROAD_BANDS 8
+#define BAJA_ROAD_BANDS 22
+/* Screen pixels per world unit at the player's berth, 8.8 fixed, and how far
+ * across the road the camera follows the player, in 256ths. */
+#define BAJA_PLAYER_SCALE_Q8 11029
+#define BAJA_CAMERA_TRACK_Q8 154
 
 #if defined(__GNUC__)
 #define BAJA_INLINE __inline__ __attribute__((always_inline))
@@ -220,21 +224,44 @@ void baja_track_frame_init(const BajaTrack *track, BajaFp base_s,
 void baja_track_frame_sample(const BajaTrack *track, const BajaTrackFrame *frame,
                              BajaFp s, BajaFp *lateral, BajaFp *rise);
 
+/* One 8.8 by 8.8 product for values under 128 world units or pixels per
+ * unit: a single hardware multiply where the full 16.16 product costs four. */
+static BAJA_INLINE BajaFp baja_fp_mul_q8(BajaFp a, BajaFp b)
+{
+    return (BajaFp)((int32_t)(int16_t)(a >> 8) * (int32_t)(int16_t)(b >> 8));
+}
+
+/* Segments of road ahead of the camera the view resolves: 264 metres at
+ * eight metres each, plus the boundary that closes the last one. */
+#define BAJA_VIEW_SEGMENTS 36
+
 /* The whole scene shares one view: building it per object cost the 68000 an
- * entire frame in redundant track sampling. */
+ * entire frame in redundant track sampling.  The view walks the segments
+ * ahead once, so any point on the road ahead is one interpolation. */
 typedef struct BajaView {
     BajaTrackFrame frame;
     BajaFp camera_lateral;
     BajaFp camera_rise;
+    /* The camera's distance into its segment, and the road's lateral offset
+     * and rise relative to the camera frame at each segment boundary ahead. */
+    BajaFp local;
+    BajaFp seg_lateral[BAJA_VIEW_SEGMENTS + 1];
+    BajaFp seg_rise[BAJA_VIEW_SEGMENTS + 1];
     /* Suspension travel as a whole-pixel shift applied equally to every band.
      * Feeding it through the projection instead would change each band's
      * height a little every frame, and a band whose height changes needs its
      * shrink rewritten on every one of its hardware sprites. */
     int16_t shake;
-    int16_t reserved;
+    /* Screen column of the player's berth: the lateral offset the camera did
+     * not absorb, softened past the road edge so the car stays in frame. */
+    int16_t player_x;
 } BajaView;
 
 void baja_view_init(const BajaSim *sim, BajaView *view);
+/* Road position at `depth` metres ahead of the camera, in the view frame. */
+void baja_view_sample(const BajaView *view, BajaFp depth, BajaFp *lateral, BajaFp *rise);
+uint8_t baja_project_bands_in(const BajaSim *sim, const BajaView *view,
+                              BajaRoadBand *bands);
 void baja_project_object_in(const BajaSim *sim, const BajaView *view,
                             BajaFp object_s, BajaFp object_e,
                             BajaObjectProjection *projection);
@@ -247,8 +274,8 @@ void baja_sim_begin_race(BajaSim *sim);
 /* Fixed funnel geometry, shared by the projection and the strip generator. */
 extern const int16_t baja_band_dy[BAJA_ROAD_BANDS + 1];
 extern const int16_t baja_band_half_width[BAJA_ROAD_BANDS];
-/* Zero means the band is too close for a readable surface phase: a metre of
- * road crosses it in well under a frame, so it carries one blurred variant. */
+/* Half wavelength of each band's surface phase as a power-of-two shift of the
+ * 16.16 course distance; zero would switch a band's phase off. */
 extern const uint8_t baja_band_stripe_shift[BAJA_ROAD_BANDS];
 
 uint8_t baja_project_bands(const BajaSim *sim, BajaRoadBand *bands);

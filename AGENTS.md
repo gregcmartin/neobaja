@@ -30,10 +30,11 @@ steering and recentering, road consequences, rival independence, collision,
 and race progression. Do not copy or port source, constants, data, maps,
 assets, presentation, names, or trade dress.
 
-Do not revive UltraGrok or depend on a Grok account. If new bitmap art is
-needed, generate genuinely new work with the available provider, retain the
-unaltered raw, identify the real provider/model, and record honest hashes and
-conversion steps.
+Do not revive UltraGrok. On 2026-09-02 Greg widened the art boundary: new
+bitmap art may be generated with his Grok Build account when the approved raws
+do not cover a need. Retain the unaltered raw under `art/raw/grok/`, identify
+the real provider/model, and record honest hashes and conversion steps in
+`art/ART_PROVENANCE.md` and `art/PROMPTS.md`.
 
 Human play is a release gate. Automated tests, telemetry, screenshots, and
 scorecards can support a verdict but cannot override Greg's live MAME result.

@@ -3,6 +3,7 @@
 
 #include "assets.h"
 #include "baja/sim.h"
+#include "bajanew_assets_config.h"
 #include "ng/asset.h"
 
 #define BAJANEW_ROAD_PHASES 2
@@ -15,8 +16,27 @@ typedef struct BajanewSpriteDef {
     uint16_t world_width_q8;
 } BajanewSpriteDef;
 
-extern const NgSpriteFrame *const bajanew_road_frames[BAJA_ROAD_BANDS][BAJANEW_ROAD_PHASES];
-extern const uint8_t bajanew_road_authored_height[BAJA_ROAD_BANDS];
+/* One road band's strip: the sheet, how many tile columns it holds, how many
+ * hardware sprites its on-screen window needs, its tile rows, the palette
+ * slot it owns and the pixel height it was authored at. */
+typedef struct BajanewStripDef {
+    const NgSpriteFrame *frame;
+    uint16_t strip_columns;
+    uint8_t window_columns;
+    uint8_t rows;
+    uint8_t palette;
+    uint8_t authored_height;
+} BajanewStripDef;
+
+extern const BajanewStripDef bajanew_road_strip[BAJA_ROAD_BANDS];
+/* Each band's palette in both surface phases, already hazed for its depth. */
+extern const uint16_t bajanew_road_palette[BAJA_ROAD_BANDS][BAJANEW_ROAD_PHASES][16];
+/* Strip column at which the backdrop layers sit when the road runs straight,
+ * and how far each may pan with a bend. */
+extern const int16_t bajanew_backdrop_origin_x;
+extern const int16_t bajanew_ground_y;
+extern const int16_t bajanew_sky_pan;
+extern const int16_t bajanew_ground_pan;
 extern const BajanewSpriteDef bajanew_scenery[BAJA_SCENERY_KINDS];
 extern const BajanewSpriteDef bajanew_rival[2][BAJANEW_RIVAL_LODS];
 extern const uint8_t bajanew_rival_lod_width[BAJANEW_RIVAL_LODS];

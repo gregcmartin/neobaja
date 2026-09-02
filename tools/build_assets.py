@@ -19,8 +19,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fixfont
 import road_strips
 from bajaart import (ASSETS, FUNNEL_K, HORIZON_Y, RAW, ROOT, SOURCE, TEX_U_SPAN,
-                     TEX_W, band_tables, box_resize, hard_alpha, load_rgba,
-                     neo_quantise, pick_palette, save_sheet, sha256, write_json)
+                     TEX_W, band_tables, box_resize, hard_alpha, hex_rgb, load_rgba,
+                     neo_quantise, neo_word, pick_palette, save_sheet, sha256,
+                     write_json)
 
 SPLASH_SOURCE = ROOT / "02_REFERENCE_LIBRARY/developer-splash/devsplashlogo.jpg"
 
@@ -33,8 +34,21 @@ PLAYER_FRAME = (112, 96)
 RIVAL_LODS = [(96, 96), (64, 64), (32, 32), (16, 16)]
 
 SCREEN_W, SCREEN_H = 320, 224
-BACKDROP_W = 640
-BACKDROP_H = 176
+# Backdrop layers.  Both are cut from one scaling of the plate so the join at
+# the horizon is seamless: the sky layer pans a little with the bends and the
+# ground layer, being nearer, pans more.
+BACKDROP_SCALE = 540.0 / 1498.0
+# The sky stops a few rows above the horizon and the ground layer, cut from
+# the same rows of the plate, takes over there: the join is invisible and the
+# sky's hardware footprint ends where its pixels do.
+GROUND_ABOVE_HORIZON = 4
+SKY_H = HORIZON_Y - GROUND_ABOVE_HORIZON
+GROUND_H = 112
+SKY_PAN = 40
+GROUND_PAN = 60
+# Palette slots handed to the road bands, one per band, above the assets'.
+ROAD_PALETTE_BASE = 32
+ROAD_HAZE = (214, 196, 170)
 
 PLAYER_BOXES = [(6, 169, 383, 586), (420, 191, 840, 592), (877, 255, 1283, 586),
                 (1317, 176, 1725, 592), (1755, 70, 2143, 587)]
@@ -140,45 +154,64 @@ def fit_sprite(rgba: np.ndarray, frame: tuple[int, int], pad: float = 0.98,
 
 # -------------------------------------------------------------------- road --
 
+def shade(colours: list[tuple[int, int, int]], gain: float) -> list[tuple[int, int, int]]:
+    return [tuple(int(round(min(255.0, c * gain))) for c in rgb) for rgb in colours]  # type: ignore[misc]
+
+
+def haze(colours: list[tuple[int, int, int]], depth_m: float) -> list[tuple[int, int, int]]:
+    """Aerial perspective: the far road fades toward the dust in the air."""
+    t = min(0.5, max(0.0, (depth_m - 30.0) / 260.0))
+    return [tuple(int(round(c * (1.0 - t) + h * t)) for c, h in zip(rgb, ROAD_HAZE))  # type: ignore[misc]
+            for rgb in colours]
+
+
+def palette_words(colours: list[tuple[int, int, int]]) -> list[int]:
+    words = [0x8000] + [neo_word(neo_quantise(np.array(c)).tolist()) for c in colours]  # type: ignore[arg-type]
+    while len(words) < 16:
+        words.append(0x8000)
+    return words
+
+
 def build_road(sprites: list[dict]) -> dict:
     strips, report = road_strips.build_sheets()
     note_source(road_strips.PLATE)
-
-    stack = np.concatenate([s.reshape(-1, 4) for _, s, _ in strips], axis=0)
-    palette = pick_palette(stack.reshape(1, -1, 4))
-    while len(palette) < 15:
-        palette.append("#%02X%02X%02X" % (len(palette) * 3, 0, 0))
-    colours = np.array([[int(c[i:i + 2], 16) for i in (1, 3, 5)] for c in palette],
-                       dtype=np.int32)
-
-    # The alternate surface phase re-shades the same pixels through the same
-    # fifteen colours, so both phases cost one palette and half the tiles of a
-    # second painted copy.
-    darker = np.array([c * 0.84 for c in colours])
-    partner = np.argmin(((darker[:, None, :] - colours[None, :, :]) ** 2).sum(axis=2),
-                        axis=1)
-    report["phase_shift"] = {"gain": 0.84,
-                             "index_map": [int(v) for v in partner]}
-
+    palettes = []
     total_columns = 0
-    for name, strip, geometry in strips:
-        quantised = quantise_to(hard_alpha(strip), palette)
-        index = np.argmin(((neo_quantise(quantised[..., :3])[..., None, :]
-                            - colours[None, None, :, :]) ** 2).sum(axis=3), axis=2)
-        phases = geometry["phases"]
-        width = geometry["width"]
-        sheet = np.zeros((geometry["height"], width * phases, 4), dtype=np.int32)
-        sheet[:, :width] = quantised
-        if phases > 1:
-            shifted = quantised.copy()
-            shifted[..., :3] = colours[partner[index]]
-            sheet[:, width:width * 2] = shifted
-        sprites.append(emit(name, sheet, (width, geometry["height"]),
-                            (width // 2, 0), 3, palette,
-                            {"band": geometry["band"], "phases": phases,
-                             "columns_on_screen": geometry["columns_on_screen"]}))
+    for name, strip, verge, geometry in strips:
+        solid = hard_alpha(strip)
+        # Road surface and verge get their own entries so the phase can darken
+        # the verge hard while the surface only breathes.
+        road_pixels = solid.copy()
+        road_pixels[verge, 3] = 0
+        verge_pixels = solid.copy()
+        verge_pixels[~verge, 3] = 0
+        road_palette = pick_palette(road_pixels, 9)
+        verge_palette = pick_palette(verge_pixels, 6) if verge.any() else []
+        palette = road_palette + [c for c in verge_palette if c not in road_palette]
+        while len(palette) < 15:
+            palette.append("#%02X%02X%02X" % (len(palette) * 3, 0, 0))
+        palette = palette[:15]
+        base = [hex_rgb(c) for c in palette]
+        is_verge = [c not in road_palette for c in palette]
+        depth = geometry["depth_mid_m"]
+        phase_a = haze(base, depth)
+        phase_b = haze([shade([c], 0.80 if v else 0.96)[0] for c, v in zip(base, is_verge)], depth)
+        palettes.append({"band": geometry["band"],
+                         "phase_a": palette_words(phase_a),
+                         "phase_b": palette_words(phase_b)})
+        sprites.append(emit(name, solid, (geometry["width"], geometry["height"]),
+                            (geometry["width"] // 2, 0),
+                            ROAD_PALETTE_BASE + geometry["band"], palette,
+                            {"band": geometry["band"], "phases": geometry["phases"],
+                             "columns_on_screen": geometry["columns_on_screen"],
+                             "strip_columns": geometry["tiles_x"],
+                             "tile_rows": geometry["tiles_y"]}))
         total_columns += geometry["columns_on_screen"]
     report["on_screen_columns"] = total_columns
+    report["palettes"] = palettes
+    report["palette_base"] = ROAD_PALETTE_BASE
+    report["haze"] = list(ROAD_HAZE)
+    report["phase_gain"] = {"road": 0.96, "verge": 0.80}
     return report
 
 
@@ -237,54 +270,55 @@ def build_drivers(sprites: list[dict]) -> dict:
 # ---------------------------------------------------------------- backdrop --
 
 def build_backdrop(sprites: list[dict]) -> dict:
-    """One panorama carrying sky, coast and the off-road plane.
+    """Sky and ground layers from one scaling of the Ensenada plate.
 
-    Sky and ground were separate layers with independent parallax until the
-    68000 made the cost plain: a full-width layer is twenty hardware sprite
-    columns whatever its height, and forty columns of backdrop is a luxury this
-    machine cannot pay for alongside the road.  They pan together now.
-
-    The panorama is mirrored about its centre so it wraps without a seam, and
-    the ground half is built only from the plate's verge so no second road is
-    ever painted behind the real bands.
+    The plate is composed with its road vanishing at PLATE_VX, PLATE_VY.  Scaled
+    so its vanishing point lands on the horizon at the neutral pan, its top
+    becomes the sky layer (sea, cliffs, mountains, clouds) and the band below
+    the horizon becomes the ground layer, with the plate's own road painted
+    out by mirroring the hillside inward so no second road ever shows behind
+    the real bands.  Neither layer is mirrored end to end: each is simply wide
+    enough for its pan.
     """
     note_source(road_strips.PLATE)
     plate = load_rgba(road_strips.PLATE)
-    # The plate is composed for a 4:3 game screen: scaling its full height to
-    # 224 puts its road vanishing point on our horizon.
-    fitted = box_resize(plate, SCREEN_W, SCREEN_H)
+    width = int(round(plate.shape[1] * BACKDROP_SCALE))
+    height = int(round(plate.shape[0] * BACKDROP_SCALE))
+    fitted = box_resize(plate, width, height).astype(np.float64)
+    vp_x = road_strips.PLATE_VX * BACKDROP_SCALE
+    vp_y = int(round(road_strips.PLATE_VY * BACKDROP_SCALE))
 
-    panel = np.zeros((BACKDROP_H, SCREEN_W, 4), dtype=np.float64)
-    panel[:HORIZON_Y] = fitted[:HORIZON_Y]
+    sky_top = vp_y - HORIZON_Y
+    sky = fitted[sky_top:sky_top + SKY_H].copy()
+    sky[..., 3] = 255.0
 
-    # Below the horizon the panel is the plate's own ground, with its road
-    # painted out by mirroring the hillside inward across it.  Tiling a verge
-    # sample instead produced a moire arch that read as a rendering fault
-    # rather than as terrain.
-    plate_cx = SCREEN_W * road_strips.PLATE_VX / 1498.0
-    # The plate's road widens more slowly than this game's funnel, so its
-    # roadway always sits inside the band the real road covers.
-    plate_slope = road_strips.PLATE_K * (1050.0 / SCREEN_H) * (SCREEN_W / 1498.0)
-    for row in range(HORIZON_Y, BACKDROP_H):
-        source = fitted[row].astype(np.float64)
-        half = plate_slope * float(row - HORIZON_Y) + 2.0
-        left_edge = int(round(plate_cx - half))
-        right_edge = int(round(plate_cx + half))
-        line = source.copy()
-        for x in range(max(0, left_edge), min(SCREEN_W, right_edge + 1)):
-            if x <= plate_cx:
-                mirrored = 2 * left_edge - x
-            else:
-                mirrored = 2 * right_edge - x
-            line[x] = source[int(np.clip(mirrored, 0, SCREEN_W - 1))]
-        panel[row] = line
-        panel[row, :, 3] = 255.0
+    ground = fitted[vp_y - GROUND_ABOVE_HORIZON:vp_y - GROUND_ABOVE_HORIZON + GROUND_H].copy()
+    plate_slope = road_strips.PLATE_K
+    for row in range(GROUND_ABOVE_HORIZON, GROUND_H):
+        source = ground[row].copy()
+        half = plate_slope * float(row - GROUND_ABOVE_HORIZON) + 2.0
+        left_edge = int(round(vp_x - half))
+        right_edge = int(round(vp_x + half))
+        for x in range(max(0, left_edge), min(width, right_edge + 1)):
+            mirrored = 2 * left_edge - x if x <= vp_x else 2 * right_edge - x
+            ground[row, x] = source[int(np.clip(mirrored, 0, width - 1))]
+    ground[..., 3] = 255.0
 
-    panorama = np.concatenate([panel[:, ::-1], panel], axis=1).astype(np.int32)
-    palette = pick_palette(panorama)
-    sprites.append(emit("backdrop", panorama, (BACKDROP_W, BACKDROP_H), (0, 0), 1, palette))
-    return {"height": BACKDROP_H, "panorama_width": BACKDROP_W, "mirrored": True,
-            "horizon_row": HORIZON_Y}
+    # Where the neutral window starts on each strip: the vanishing point sits
+    # at the screen centre when the road runs straight.
+    sky_origin = int(round(vp_x)) - SCREEN_W // 2
+    strip_w = (width // 16) * 16
+    sky_palette = pick_palette(sky.astype(np.int32))
+    sprites.append(emit("sky", sky[:, :strip_w].astype(np.int32), (strip_w, SKY_H), (0, 0), 1, sky_palette))
+    ground_palette = pick_palette(ground.astype(np.int32))
+    sprites.append(emit("ground", ground[:, :strip_w].astype(np.int32), (strip_w, GROUND_H), (0, 0), 2,
+                        ground_palette))
+    if sky_origin - SKY_PAN < 0 or sky_origin + SCREEN_W + GROUND_PAN > strip_w:
+        raise SystemExit("backdrop strip is too narrow for its pan")
+    return {"scale": BACKDROP_SCALE, "strip_width": strip_w, "sky_height": SKY_H,
+            "ground_height": GROUND_H, "origin_x": sky_origin,
+            "ground_y": HORIZON_Y - GROUND_ABOVE_HORIZON,
+            "sky_pan": SKY_PAN, "ground_pan": GROUND_PAN, "horizon_row": HORIZON_Y}
 
 
 # ------------------------------------------------------------------ actors --
@@ -404,25 +438,36 @@ def c_identifier(name: str) -> str:
     return "".join(ch if ch.isalnum() else "_" for ch in name)
 
 
-def emit_c_tables(road: dict, scenery: dict, out_dir: Path) -> None:
+def emit_c_tables(road: dict, backdrop: dict, scenery: dict, out_dir: Path) -> None:
     """Emit the frame tables the renderer indexes, so art and code cannot drift."""
     bands = road_strips.strip_geometry()
     lines = [
         "/* Generated by tools/build_assets.py.  Do not edit. */",
         '#include "game/bajanew_assets.h"',
         "",
-        "const NgSpriteFrame *const bajanew_road_frames"
-        "[BAJA_ROAD_BANDS][BAJANEW_ROAD_PHASES] = {",
+        "const BajanewStripDef bajanew_road_strip[BAJA_ROAD_BANDS] = {",
     ]
     for geometry in bands:
         name = f"road{geometry['band']:02d}"
-        second = 1 if geometry["phases"] > 1 else 0
-        lines.append(f"    {{&ng_asset_{name}_frames[0], &ng_asset_{name}_frames[{second}]}},")
+        lines.append(f"    {{&ng_asset_{name}_frames[0], {geometry['tiles_x']}, "
+                     f"{geometry['columns_on_screen']}, {geometry['tiles_y']}, "
+                     f"{ROAD_PALETTE_BASE + geometry['band']}, {geometry['height']}}},")
     lines[-1] = lines[-1].rstrip(",")
     lines += ["};", "",
-              "const uint8_t bajanew_road_authored_height[BAJA_ROAD_BANDS] = {"]
-    lines.append("    " + ", ".join(str(g["height"]) for g in bands))
-    lines += ["};", "", "const BajanewSpriteDef bajanew_scenery[BAJA_SCENERY_KINDS] = {"]
+              "const uint16_t bajanew_road_palette[BAJA_ROAD_BANDS][2][16] = {"]
+    for entry in road["palettes"]:
+        a = ", ".join(f"0x{w:04x}" for w in entry["phase_a"])
+        b = ", ".join(f"0x{w:04x}" for w in entry["phase_b"])
+        lines.append(f"    {{{{{a}}},")
+        lines.append(f"     {{{b}}}}},")
+    lines[-1] = lines[-1].rstrip(",")
+    lines += ["};", "",
+              f"const int16_t bajanew_backdrop_origin_x = {backdrop['origin_x']};",
+              f"const int16_t bajanew_ground_y = {backdrop['ground_y']};",
+              f"const int16_t bajanew_sky_pan = {backdrop['sky_pan']};",
+              f"const int16_t bajanew_ground_pan = {backdrop['ground_pan']};",
+              "",
+              "const BajanewSpriteDef bajanew_scenery[BAJA_SCENERY_KINDS] = {"]
     for name, _cell, _frame, world in SCENERY:
         lines.append(f"    {{&ng_asset_{c_identifier(name)}_frames[0], {int(round(world * 256))}}},")
     lines[-1] = lines[-1].rstrip(",")
@@ -444,6 +489,14 @@ def emit_c_tables(road: dict, scenery: dict, out_dir: Path) -> None:
               f"{{&ng_asset_dust_frames[0], {int(round(DUST_WORLD_M * 256))}}};",
               ""]
     (out_dir / "bajanew_assets.c").write_text("\n".join(lines), encoding="utf-8")
+    # RAM the strip layers need for their prebuilt tile map words.
+    words = sum(g["tiles_x"] * g["tiles_y"] * 2 for g in bands)
+    words += backdrop["strip_width"] // 16 * (backdrop["sky_height"] // 16) * 2
+    words += backdrop["strip_width"] // 16 * (backdrop["ground_height"] // 16) * 2
+    (out_dir / "bajanew_assets_config.h").write_text(
+        "/* Generated by tools/build_assets.py.  Do not edit. */\n"
+        "#ifndef BAJANEW_ASSETS_CONFIG_H\n#define BAJANEW_ASSETS_CONFIG_H\n"
+        f"#define BAJANEW_STRIP_WORDS {words}\n#endif\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -461,9 +514,9 @@ def main() -> None:
         "format": 2,
         "art_policy": {
             "mode": "bajanew_approved_originals",
-            "note": "AGENTS.md forbids reviving Grok; the approved OpenAI raws "
-                    "under art/ and the hand-authored FIX glyphs are the only "
-                    "shipping sources.",
+            "note": "The approved raws under art/ and the hand-authored FIX "
+                    "glyphs are the shipping sources; any new art is generated "
+                    "with Greg's Grok Build account and retained raw under art/.",
             "native_resolution": "320x224",
             "resampling": "area_average_downscale_then_exact_palette_index",
         },
@@ -476,7 +529,7 @@ def main() -> None:
     write_json(ASSETS / "manifest.json", manifest)
     generated = ROOT / "build/assets/generated"
     generated.mkdir(parents=True, exist_ok=True)
-    emit_c_tables(road, scenery, generated)
+    emit_c_tables(road, backdrop, scenery, generated)
     write_json(ROOT / "build/assets/CONVERSION.json", {
         "road": road, "backdrop": backdrop, "splash": splash, "drivers": drivers,
         "player": player, "rivals": rivals,

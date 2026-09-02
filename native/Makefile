@@ -26,7 +26,7 @@ M68K_CFLAGS := -m68000 -std=c11 -O2 -g3 -gdwarf-2 -ffreestanding -fno-builtin \
 M68K_LDFLAGS := -m68000 -nostdlib -Wl,-T,$(ROOT)/native/link.ld \
 	-Wl,-Map,$(BUILD)/m68k/bajanew.map -Wl,--gc-sections
 
-ENGINE_REL := animation audio bank camera collision crash entity fix gameplay \
+ENGINE_REL := animation audio bank camera collision crash entity fix gameplay strip \
 	persistence renderer scene system timing
 HOST_ENGINE_OBJECTS := $(addprefix $(BUILD)/host/engine/,$(addsuffix .o,$(ENGINE_REL)))
 HOST_OBJECTS := $(HOST_ENGINE_OBJECTS) $(BUILD)/host/engine/platform_host.o \

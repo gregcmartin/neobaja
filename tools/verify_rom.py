@@ -9,10 +9,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import zipfile
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
 
 FAILURES: list[str] = []
 
@@ -56,8 +59,10 @@ def main() -> None:
             "the player is missing its steering and airborne poses")
     road_bands = sum(1 for a in assets["assets"] if a["name"].startswith("road"))
     require(road_bands >= 6, "the road is missing bands")
-    require(any(a["name"].startswith("road") and a["frames"] > 1
-                for a in assets["assets"]),
+    tables = (ROOT / "build/assets/generated/bajanew_assets.c").read_text(encoding="utf-8")
+    palettes = re.findall(r"\{\{([^}]*)\},\s*\{([^}]*)\}\}", tables)
+    require(len(palettes) == road_bands, "every road band needs a palette in both phases")
+    require(any(a.strip() != b.strip() for a, b in palettes),
             "no road band carries a second surface phase")
 
     audio = json.loads(args.audio_report.read_text(encoding="utf-8"))
