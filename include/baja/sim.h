@@ -10,7 +10,7 @@
  * never divides to locate a point on the track. */
 #define BAJA_SEGMENT_SHIFT 19
 #define BAJA_RIVAL_COUNT 3
-#define BAJA_SCENERY_COUNT 48
+#define BAJA_SCENERY_COUNT 384
 
 /* Screen contract for the projection.  The renderer may quantise these to
  * sprite tiles and zoom steps but never feeds them back into gameplay. */
@@ -73,6 +73,12 @@ typedef enum BajaSceneryKind {
     BAJA_SCENERY_CHEVRON,
     BAJA_SCENERY_FLAG,
     BAJA_SCENERY_CROWD,
+    BAJA_SCENERY_SIGN_ENSENADA,
+    BAJA_SCENERY_SIGN_PACIFIC,
+    BAJA_SCENERY_SIGN_BAJA,
+    /* Gantries stand over the road itself and are never collided with. */
+    BAJA_SCENERY_GANTRY_START,
+    BAJA_SCENERY_GANTRY_FINISH,
     BAJA_SCENERY_KINDS
 } BajaSceneryKind;
 

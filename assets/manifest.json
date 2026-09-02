@@ -38,7 +38,7 @@
         24,
         0
       ],
-      "palette": 32,
+      "palette": 64,
       "palette_colors": [
         "#CE8429",
         "#8C4A08",
@@ -78,7 +78,7 @@
         24,
         0
       ],
-      "palette": 33,
+      "palette": 65,
       "palette_colors": [
         "#CE8429",
         "#9C5210",
@@ -118,7 +118,7 @@
         24,
         0
       ],
-      "palette": 34,
+      "palette": 66,
       "palette_colors": [
         "#C57B21",
         "#944A10",
@@ -158,7 +158,7 @@
         24,
         0
       ],
-      "palette": 35,
+      "palette": 67,
       "palette_colors": [
         "#BD7321",
         "#D68C31",
@@ -198,7 +198,7 @@
         24,
         0
       ],
-      "palette": 36,
+      "palette": 68,
       "palette_colors": [
         "#CE8429",
         "#944A10",
@@ -238,7 +238,7 @@
         24,
         0
       ],
-      "palette": 37,
+      "palette": 69,
       "palette_colors": [
         "#CE8429",
         "#9C5210",
@@ -278,7 +278,7 @@
         24,
         0
       ],
-      "palette": 38,
+      "palette": 70,
       "palette_colors": [
         "#CE8429",
         "#945210",
@@ -318,7 +318,7 @@
         32,
         0
       ],
-      "palette": 39,
+      "palette": 71,
       "palette_colors": [
         "#C57B21",
         "#944A08",
@@ -358,7 +358,7 @@
         40,
         0
       ],
-      "palette": 40,
+      "palette": 72,
       "palette_colors": [
         "#CE8429",
         "#945210",
@@ -398,7 +398,7 @@
         48,
         0
       ],
-      "palette": 41,
+      "palette": 73,
       "palette_colors": [
         "#CE8429",
         "#9C5210",
@@ -438,7 +438,7 @@
         56,
         0
       ],
-      "palette": 42,
+      "palette": 74,
       "palette_colors": [
         "#BD7321",
         "#D68C31",
@@ -478,7 +478,7 @@
         72,
         0
       ],
-      "palette": 43,
+      "palette": 75,
       "palette_colors": [
         "#CE8429",
         "#944A08",
@@ -518,7 +518,7 @@
         88,
         0
       ],
-      "palette": 44,
+      "palette": 76,
       "palette_colors": [
         "#BD7321",
         "#8C4208",
@@ -558,7 +558,7 @@
         104,
         0
       ],
-      "palette": 45,
+      "palette": 77,
       "palette_colors": [
         "#D68C31",
         "#944A08",
@@ -598,7 +598,7 @@
         128,
         0
       ],
-      "palette": 46,
+      "palette": 78,
       "palette_colors": [
         "#D68C31",
         "#8C4208",
@@ -638,7 +638,7 @@
         152,
         0
       ],
-      "palette": 47,
+      "palette": 79,
       "palette_colors": [
         "#D68C31",
         "#8C4A08",
@@ -678,7 +678,7 @@
         176,
         0
       ],
-      "palette": 48,
+      "palette": 80,
       "palette_colors": [
         "#DE943A",
         "#844208",
@@ -718,7 +718,7 @@
         208,
         0
       ],
-      "palette": 49,
+      "palette": 81,
       "palette_colors": [
         "#BD7319",
         "#6B2900",
@@ -758,7 +758,7 @@
         232,
         0
       ],
-      "palette": 50,
+      "palette": 82,
       "palette_colors": [
         "#DE9431",
         "#6B2900",
@@ -798,7 +798,7 @@
         256,
         0
       ],
-      "palette": 51,
+      "palette": 83,
       "palette_colors": [
         "#CE8429",
         "#A55A10",
@@ -838,7 +838,7 @@
         280,
         0
       ],
-      "palette": 52,
+      "palette": 84,
       "palette_colors": [
         "#C57B21",
         "#944A10",
@@ -878,7 +878,7 @@
         304,
         0
       ],
-      "palette": 53,
+      "palette": 85,
       "palette_colors": [
         "#C57321",
         "#8C4208",
@@ -1486,7 +1486,7 @@
         24,
         31
       ],
-      "palette": 7,
+      "palette": 40,
       "palette_colors": [
         "#F7CE84",
         "#212129",
@@ -1519,6 +1519,46 @@
           "name": "still"
         }
       ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "rock_pale_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 40,
+      "palette_colors": [
+        "#F7CE84",
+        "#212129",
+        "#9C7352",
+        "#4A526B",
+        "#BD9463",
+        "#736310",
+        "#F7E6B5",
+        "#735A4A",
+        "#F7DE9C",
+        "#A57B21",
+        "#194263",
+        "#4A4210",
+        "#313A4A",
+        "#DEB573",
+        "#524A42"
+      ],
+      "source": "source/rock_pale_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
       "frame_height": 32,
       "frame_width": 48,
       "name": "rock_grey",
@@ -1526,7 +1566,7 @@
         24,
         31
       ],
-      "palette": 8,
+      "palette": 41,
       "palette_colors": [
         "#21293A",
         "#B59473",
@@ -1559,6 +1599,46 @@
           "name": "still"
         }
       ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "rock_grey_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 41,
+      "palette_colors": [
+        "#21293A",
+        "#B59473",
+        "#6B5242",
+        "#4A3A3A",
+        "#9C7B63",
+        "#F7CE7B",
+        "#CE7B29",
+        "#21425A",
+        "#635210",
+        "#BD8C4A",
+        "#192121",
+        "#846B52",
+        "#3A3129",
+        "#5A4A42",
+        "#946321"
+      ],
+      "source": "source/rock_grey_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
       "frame_height": 48,
       "frame_width": 48,
       "name": "agave",
@@ -1566,7 +1646,7 @@
         24,
         47
       ],
-      "palette": 9,
+      "palette": 42,
       "palette_colors": [
         "#002129",
         "#CEB563",
@@ -1599,6 +1679,46 @@
           "name": "still"
         }
       ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "agave_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 42,
+      "palette_colors": [
+        "#002129",
+        "#CEB563",
+        "#5A7B42",
+        "#AD5210",
+        "#194A4A",
+        "#424229",
+        "#081010",
+        "#7BA55A",
+        "#DE8C21",
+        "#9C7331",
+        "#FFEF9C",
+        "#3A6B4A",
+        "#083A42",
+        "#293129",
+        "#734A21"
+      ],
+      "source": "source/agave_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
       "frame_height": 32,
       "frame_width": 48,
       "name": "bush",
@@ -1606,7 +1726,7 @@
         24,
         31
       ],
-      "palette": 10,
+      "palette": 43,
       "palette_colors": [
         "#4A5208",
         "#D6AD73",
@@ -1639,6 +1759,46 @@
           "name": "still"
         }
       ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "bush_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 43,
+      "palette_colors": [
+        "#4A5208",
+        "#D6AD73",
+        "#192110",
+        "#AD8400",
+        "#8C6B00",
+        "#8C7363",
+        "#313A4A",
+        "#C5843A",
+        "#313A08",
+        "#6B4A3A",
+        "#192921",
+        "#523A19",
+        "#E69C3A",
+        "#6B5A08",
+        "#945A29"
+      ],
+      "source": "source/bush_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
       "frame_height": 96,
       "frame_width": 64,
       "name": "palm",
@@ -1646,7 +1806,7 @@
         32,
         95
       ],
-      "palette": 11,
+      "palette": 44,
       "palette_colors": [
         "#193108",
         "#E6B573",
@@ -1679,6 +1839,46 @@
           "name": "still"
         }
       ],
+      "frame_height": 32,
+      "frame_width": 16,
+      "name": "palm_far",
+      "origin": [
+        8,
+        31
+      ],
+      "palette": 44,
+      "palette_colors": [
+        "#193108",
+        "#E6B573",
+        "#9C7B00",
+        "#103A63",
+        "#525200",
+        "#5A2908",
+        "#314A00",
+        "#081908",
+        "#C5A500",
+        "#082921",
+        "#6B6B00",
+        "#423A42",
+        "#8C5221",
+        "#311908",
+        "#BD7B3A"
+      ],
+      "source": "source/palm_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
       "frame_height": 80,
       "frame_width": 48,
       "name": "cactus",
@@ -1686,7 +1886,7 @@
         24,
         79
       ],
-      "palette": 12,
+      "palette": 45,
       "palette_colors": [
         "#082921",
         "#8C9410",
@@ -1719,6 +1919,46 @@
           "name": "still"
         }
       ],
+      "frame_height": 32,
+      "frame_width": 16,
+      "name": "cactus_far",
+      "origin": [
+        8,
+        31
+      ],
+      "palette": 45,
+      "palette_colors": [
+        "#082921",
+        "#8C9410",
+        "#4A6319",
+        "#E6AD63",
+        "#214221",
+        "#FFE608",
+        "#8C5229",
+        "#6B7B10",
+        "#4A4A42",
+        "#C57B31",
+        "#BDAD00",
+        "#A58463",
+        "#4A3A21",
+        "#10313A",
+        "#212910"
+      ],
+      "source": "source/cactus_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
       "frame_height": 48,
       "frame_width": 48,
       "name": "chevron",
@@ -1726,7 +1966,7 @@
         24,
         47
       ],
-      "palette": 13,
+      "palette": 46,
       "palette_colors": [
         "#212129",
         "#FFB500",
@@ -1759,6 +1999,46 @@
           "name": "still"
         }
       ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "chevron_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 46,
+      "palette_colors": [
+        "#212129",
+        "#FFB500",
+        "#AD6310",
+        "#9C7B5A",
+        "#423119",
+        "#313A4A",
+        "#C58408",
+        "#5A4A42",
+        "#211010",
+        "#E69400",
+        "#D6A56B",
+        "#6B4210",
+        "#846319",
+        "#F7A500",
+        "#D68429"
+      ],
+      "source": "source/chevron_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
       "frame_height": 64,
       "frame_width": 32,
       "name": "flag",
@@ -1766,7 +2046,7 @@
         16,
         63
       ],
-      "palette": 14,
+      "palette": 47,
       "palette_colors": [
         "#0073EF",
         "#292919",
@@ -1799,6 +2079,46 @@
           "name": "still"
         }
       ],
+      "frame_height": 32,
+      "frame_width": 16,
+      "name": "flag_far",
+      "origin": [
+        8,
+        31
+      ],
+      "palette": 47,
+      "palette_colors": [
+        "#0073EF",
+        "#292919",
+        "#083A84",
+        "#DEAD6B",
+        "#0052BD",
+        "#946331",
+        "#4A4242",
+        "#008CF7",
+        "#C55A19",
+        "#5A5A08",
+        "#0063D6",
+        "#733110",
+        "#A58C6B",
+        "#0042A5",
+        "#9C7B08"
+      ],
+      "source": "source/flag_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
       "frame_height": 48,
       "frame_width": 64,
       "name": "crowd",
@@ -1806,7 +2126,7 @@
         32,
         47
       ],
-      "palette": 15,
+      "palette": 48,
       "palette_colors": [
         "#191919",
         "#E69C42",
@@ -1825,6 +2145,446 @@
         "#3A3A31"
       ],
       "source": "source/crowd.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "crowd_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 48,
+      "palette_colors": [
+        "#191919",
+        "#E69C42",
+        "#007BD6",
+        "#9C3A10",
+        "#08427B",
+        "#5A5A5A",
+        "#DECEBD",
+        "#5A2108",
+        "#9C6B31",
+        "#10294A",
+        "#9C9494",
+        "#CE0808",
+        "#CE6B19",
+        "#635210",
+        "#3A3A31"
+      ],
+      "source": "source/crowd_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 48,
+      "frame_width": 64,
+      "name": "sign_ensenada",
+      "origin": [
+        32,
+        47
+      ],
+      "palette": 49,
+      "palette_colors": [
+        "#EFE6C5",
+        "#101021",
+        "#4A2910",
+        "#D68C42",
+        "#735A4A",
+        "#945208",
+        "#293142",
+        "#DEAD73",
+        "#6B4221",
+        "#9C845A",
+        "#52423A",
+        "#635A08",
+        "#946329",
+        "#BD6B21",
+        "#FFD65A"
+      ],
+      "source": "source/sign_ensenada.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "sign_ensenada_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 49,
+      "palette_colors": [
+        "#EFE6C5",
+        "#101021",
+        "#4A2910",
+        "#D68C42",
+        "#735A4A",
+        "#945208",
+        "#293142",
+        "#DEAD73",
+        "#6B4221",
+        "#9C845A",
+        "#52423A",
+        "#635A08",
+        "#946329",
+        "#BD6B21",
+        "#FFD65A"
+      ],
+      "source": "source/sign_ensenada_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 48,
+      "frame_width": 64,
+      "name": "sign_pacific",
+      "origin": [
+        32,
+        47
+      ],
+      "palette": 50,
+      "palette_colors": [
+        "#EFE6C5",
+        "#101021",
+        "#4A3110",
+        "#D68C42",
+        "#735A4A",
+        "#9C5208",
+        "#293142",
+        "#DEAD73",
+        "#6B4221",
+        "#9C845A",
+        "#52423A",
+        "#6B5A08",
+        "#946329",
+        "#B57321",
+        "#FFD65A"
+      ],
+      "source": "source/sign_pacific.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "sign_pacific_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 50,
+      "palette_colors": [
+        "#EFE6C5",
+        "#101021",
+        "#4A3110",
+        "#D68C42",
+        "#735A4A",
+        "#9C5208",
+        "#293142",
+        "#DEAD73",
+        "#6B4221",
+        "#9C845A",
+        "#52423A",
+        "#6B5A08",
+        "#946329",
+        "#B57321",
+        "#FFD65A"
+      ],
+      "source": "source/sign_pacific_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 48,
+      "frame_width": 64,
+      "name": "sign_baja",
+      "origin": [
+        32,
+        47
+      ],
+      "palette": 51,
+      "palette_colors": [
+        "#EFE6C5",
+        "#101021",
+        "#4A2910",
+        "#D68C42",
+        "#735A4A",
+        "#945208",
+        "#293142",
+        "#DEAD73",
+        "#6B4221",
+        "#9C845A",
+        "#52423A",
+        "#635A08",
+        "#946329",
+        "#BD6B21",
+        "#FFD65A"
+      ],
+      "source": "source/sign_baja.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "sign_baja_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 51,
+      "palette_colors": [
+        "#EFE6C5",
+        "#101021",
+        "#4A2910",
+        "#D68C42",
+        "#735A4A",
+        "#945208",
+        "#293142",
+        "#DEAD73",
+        "#6B4221",
+        "#9C845A",
+        "#52423A",
+        "#635A08",
+        "#946329",
+        "#BD6B21",
+        "#FFD65A"
+      ],
+      "source": "source/sign_baja_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 64,
+      "frame_width": 144,
+      "name": "gantry_start",
+      "origin": [
+        72,
+        63
+      ],
+      "palette": 52,
+      "palette_colors": [
+        "#EFE6C5",
+        "#101021",
+        "#C52921",
+        "#4A2910",
+        "#FFCE10",
+        "#B55A10",
+        "#AD9473",
+        "#6B6308",
+        "#FFF763",
+        "#735242",
+        "#DE9C52",
+        "#A57B4A",
+        "#313A31",
+        "#7B4A19",
+        "#A56B29"
+      ],
+      "source": "source/gantry_start.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "gantry_start_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 52,
+      "palette_colors": [
+        "#EFE6C5",
+        "#101021",
+        "#C52921",
+        "#4A2910",
+        "#FFCE10",
+        "#B55A10",
+        "#AD9473",
+        "#6B6308",
+        "#FFF763",
+        "#735242",
+        "#DE9C52",
+        "#A57B4A",
+        "#313A31",
+        "#7B4A19",
+        "#A56B29"
+      ],
+      "source": "source/gantry_start_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 64,
+      "frame_width": 144,
+      "name": "gantry_finish",
+      "origin": [
+        72,
+        63
+      ],
+      "palette": 53,
+      "palette_colors": [
+        "#EFE6C5",
+        "#101021",
+        "#C52921",
+        "#4A2910",
+        "#FFCE10",
+        "#B55A10",
+        "#AD9473",
+        "#6B6308",
+        "#FFF763",
+        "#735242",
+        "#DE9C52",
+        "#A57B4A",
+        "#313A31",
+        "#7B4A19",
+        "#A56B29"
+      ],
+      "source": "source/gantry_finish.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "gantry_finish_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 53,
+      "palette_colors": [
+        "#EFE6C5",
+        "#101021",
+        "#C52921",
+        "#4A2910",
+        "#FFCE10",
+        "#B55A10",
+        "#AD9473",
+        "#6B6308",
+        "#FFF763",
+        "#735242",
+        "#DE9C52",
+        "#A57B4A",
+        "#313A31",
+        "#7B4A19",
+        "#A56B29"
+      ],
+      "source": "source/gantry_finish_far.png"
     },
     {
       "clips": [
@@ -1850,7 +2610,7 @@
         16,
         28
       ],
-      "palette": 16,
+      "palette": 60,
       "palette_colors": [
         "#F7BD6B",
         "#B54A10",

@@ -423,15 +423,22 @@ static void test_scenery_sits_off_the_racing_line(void)
     for (i = 0; i < BAJA_SCENERY_KINDS; ++i) kinds[i] = 0;
     for (i = 0; i < BAJA_SCENERY_COUNT; ++i) {
         BajaFp e = sim.scenery[i].e;
-        REQUIRE(sim.scenery[i].kind < BAJA_SCENERY_KINDS);
-        REQUIRE(e > BAJA_FP_ONE || e < -BAJA_FP_ONE);
+        uint8_t kind = sim.scenery[i].kind;
+        REQUIRE(kind < BAJA_SCENERY_KINDS);
+        /* Gantries stand over the road; everything else stays off it. */
+        if (kind == BAJA_SCENERY_GANTRY_START || kind == BAJA_SCENERY_GANTRY_FINISH) {
+            REQUIRE(e == 0);
+        } else {
+            REQUIRE(e > BAJA_FP_ONE || e < -BAJA_FP_ONE);
+        }
         REQUIRE(sim.scenery[i].s >= 0);
-        REQUIRE(sim.scenery[i].s < sim.track.total_length);
-        kinds[sim.scenery[i].kind] = 1;
+        if (sim.scenery[i].s < sim.track.total_length) kinds[kind] = 1;
         if (i > 0) REQUIRE(sim.scenery[i].s > sim.scenery[i - 1].s);
     }
     for (i = 0; i < BAJA_SCENERY_KINDS; ++i) distinct += kinds[i];
-    REQUIRE(distinct >= 6);
+    REQUIRE(distinct >= 12);
+    /* Dense enough to dress the course: a prop every dozen metres or so. */
+    REQUIRE(sim.scenery[300].s < sim.track.total_length);
     ++checks;
 }
 

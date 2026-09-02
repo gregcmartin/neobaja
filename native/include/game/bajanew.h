@@ -4,6 +4,7 @@
 #include "baja/sim.h"
 #include "game/bajanew_assets.h"
 #include "ng/input.h"
+#include "ng/pool.h"
 #include "ng/renderer.h"
 #include "ng/strip.h"
 
@@ -18,12 +19,33 @@
 #define BAJANEW_FIELDS_PER_FRAME 2
 #define BAJANEW_SIM_STEPS_PER_FRAME 2
 
+#define BAJANEW_POOL_SLOTS (NG_HW_SPRITE_CAPACITY - BAJANEW_STRIP_SLOTS)
+/* World objects a frame can hold before the nearest ones win. */
+#define BAJANEW_DRAW_ITEMS 40
+
+/* One object waiting to be placed, nearest first. */
+typedef struct BajanewDrawItem {
+    const NgSpriteFrame *frame;
+    int16_t x;
+    int16_t y;
+    uint16_t depth;
+    uint8_t zoom_x;
+    uint8_t zoom_y;
+    uint8_t flags;
+    uint8_t palette;
+} BajanewDrawItem;
+
 /* The renderer never writes gameplay state.  Everything below is presentation
  * derived from the immutable simulation snapshot. */
 typedef struct BajanewGame {
     BajaSim sim;
+    /* Kept for its scanline accounting; every sprite is placed directly. */
     NgRenderer renderer;
     NgRenderStats last_render;
+    NgSpritePool pool;
+    NgSpriteCache pool_cache[BAJANEW_POOL_SLOTS];
+    BajanewDrawItem items[BAJANEW_DRAW_ITEMS];
+    uint16_t item_count;
     /* The backdrop and the road own fixed hardware sprites beneath everything
      * the renderer places, so a frame costs them only the words that moved. */
     NgStripLayer sky;
@@ -33,6 +55,7 @@ typedef struct BajanewGame {
     uint8_t road_phase[BAJA_ROAD_BANDS];
     uint16_t strip_words;
     uint16_t road_slots;
+    uint16_t scenery_cursor;
     uint32_t frame;
     int16_t sky_pan;
     int16_t ground_pan;

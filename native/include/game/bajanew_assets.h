@@ -38,6 +38,7 @@ extern const int16_t bajanew_ground_y;
 extern const int16_t bajanew_sky_pan;
 extern const int16_t bajanew_ground_pan;
 extern const BajanewSpriteDef bajanew_scenery[BAJA_SCENERY_KINDS];
+extern const BajanewSpriteDef bajanew_scenery_far[BAJA_SCENERY_KINDS];
 extern const BajanewSpriteDef bajanew_rival[2][BAJANEW_RIVAL_LODS];
 extern const uint8_t bajanew_rival_lod_width[BAJANEW_RIVAL_LODS];
 extern const BajanewSpriteDef bajanew_player_def;

@@ -93,6 +93,40 @@ static const BajaFp band_edge_depth_fp[BAJA_ROAD_BANDS + 1] = {
     445735, 384338, 336021, 298350, 269461, 245775, 211280
 };
 
+/* Pixels per metre at each depth the object projection handles, in 8.8: one
+ * eighth of a metre apart up to 32 metres, then a metre apart to the far end
+ * of the funnel.  Filled once so no object ever costs a division. */
+#define SCALE_FINE_ENTRIES 256
+#define SCALE_FINE_SHIFT (BAJA_FP_SHIFT - 3)
+#define SCALE_FAR_ENTRIES 240
+static uint16_t scale_by_depth[SCALE_FINE_ENTRIES + SCALE_FAR_ENTRIES];
+/* Which band owns each whole metre of depth, for draw order and crests. */
+static uint8_t band_by_depth[SCALE_FAR_ENTRIES + 32];
+static uint8_t depth_tables_ready = 0;
+
+static void build_depth_tables(BajaServiceHook service_hook)
+{
+    uint32_t i;
+    if (depth_tables_ready) return;
+    for (i = 1; i < SCALE_FINE_ENTRIES; ++i) {
+        uint32_t scale = (40960UL * 8UL) / i;
+        scale_by_depth[i] = (uint16_t)(scale > 65535UL ? 65535UL : scale);
+        if ((i & 63U) == 0U && service_hook != NULL) service_hook();
+    }
+    scale_by_depth[0] = 65535U;
+    for (i = 0; i < SCALE_FAR_ENTRIES; ++i) {
+        scale_by_depth[SCALE_FINE_ENTRIES + i] = (uint16_t)(40960UL / (32U + i));
+        if ((i & 63U) == 0U && service_hook != NULL) service_hook();
+    }
+    for (i = 0; i < SCALE_FAR_ENTRIES + 32; ++i) {
+        BajaFp depth = baja_fp_from_int((int32_t)i);
+        uint8_t band = BAJA_ROAD_BANDS - 1;
+        while (band > 0 && depth > band_depth_fp[band]) --band;
+        band_by_depth[i] = band;
+    }
+    depth_tables_ready = 1;
+}
+
 static void zero_bytes(void *memory, uint32_t bytes)
 {
     uint8_t *cursor = (uint8_t *)memory;
@@ -294,46 +328,107 @@ void baja_track_frame_sample(const BajaTrack *track, const BajaTrackFrame *frame
     }
 }
 
+/* Append a prop, keeping the list strictly ordered by course distance so the
+ * renderer can window it with one cursor. */
+static void place_scenery(BajaSim *sim, uint16_t *count, BajaFp s, BajaFp e, uint8_t kind)
+{
+    BajaScenery *item;
+    if (*count >= BAJA_SCENERY_COUNT) return;
+    if (*count > 0U && s <= sim->scenery[*count - 1U].s) {
+        s = sim->scenery[*count - 1U].s + FP_RATIO(1, 2);
+    }
+    if (s >= sim->track.total_length) return;
+    item = &sim->scenery[*count];
+    item->s = s;
+    item->e = e;
+    item->kind = kind;
+    item->reserved[0] = 0;
+    item->reserved[1] = 0;
+    item->reserved[2] = 0;
+    ++*count;
+}
+
+/* Ensenada's roadside: the sea side to the left is palms, pale rock, agave
+ * and flags; the hillside to the right is cactus, grey rock and scrub.
+ * Chevrons line the outside of every real bend, crowds gather at the start
+ * and the finish, a sign passes every few hundred metres, and gantries stand
+ * over the road at each end.  Everything is read from the course, so the
+ * same course always dresses the same way. */
 static void reset_scenery(BajaSim *sim)
 {
-    static const uint8_t left_kinds[] = {
-        BAJA_SCENERY_PALM, BAJA_SCENERY_ROCK_PALE, BAJA_SCENERY_BUSH,
-        BAJA_SCENERY_ROCK_GREY, BAJA_SCENERY_FLAG, BAJA_SCENERY_AGAVE
+    static const uint8_t sea_kinds[8] = {
+        BAJA_SCENERY_PALM, BAJA_SCENERY_ROCK_PALE, BAJA_SCENERY_AGAVE,
+        BAJA_SCENERY_BUSH, BAJA_SCENERY_ROCK_PALE, BAJA_SCENERY_FLAG,
+        BAJA_SCENERY_AGAVE, BAJA_SCENERY_ROCK_GREY
     };
-    static const uint8_t right_kinds[] = {
-        BAJA_SCENERY_CACTUS, BAJA_SCENERY_ROCK_GREY, BAJA_SCENERY_CROWD,
-        BAJA_SCENERY_AGAVE, BAJA_SCENERY_ROCK_PALE, BAJA_SCENERY_BUSH
+    static const uint8_t hill_kinds[8] = {
+        BAJA_SCENERY_CACTUS, BAJA_SCENERY_ROCK_GREY, BAJA_SCENERY_AGAVE,
+        BAJA_SCENERY_BUSH, BAJA_SCENERY_CACTUS, BAJA_SCENERY_ROCK_PALE,
+        BAJA_SCENERY_BUSH, BAJA_SCENERY_ROCK_GREY
     };
-    BajaFp spacing = baja_fp_div(sim->track.total_length,
-                                 baja_fp_from_int(BAJA_SCENERY_COUNT));
-    uint16_t i;
+    static const uint8_t sign_kinds[3] = {
+        BAJA_SCENERY_SIGN_ENSENADA, BAJA_SCENERY_SIGN_PACIFIC, BAJA_SCENERY_SIGN_BAJA
+    };
+    const BajaFp total = sim->track.total_length;
+    const BajaFp step = FP_RATIO(11, 1);
+    BajaFp s = FP_RATIO(6, 1);
+    uint16_t count = 0;
+    uint16_t slot = 0;
+    uint8_t signs = 0;
 
-    for (i = 0; i < BAJA_SCENERY_COUNT; ++i) {
-        BajaScenery *item = &sim->scenery[i];
-        int32_t jitter = course_noise(spacing * (BajaFp)i, 7U + i);
-        BajaFp offset = FP_RATIO(3, 2) + ((BajaFp)(jitter + 256) * 6);
+    place_scenery(sim, &count, FP_RATIO(4, 1), 0, BAJA_SCENERY_GANTRY_START);
+    while (s < total - FP_RATIO(24, 1)) {
+        int32_t noise = course_noise(s, 7U + slot);
+        int32_t pick = course_noise(s, 31U + slot);
         BajaFp curve;
-        item->s = spacing * (BajaFp)i + baja_fp_from_int(20);
-        baja_track_sample(&sim->track, item->s, NULL, NULL, &curve);
-        if ((i & 1U) != 0U) {
-            item->e = offset;
-            item->kind = right_kinds[i % (uint16_t)(sizeof(right_kinds))];
+        BajaFp offset = FP_RATIO(125, 100) + ((BajaFp)(noise + 256) * 90);
+        uint8_t left = (uint8_t)((slot & 1U) == 0U);
+        baja_track_sample(&sim->track, s, NULL, NULL, &curve);
+
+        if (curve > FP_RATIO(15, 100) || curve < -FP_RATIO(15, 100)) {
+            /* The outside of a bend is lined with chevrons the player can
+             * read before arriving; the inside keeps its scrub. */
+            BajaFp outside = curve > 0 ? -FP_RATIO(13, 10) : FP_RATIO(13, 10);
+            BajaFp inside = -outside + (curve > 0 ? (BajaFp)(noise + 256) * 60
+                                                  : -(BajaFp)(noise + 256) * 60);
+            if ((slot & 1U) == 0U) {
+                place_scenery(sim, &count, s, outside, BAJA_SCENERY_CHEVRON);
+            } else {
+                place_scenery(sim, &count, s, inside,
+                              curve > 0 ? hill_kinds[pick & 7] : sea_kinds[pick & 7]);
+            }
+        } else if (s < FP_RATIO(110, 1) || s > total - FP_RATIO(170, 1)) {
+            /* Spectators and flags crowd both ends of the course. */
+            place_scenery(sim, &count, s, left ? -FP_RATIO(13, 10) : FP_RATIO(13, 10),
+                          ((slot >> 1) & 1U) ? BAJA_SCENERY_FLAG : BAJA_SCENERY_CROWD);
+        } else if ((slot % 44U) == 20U) {
+            place_scenery(sim, &count, s, left ? -FP_RATIO(15, 10) : FP_RATIO(15, 10),
+                          sign_kinds[signs % 3U]);
+            ++signs;
         } else {
-            item->e = -offset;
-            item->kind = left_kinds[i % (uint16_t)(sizeof(left_kinds))];
+            place_scenery(sim, &count, s, left ? -offset : offset,
+                          left ? sea_kinds[pick & 7] : hill_kinds[pick & 7]);
+            /* Now and then the other side gets something too. */
+            if ((pick & 0x70) == 0x70) {
+                place_scenery(sim, &count, s + FP_RATIO(3, 1),
+                              left ? offset + FP_RATIO(2, 10) : -offset - FP_RATIO(2, 10),
+                              left ? hill_kinds[(pick >> 3) & 7] : sea_kinds[(pick >> 3) & 7]);
+            }
         }
-        /* Chevrons mark the outside of a real bend so the player can read it
-         * before arriving. */
-        if (curve > FP_RATIO(15, 100)) {
-            item->e = -(FP_RATIO(13, 10));
-            item->kind = BAJA_SCENERY_CHEVRON;
-        } else if (curve < -FP_RATIO(15, 100)) {
-            item->e = FP_RATIO(13, 10);
-            item->kind = BAJA_SCENERY_CHEVRON;
-        }
+        s += step + (BajaFp)noise * 8;
+        ++slot;
+    }
+    place_scenery(sim, &count, total - FP_RATIO(14, 1), 0, BAJA_SCENERY_GANTRY_FINISH);
+    while (count < BAJA_SCENERY_COUNT) {
+        /* Unused entries park past the finish where nothing draws them. */
+        BajaScenery *item = &sim->scenery[count];
+        item->s = total + (BajaFp)count;
+        item->e = FP_RATIO(2, 1);
+        item->kind = BAJA_SCENERY_BUSH;
         item->reserved[0] = 0;
         item->reserved[1] = 0;
         item->reserved[2] = 0;
+        ++count;
     }
 }
 
@@ -368,6 +463,7 @@ static void reset_rivals(BajaSim *sim)
 void baja_sim_init_cooperative(BajaSim *sim, BajaServiceHook service_hook)
 {
     zero_bytes(sim, (uint32_t)sizeof(*sim));
+    build_depth_tables(service_hook);
     baja_track_init_cooperative(&sim->track, service_hook);
     reset_scenery(sim);
     sim->phase = BAJA_PHASE_SPLASH;
@@ -747,21 +843,22 @@ void baja_view_sample(const BajaView *view, BajaFp depth, BajaFp *lateral, BajaF
 {
     BajaFp ahead = view->local + depth;
     uint32_t k = (uint32_t)ahead >> BAJA_SEGMENT_SHIFT;
-    BajaFp t;
+    int32_t t8;
     if (ahead < 0) { k = 0; ahead = 0; }
     if (k >= BAJA_VIEW_SEGMENTS) {
         if (lateral != NULL) *lateral = view->seg_lateral[BAJA_VIEW_SEGMENTS];
         if (rise != NULL) *rise = view->seg_rise[BAJA_VIEW_SEGMENTS];
         return;
     }
-    t = (ahead & (SEGMENT_LENGTH - 1)) >> SEGMENT_T_SHIFT;
+    /* Eight bits of fraction: one 16 by 16 multiply per interpolation. */
+    t8 = (int32_t)(((uint32_t)ahead >> (BAJA_SEGMENT_SHIFT - 8)) & 0xffU);
     if (lateral != NULL) {
         *lateral = view->seg_lateral[k] +
-                   baja_fp_mul(view->seg_lateral[k + 1] - view->seg_lateral[k], t);
+                   (int32_t)(int16_t)((view->seg_lateral[k + 1] - view->seg_lateral[k]) >> 8) * t8;
     }
     if (rise != NULL) {
         *rise = view->seg_rise[k] +
-                baja_fp_mul(view->seg_rise[k + 1] - view->seg_rise[k], t);
+                (int32_t)(int16_t)((view->seg_rise[k + 1] - view->seg_rise[k]) >> 8) * t8;
     }
 }
 
@@ -880,23 +977,22 @@ void baja_project_object_in(const BajaSim *sim, const BajaView *view,
      * depth this projection handles, and would overflow the 8.8 products. */
     if (lateral >= baja_fp_from_int(120) || lateral <= -baja_fp_from_int(120)) return;
 
-    /* Screen pixels per world unit at this depth, as one 32-bit divide.
-     * Depth is taken in sixteenths of a metre so the step is under two percent
-     * even alongside the player. */
-    {
-        uint32_t depth_q4 = (uint32_t)(depth >> 12);
-        if (depth_q4 == 0U) depth_q4 = 1U;
-        scale = (int32_t)(655360UL / depth_q4);   /* 8.8 pixels per metre */
+    /* Screen pixels per metre at this depth, from the table. */
+    if (depth < baja_fp_from_int(32)) {
+        scale = scale_by_depth[(uint32_t)depth >> SCALE_FINE_SHIFT];
+    } else {
+        scale = scale_by_depth[SCALE_FINE_ENTRIES + ((uint32_t)depth >> BAJA_FP_SHIFT) - 32U];
     }
-    x = (int32_t)(int16_t)(lateral >> 8) * scale;
-    y = (int32_t)(int16_t)((view->camera_rise - rise) >> 8) * scale;
-    projection->screen_x = (int16_t)(BAJA_SCREEN_CENTER + (x >> 16));
-    projection->ground_y = (int16_t)(BAJA_HORIZON_Y + view->shake + (y >> 16));
+    /* Half the scale keeps both factors signed 16-bit for one hardware
+     * multiply; the shift takes the half back out. */
+    x = (int32_t)(int16_t)(lateral >> 8) * (int32_t)(int16_t)(scale >> 1);
+    y = (int32_t)(int16_t)((view->camera_rise - rise) >> 8) * (int32_t)(int16_t)(scale >> 1);
+    projection->screen_x = (int16_t)(BAJA_SCREEN_CENTER + (x >> 15));
+    projection->ground_y = (int16_t)(BAJA_HORIZON_Y + view->shake + (y >> 15));
     projection->depth = (uint16_t)(depth >> BAJA_FP_SHIFT);
-    projection->scale_q8 = (uint16_t)(scale > 65535 ? 65535 : scale);
+    projection->scale_q8 = (uint16_t)scale;
 
-    band = BAJA_ROAD_BANDS - 1;
-    while (band > 0 && depth > band_depth_fp[band]) --band;
+    band = band_by_depth[(uint32_t)depth >> BAJA_FP_SHIFT];
     projection->band = band;
     projection->visible = (uint8_t)(projection->screen_x > -96 &&
                                     projection->screen_x < 416 &&

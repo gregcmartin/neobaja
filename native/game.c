@@ -22,15 +22,11 @@
  * below all of them in fixed hardware sprites, so an object is always over the
  * road; an object the road should hide - one whose feet fall behind a crest -
  * is simply not drawn. */
-#define PRIORITY_BACKDROP 0
-#define PRIORITY_ON_BAND(b) ((uint8_t)(1U + (uint8_t)(b)))
-#define PRIORITY_DUST 200
-#define PRIORITY_PLAYER 204
 
-/* Scenery on screen at once.  The hardware sprite table is the hard limit and
- * the road already claims most of it, so the field is capped rather than left
+/* Hardware sprite columns the scenery may use in one frame.  The road claims
+ * most of the table, so the field is budgeted nearest first rather than left
  * to drop columns at the worst possible moment. */
-#define SCENERY_BUDGET 8
+#define SCENERY_COLUMN_BUDGET 32
 /* Baseline the selection portraits stand on. */
 #define DRIVER_BASE_Y 190
 
@@ -195,60 +191,90 @@ static void flush_fix(BajanewGame *game)
 
 /* ---------------------------------------------------------------- sprites -- */
 
-static void submit(NgRenderer *renderer, const NgSpriteFrame *frame,
-                   int16_t x, int16_t y, uint8_t priority,
-                   uint8_t zoom_x, uint8_t zoom_y, uint8_t flags)
+/* Place a sprite straight into the pool: no sorting, so the caller draws
+ * nearest first. */
+static void place(BajanewGame *game, const NgSpriteFrame *frame,
+                  int16_t x, int16_t y, uint8_t zoom_x, uint8_t zoom_y, uint8_t flags)
 {
-    NgRenderOptions options;
-    options.x = x;
-    options.y = y;
-    options.priority = priority;
-    options.palette_override = 0xffU;
-    options.flags = flags;
-    options.zoom_x = zoom_x;
-    options.zoom_y = zoom_y;
-    options.reserved = 0;
-    (void)ng_renderer_submit_ex(renderer, frame, &options);
+    uint16_t columns = ng_pool_draw(&game->pool, frame, x, y, zoom_x, zoom_y, flags,
+                                    frame->palette);
+    if (columns != 0U) {
+        int16_t shown_rows = (int16_t)((frame->height_tiles * (zoom_y + 1) + 255) >> 8);
+        if (shown_rows < 1) shown_rows = 1;
+        ng_renderer_mark_span(&game->renderer,
+                              (int16_t)(y - (int16_t)((frame->origin_y * (zoom_y + 1)) >> 8)),
+                              (int16_t)(shown_rows * 16), columns);
+    }
 }
 
-/* Size a world object from the shared projection scale and draw it standing on
- * the road surface.  Choosing a nearer LOD keeps the shrink factor mild, which
- * is what stops a distant vehicle turning into sparkling noise. */
+/* Queue a world object, keeping the queue ordered nearest first.  Scenery
+ * arrives already ordered, so a rival or a prop out of turn only shuffles the
+ * few entries behind it. */
+static void queue_item(BajanewGame *game, const NgSpriteFrame *frame, int16_t x, int16_t y,
+                       uint16_t depth, uint8_t zoom_x, uint8_t zoom_y, uint8_t flags)
+{
+    BajanewDrawItem *items = game->items;
+    uint16_t at = game->item_count;
+    if (at >= BAJANEW_DRAW_ITEMS) return;
+    while (at > 0U && items[at - 1U].depth > depth) {
+        items[at] = items[at - 1U];
+        --at;
+    }
+    items[at].frame = frame;
+    items[at].x = x;
+    items[at].y = y;
+    items[at].depth = depth;
+    items[at].zoom_x = zoom_x;
+    items[at].zoom_y = zoom_y;
+    items[at].flags = flags;
+    items[at].palette = frame->palette;
+    ++game->item_count;
+}
+
+static void draw_items(BajanewGame *game)
+{
+    const BajanewDrawItem *item = game->items;
+    uint16_t remaining;
+    for (remaining = game->item_count; remaining != 0U; --remaining, ++item) {
+        place(game, item->frame, item->x, item->y, item->zoom_x, item->zoom_y, item->flags);
+    }
+    game->item_count = 0;
+}
+
 /* 65536 / n for the tile counts a sprite frame can have, so sizing an object
  * costs multiplies instead of the 68000's software division. */
 static const uint16_t reciprocal_tiles[9] = {
     0, 65535, 32768, 21845, 16384, 13107, 10923, 9362, 8192
 };
 
-static void submit_world_sprite(BajanewGame *game, const BajanewSpriteDef *def,
-                                const BajaObjectProjection *projection,
-                                uint8_t priority, uint8_t flags)
+/* Size a world object from the shared projection scale and queue it standing
+ * on the road surface.  Choosing a nearer LOD keeps the shrink factor mild,
+ * which is what stops a distant vehicle turning into sparkling noise. */
+static void queue_world_sprite(BajanewGame *game, const BajanewSpriteDef *def,
+                               const BajaObjectProjection *projection, uint8_t flags)
 {
     uint32_t pixels;
     uint16_t width_tiles;
-    uint16_t height_tiles;
     int32_t zoom_x;
     int32_t zoom_y;
 
     if (def->frame == 0) return;
     width_tiles = def->frame->width_tiles;
-    height_tiles = def->frame->height_tiles;
-    if (width_tiles == 0U || width_tiles > 8U || height_tiles == 0U) return;
-    (void)height_tiles;
-    pixels = ((uint32_t)def->world_width_q8 * (uint32_t)projection->scale_q8) >> 16;
+    if (width_tiles == 0U || width_tiles > 8U) return;
+    /* Both products are 16 by 16: the hardware multiply, not libgcc's. */
+    pixels = ((uint32_t)(uint16_t)def->world_width_q8 * (uint16_t)projection->scale_q8) >> 16;
     if (pixels == 0U) return;
     if (pixels > 2048U) pixels = 2048U;
 
-    zoom_x = (int32_t)((pixels * reciprocal_tiles[width_tiles]) >> 16) - 1;
+    zoom_x = (int32_t)(((uint32_t)(uint16_t)pixels * reciprocal_tiles[width_tiles]) >> 16) - 1;
     if (zoom_x < 0) zoom_x = 0;
     if (zoom_x > 15) zoom_x = 15;
     /* Uniform scale: shrinking each tile column to zoom_x+1 pixels means the
      * rows must shrink by the same fraction, and that fraction is the whole of
      * zoom_y regardless of how many tile rows the frame has. */
     zoom_y = ((zoom_x + 1) << 4) - 1;
-
-    submit(&game->renderer, def->frame, projection->screen_x, projection->ground_y,
-           priority, (uint8_t)zoom_x, (uint8_t)zoom_y, flags);
+    queue_item(game, def->frame, projection->screen_x, projection->ground_y,
+               projection->depth, (uint8_t)zoom_x, (uint8_t)zoom_y, flags);
 }
 
 static const BajanewSpriteDef *rival_lod(uint8_t livery, uint16_t pixels)
@@ -366,26 +392,49 @@ static uint8_t behind_crest(const BajaRoadBand *bands, const BajaObjectProjectio
     return (uint8_t)(projection->ground_y > band->top_y + (int16_t)band->height + 2);
 }
 
+/* How far each kind of prop is drawn, in quarter metres.  Small scrub is a
+ * pixel or two beyond a hundred metres and not worth a sprite; tall props and
+ * signs read from the far end of the funnel. */
+static const uint8_t scenery_reach_q[BAJA_SCENERY_KINDS] = {
+    22, 22, 24, 20, 44, 36, 40, 28, 36, 44, 44, 44, 60, 60
+};
+
 static void draw_scenery(BajanewGame *game, const BajaView *view, const BajaRoadBand *bands)
 {
     const BajaFp near_edge = game->sim.player_s;
     const BajaFp far_edge = game->sim.player_s + baja_fp_from_int(260);
-    uint8_t drawn = 0;
+    int16_t columns_left = SCENERY_COLUMN_BUDGET;
     uint16_t i;
-    /* The course list is sorted by distance, so a cheap window finds the few
-     * items in view without projecting the whole field every frame. */
-    for (i = 0; i < BAJA_SCENERY_COUNT; ++i) {
+    /* The course list is sorted by distance, so a cursor that only ever moves
+     * forward finds the items in view without a walk from the start; it
+     * rewinds when a restart puts the player behind it. */
+    if (game->scenery_cursor > 0U &&
+        game->sim.scenery[game->scenery_cursor - 1U].s >= near_edge) {
+        game->scenery_cursor = 0;
+    }
+    while (game->scenery_cursor < BAJA_SCENERY_COUNT &&
+           game->sim.scenery[game->scenery_cursor].s < near_edge) {
+        ++game->scenery_cursor;
+    }
+    for (i = game->scenery_cursor; i < BAJA_SCENERY_COUNT; ++i) {
         const BajaScenery *item = &game->sim.scenery[i];
+        const BajanewSpriteDef *def = &bajanew_scenery[item->kind];
         BajaObjectProjection projection;
-        if (item->s < near_edge) continue;
+        uint32_t pixels;
+        int16_t columns;
         if (item->s > far_edge) break;
-        if (drawn >= SCENERY_BUDGET) break;
+        /* Beyond the middle distance a prop is a few pixels: its far frame is
+         * one column wide, so a busy horizon costs one sprite a prop. */
+        if (item->s - near_edge > baja_fp_from_int(56)) def = &bajanew_scenery_far[item->kind];
+        if ((item->s - near_edge) >> 18 > (BajaFp)scenery_reach_q[item->kind]) continue;
+        if (columns_left <= 0) break;
         baja_project_object_in(&game->sim, view, item->s, item->e, &projection);
         if (!projection.visible || behind_crest(bands, &projection)) continue;
-        submit_world_sprite(game, &bajanew_scenery[item->kind], &projection,
-                            PRIORITY_ON_BAND(projection.band),
-                            (item->e < 0) ? NG_RENDER_FLIP_X : 0U);
-        ++drawn;
+        pixels = ((uint32_t)(uint16_t)def->world_width_q8 * (uint16_t)projection.scale_q8) >> 16;
+        columns = (int16_t)((pixels + 15U) >> 4);
+        if (columns > columns_left) continue;
+        queue_world_sprite(game, def, &projection, (item->e < 0) ? NG_RENDER_FLIP_X : 0U);
+        columns_left = (int16_t)(columns_left - columns);
     }
 }
 
@@ -400,12 +449,11 @@ static void draw_rivals(BajanewGame *game, const BajaView *view, const BajaRoadB
         if (!rival->active) continue;
         baja_project_object_in(&game->sim, view, rival->s, rival->e, &projection);
         if (!projection.visible || behind_crest(bands, &projection)) continue;
-        pixels = ((uint32_t)bajanew_rival[0][0].world_width_q8 *
-                  (uint32_t)projection.scale_q8) >> 16;
+        pixels = ((uint32_t)(uint16_t)bajanew_rival[0][0].world_width_q8 *
+                  (uint16_t)projection.scale_q8) >> 16;
         if (pixels > 255U) pixels = 255U;
         def = rival_lod((uint8_t)(rival->profile & 1U), (uint16_t)pixels);
-        submit_world_sprite(game, def, &projection,
-                            PRIORITY_ON_BAND(projection.band), 0U);
+        queue_world_sprite(game, def, &projection, 0U);
     }
 }
 
@@ -417,54 +465,33 @@ static void draw_player(BajanewGame *game, const BajaView *view)
     int16_t x = (int16_t)(view->player_x + lean);
     int16_t y = (int16_t)(PLAYER_GROUND_Y - lift);
     uint8_t pose = POSE_NEUTRAL;
-    BajaObjectProjection projection;
 
     if (sim->bounce < -(BAJA_FP_ONE / 5)) pose = POSE_AIR;
     else if (sim->steer < -(BAJA_FP_ONE / 3)) pose = POSE_LEFT;
     else if (sim->steer > (BAJA_FP_ONE / 3)) pose = POSE_RIGHT;
     else if (sim->speed < BAJA_FP_ONE / 8) pose = POSE_SETTLED;
 
-    projection.screen_x = x;
-    projection.ground_y = y;
-    projection.scale_q8 = PLAYER_SCALE_Q8;
-    projection.depth = 4;
-    projection.band = BAJA_ROAD_BANDS - 1U;
-    projection.visible = 1;
-
+    /* The player is the nearest thing in the scene and is placed first, so it
+     * takes the top of the pool; its dust puffs sit just behind it. */
+    place(game, &ng_asset_player_frames[pose], x, y, 0x0fU, 0xffU, 0U);
     if (sim->dust_event != 0U) {
         uint8_t frame = (uint8_t)((game->frame >> 2) % 3U);
-        submit(&game->renderer, &ng_asset_dust_frames[frame],
-               (int16_t)(x - 36), (int16_t)(y + 2), PRIORITY_DUST,
-               0x0fU, 0xffU, 0U);
-        submit(&game->renderer, &ng_asset_dust_frames[(frame + 1U) % 3U],
-               (int16_t)(x + 36), (int16_t)(y + 2), PRIORITY_DUST,
-               0x0fU, 0xffU, NG_RENDER_FLIP_X);
-    }
-
-    {
-        BajanewSpriteDef def = bajanew_player_def;
-        def.frame = &ng_asset_player_frames[pose];
-        submit_world_sprite(game, &def, &projection, PRIORITY_PLAYER, 0U);
+        place(game, &ng_asset_dust_frames[frame], (int16_t)(x - 36), (int16_t)(y + 2),
+              0x0fU, 0xffU, 0U);
+        place(game, &ng_asset_dust_frames[(frame + 1U) % 3U], (int16_t)(x + 36),
+              (int16_t)(y + 2), 0x0fU, 0xffU, NG_RENDER_FLIP_X);
     }
 }
 
-/* The chosen racer stands full height; the other one steps back.  Shrink is
- * measured from the frame's own origin, so the anchor is nudged to keep the
- * smaller portrait standing on the same line and centred on the same spot. */
+/* The chosen racer stands full height; the other one steps back.  A frame's
+ * origin is its centre-bottom and the pool anchors it there at any shrink,
+ * so both portraits stand on the same line, centred on the same spot. */
 static void draw_driver(BajanewGame *game, const NgSpriteFrame *frame,
                         int16_t x, uint8_t chosen)
 {
     uint8_t zoom_x = chosen ? 0x0fU : 0x0bU;
     uint8_t zoom_y = (uint8_t)(((zoom_x + 1U) << 4) - 1U);
-    int16_t width = (int16_t)(frame->width_tiles * (zoom_x + 1U));
-    int16_t height = (int16_t)(((int32_t)frame->height_tiles * 16 * (zoom_y + 1)) / 256);
-    int16_t full_width = (int16_t)(frame->width_tiles * 16U);
-    int16_t full_height = (int16_t)(frame->height_tiles * 16U);
-
-    submit(&game->renderer, frame,
-           (int16_t)(x + ((full_width - width) / 2)),
-           (int16_t)(DRIVER_BASE_Y + (full_height - height)),
-           PRIORITY_PLAYER, zoom_x, zoom_y, 0U);
+    place(game, frame, (int16_t)(x + frame->origin_x), DRIVER_BASE_Y, zoom_x, zoom_y, 0U);
 }
 
 /* ------------------------------------------------------------------- HUD -- */
@@ -552,12 +579,14 @@ static void draw_race(BajanewGame *game, uint8_t with_actors)
     draw_road(game, bands);
     STAGE(5);
     if (level >= 2U) return;
+    if (with_actors) draw_player(game, &view);
+    STAGE(6);
     draw_scenery(game, &view, bands);
+    STAGE(7);
     if (level >= 1U) return;
-    if (with_actors) {
-        draw_rivals(game, &view, bands);
-        draw_player(game, &view);
-    }
+    if (with_actors) draw_rivals(game, &view, bands);
+    STAGE(8);
+    draw_items(game);
 }
 
 static void draw_frame(BajanewGame *game)
@@ -568,9 +597,12 @@ static void draw_frame(BajanewGame *game)
     if (level >= 7U) return;
     clear_next(game);
     ng_renderer_begin(&game->renderer);
+    ng_pool_begin(&game->pool);
+    game->item_count = 0;
     game->strip_words = 0;
     STAGE(3);
     if (level >= 6U) {
+        ng_pool_end(&game->pool);
         game->last_render = ng_renderer_flush(&game->renderer);
         flush_fix(game);
         return;
@@ -581,8 +613,7 @@ static void draw_frame(BajanewGame *game)
         /* The developer mark stands alone for its five seconds and ignores
          * every input, exactly as the packet requires. */
         hide_layers(game);
-        submit(&game->renderer, &ng_asset_splash_frames[0], 0, 0,
-               PRIORITY_BACKDROP, 0x0fU, 0xffU, 0U);
+        place(game, &ng_asset_splash_frames[0], 0, 0, 0x0fU, 0xffU, 0U);
         break;
     case BAJA_PHASE_TITLE:
         draw_race(game, 0);
@@ -638,11 +669,17 @@ static void draw_frame(BajanewGame *game)
         break;
     }
 
-    STAGE(6);
+    STAGE(9);
+    ng_pool_end(&game->pool);
     game->last_render = ng_renderer_flush(&game->renderer);
-    STAGE(7);
+    /* Every sprite is placed directly, so the report is the pool's and the
+     * strips', not the command list's. */
+    game->last_render.active_columns = (uint16_t)(BAJANEW_STRIP_SLOTS + game->pool.used);
+    game->last_render.dropped_columns = game->pool.dropped_columns;
+    game->last_render.vram_writes = (uint16_t)(game->pool.vram_writes + game->strip_words);
+    STAGE(10);
     flush_fix(game);
-    STAGE(8);
+    STAGE(11);
 }
 
 void bajanew_game_init(BajanewGame *game)
@@ -683,8 +720,13 @@ void bajanew_game_init(BajanewGame *game)
         slot = (uint16_t)(slot + def->window_columns);
     }
     game->road_slots = slot;
-    ng_renderer_set_first_slot(&game->renderer, slot);
+    /* The renderer keeps only the scanline accounting; the pool owns every
+     * slot above the strips. */
+    ng_renderer_set_first_slot(&game->renderer, NG_HW_SPRITE_CAPACITY);
+    ng_pool_init(&game->pool, game->pool_cache, slot, (uint16_t)(NG_HW_SPRITE_CAPACITY - slot));
+    game->item_count = 0;
     game->strip_words = 0;
+    game->scenery_cursor = 0;
     game->frame = 0;
     game->sky_pan = 0;
     game->ground_pan = 0;

@@ -46,8 +46,10 @@ SKY_H = HORIZON_Y - GROUND_ABOVE_HORIZON
 GROUND_H = 112
 SKY_PAN = 40
 GROUND_PAN = 60
-# Palette slots handed to the road bands, one per band, above the assets'.
-ROAD_PALETTE_BASE = 32
+# Palette slots: scenery kinds from 40, dust at 60, one per road band from 64.
+SCENERY_PALETTE_BASE = 40
+DUST_PALETTE = 60
+ROAD_PALETTE_BASE = 64
 ROAD_HAZE = (214, 196, 170)
 
 PLAYER_BOXES = [(6, 169, 383, 586), (420, 191, 840, 592), (877, 255, 1283, 586),
@@ -73,6 +75,20 @@ SCENERY = [
     ("flag", (3, 2), (32, 64), 1.8),
     ("crowd", (0, 3), (64, 48), 4.2),
 ]
+# Signs are the chevron sign's posts and board with the board repainted and
+# lettered in the game's own typeface; gantries are the same board stretched
+# across the road on two of its posts.  name, lines, frame, world width.
+SIGNS = [
+    ("sign_ensenada", ("ENSENADA",), (64, 48), 3.6),
+    ("sign_pacific", ("PACIFIC", "RUN"), (64, 48), 3.6),
+    ("sign_baja", ("BAJA", "1000"), (64, 48), 3.6),
+    ("gantry_start", ("START",), (144, 64), 10.0),
+    ("gantry_finish", ("FINISH",), (144, 64), 10.0),
+]
+BOARD_FACE = (242, 230, 200)
+BOARD_EDGE = (70, 40, 20)
+BOARD_INK = (18, 20, 31)
+BOARD_ACCENT = (200, 40, 30)
 DUST_CELLS = [(1, 3), (2, 3)]
 DUST_FRAME = (32, 32)
 DUST_WORLD_M = 3.6
@@ -390,6 +406,96 @@ def build_rivals(sprites: list[dict]) -> dict:
             "lods": [list(f) for f in RIVAL_LODS]}
 
 
+def letter(canvas: np.ndarray, text: str, x: int, y: int, scale: int,
+           ink: tuple[int, int, int]) -> None:
+    """Blit the HUD typeface onto a sprite, seven columns per glyph."""
+    for index, ch in enumerate(text):
+        rows = fixfont.GLYPHS.get(ch, fixfont.GLYPHS[" "])
+        for gy, row in enumerate(rows):
+            for gx, cell in enumerate(row[:7]):
+                if cell != "#":
+                    continue
+                x0 = x + (index * 7 + gx) * scale
+                y0 = y + gy * scale
+                canvas[y0:y0 + scale, x0:x0 + scale, :3] = ink
+                canvas[y0:y0 + scale, x0:x0 + scale, 3] = 255
+
+
+def build_sign(props: np.ndarray, lines: tuple[str, ...], frame: tuple[int, int]) -> np.ndarray:
+    """A lettered sign from the approved chevron sign's posts and board.
+
+    The chevron's black board is found by its darkness, repainted as a cream
+    face with a wooden edge, and lettered.  A gantry keeps two copies of the
+    posts at the frame's edges and stretches the board between them.
+    """
+    x0, x1 = PROPS_COLUMNS[2]
+    y0, y1 = PROPS_ROWS[2]
+    chevron = props[y0:y1 + 1, x0:x1 + 1]
+    gantry = frame[0] > 96
+    base = fit_sprite(chevron, (64, 48) if not gantry else (48, 64))
+    solid = base[..., 3] >= 128
+    dark = solid & (base[..., :3].max(axis=2) < 70)
+    ys, xs = np.where(dark[: int(base.shape[0] * 0.62)])
+    by0, by1, bx0, bx1 = ys.min(), ys.max(), xs.min(), xs.max()
+    out = np.zeros((frame[1], frame[0], 4), dtype=np.int32)
+    if not gantry:
+        out[:] = base
+        # The board keeps the sign's outline and gains a face and an edge.
+        board = np.zeros_like(out[by0:by1 + 1, bx0:bx1 + 1])
+        board[..., :3] = BOARD_EDGE
+        board[..., 3] = 255
+        board[1:-1, 1:-1, :3] = BOARD_FACE
+        out[by0:by1 + 1, bx0:bx1 + 1] = board
+        face_w, face_h = bx1 - bx0 - 1, by1 - by0 - 1
+        scale = 1
+        text_h = len(lines) * 8 * scale + (len(lines) - 1) * scale
+        ty = by0 + 1 + max(0, (face_h - text_h) // 2)
+        for line in lines:
+            tx = bx0 + 1 + max(0, (face_w - len(line) * 7 * scale) // 2)
+            letter(out, line, tx, ty, scale, BOARD_INK)
+            ty += 9 * scale
+        return out
+    # Gantry: posts at each side, a banner across the top.
+    post = base[:, bx0:bx1 + 1].copy()
+    post[: by1 + 1] = 0  # keep the legs only
+    legs = post[by1 + 1:]
+    leg_h = legs.shape[0]
+    leg_w = legs.shape[1]
+    scale_h = (frame[1] - 22) / leg_h
+    legs = box_resize(legs, max(6, int(leg_w * scale_h * 0.35)), frame[1] - 22)
+    out[22:, 2:2 + legs.shape[1]] = legs
+    out[22:, frame[0] - 2 - legs.shape[1]:frame[0] - 2] = legs
+    banner = np.zeros((24, frame[0], 4), dtype=np.int32)
+    banner[..., :3] = BOARD_EDGE
+    banner[..., 3] = 255
+    banner[2:-2, 2:-2, :3] = BOARD_FACE
+    banner[2:4, 2:-2, :3] = BOARD_ACCENT
+    banner[-4:-2, 2:-2, :3] = BOARD_ACCENT
+    text = lines[0]
+    tx = (frame[0] - len(text) * 14) // 2
+    letter(banner, text, tx, 4, 2, BOARD_INK)
+    out[2:26] = banner
+    return out
+
+
+def far_frame(frame: tuple[int, int]) -> tuple[int, int]:
+    """One column wide, keeping the prop's proportions in tile rows."""
+    height = max(16, min(48, (frame[1] * 16 // frame[0] + 15) // 16 * 16))
+    return (16, height)
+
+
+def emit_prop(sprites: list[dict], name: str, art: np.ndarray, frame: tuple[int, int],
+              palette_index: int, world: float, extra: dict) -> None:
+    """A prop and its far frame, sharing one palette so both quantise alike."""
+    palette = pick_palette(art)
+    sprites.append(emit(name, art, frame, (frame[0] // 2, frame[1] - 1),
+                        palette_index, palette, dict(extra, world_metres=world)))
+    far = far_frame(frame)
+    small = fit_sprite(art, far, pad=1.0)
+    sprites.append(emit(f"{name}_far", small, far, (far[0] // 2, far[1] - 1),
+                        palette_index, palette, dict(extra, world_metres=world, far=True)))
+
+
 def build_scenery(sprites: list[dict]) -> dict:
     note_source("ensenada-props.png")
     props = load_rgba("ensenada-props.png")
@@ -398,10 +504,14 @@ def build_scenery(sprites: list[dict]) -> dict:
         x0, x1 = PROPS_COLUMNS[col]
         y0, y1 = PROPS_ROWS[row]
         art = fit_sprite(props[y0:y1 + 1, x0:x1 + 1], frame)
-        palette = pick_palette(art)
-        sprites.append(emit(name, art, frame, (frame[0] // 2, frame[1] - 1),
-                            7 + index, palette, {"world_metres": world}))
+        emit_prop(sprites, name, art, frame, SCENERY_PALETTE_BASE + index, world, {})
         out.append({"name": name, "frame": list(frame), "world_metres": world})
+    for index, (name, lines, frame, world) in enumerate(SIGNS):
+        art = build_sign(props, lines, frame)
+        emit_prop(sprites, name, art, frame, SCENERY_PALETTE_BASE + len(SCENERY) + index,
+                  world, {"text": list(lines)})
+        out.append({"name": name, "frame": list(frame), "world_metres": world,
+                    "text": list(lines)})
 
     dust_frames = []
     for col, row in DUST_CELLS:
@@ -417,7 +527,7 @@ def build_scenery(sprites: list[dict]) -> dict:
     dust = np.concatenate(dust_frames, axis=1)
     dust_palette = pick_palette(dust)
     sprites.append(emit("dust", dust, DUST_FRAME, (DUST_FRAME[0] // 2, DUST_FRAME[1] - 4),
-                        7 + len(SCENERY), dust_palette, {"world_metres": DUST_WORLD_M}))
+                        DUST_PALETTE, dust_palette, {"world_metres": DUST_WORLD_M}))
     return {"scenery": out, "dust_world_metres": DUST_WORLD_M}
 
 
@@ -470,6 +580,14 @@ def emit_c_tables(road: dict, backdrop: dict, scenery: dict, out_dir: Path) -> N
               "const BajanewSpriteDef bajanew_scenery[BAJA_SCENERY_KINDS] = {"]
     for name, _cell, _frame, world in SCENERY:
         lines.append(f"    {{&ng_asset_{c_identifier(name)}_frames[0], {int(round(world * 256))}}},")
+    for name, _text, _frame, world in SIGNS:
+        lines.append(f"    {{&ng_asset_{c_identifier(name)}_frames[0], {int(round(world * 256))}}},")
+    lines[-1] = lines[-1].rstrip(",")
+    lines += ["};", "", "const BajanewSpriteDef bajanew_scenery_far[BAJA_SCENERY_KINDS] = {"]
+    for name, _cell, _frame, world in SCENERY:
+        lines.append(f"    {{&ng_asset_{c_identifier(name)}_far_frames[0], {int(round(world * 256))}}},")
+    for name, _text, _frame, world in SIGNS:
+        lines.append(f"    {{&ng_asset_{c_identifier(name)}_far_frames[0], {int(round(world * 256))}}},")
     lines[-1] = lines[-1].rstrip(",")
     lines += ["};", "",
               "const BajanewSpriteDef bajanew_rival[2][BAJANEW_RIVAL_LODS] = {"]
@@ -493,10 +611,13 @@ def emit_c_tables(road: dict, backdrop: dict, scenery: dict, out_dir: Path) -> N
     words = sum(g["tiles_x"] * g["tiles_y"] * 2 for g in bands)
     words += backdrop["strip_width"] // 16 * (backdrop["sky_height"] // 16) * 2
     words += backdrop["strip_width"] // 16 * (backdrop["ground_height"] // 16) * 2
+    road_slots = 21 + 21 + sum(g["columns_on_screen"] for g in bands)
     (out_dir / "bajanew_assets_config.h").write_text(
         "/* Generated by tools/build_assets.py.  Do not edit. */\n"
         "#ifndef BAJANEW_ASSETS_CONFIG_H\n#define BAJANEW_ASSETS_CONFIG_H\n"
-        f"#define BAJANEW_STRIP_WORDS {words}\n#endif\n", encoding="utf-8")
+        f"#define BAJANEW_STRIP_WORDS {words}\n"
+        "/* Hardware sprites the sky, ground and road bands own; objects use the rest. */\n"
+        f"#define BAJANEW_STRIP_SLOTS {road_slots}\n#endif\n", encoding="utf-8")
 
 
 def main() -> None:
