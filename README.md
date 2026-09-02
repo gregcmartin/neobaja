@@ -33,11 +33,14 @@ The new implementation is programming-first. The pinned projects named in
 BAJANEW's deterministic fixed-point road, handling, rival AI, collision, and
 projection code is independently authored under `src/` and `include/`.
 
-The first native programming slice now boots and accepts real Neo Geo controls.
-It intentionally uses a wireframe/FIX debug road and Forge68 development
-fixtures; those pixels are not a visual-completion claim and will be replaced
-only with the approved original work under `art/` after the driving slice earns
-human approval.
+The Ensenada vertical slice runs on real Neo Geo hardware in MAME from the
+approved artwork under `art/`: a twenty two band projected road on the SDK's
+strip layers, a two layer parallax coast, 380 roadside props with crowds,
+chevrons, signs and gantries, rivals that keep the leg a race, crest jumps,
+roadside hazards, a shadowed HUD with 16x16 numerals and a route minimap, a
+typographic title and a results panel.  The display holds a locked 30 Hz with
+the simulation at its designed 60 Hz.  Greg's five-minute unscripted MAME
+session remains the release gate; see `TODO.md` for what is open.
 
 Verification commands:
 
