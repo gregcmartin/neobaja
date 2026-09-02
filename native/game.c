@@ -445,7 +445,8 @@ static const uint8_t scenery_reach_q[BAJA_SCENERY_KINDS] = {
     22, 22, 24, 20, 44, 36, 40, 28, 36, 44, 44, 44, 60, 60
 };
 
-static void draw_scenery(BajanewGame *game, const BajaView *view, const BajaRoadBand *bands)
+static void draw_scenery(BajanewGame *game, const BajaView *view, const BajaRoadBand *bands,
+                         uint8_t with_actors)
 {
     const BajaFp near_edge = game->sim.player_s;
     const BajaFp far_edge = game->sim.player_s + baja_fp_from_int(260);
@@ -469,6 +470,10 @@ static void draw_scenery(BajanewGame *game, const BajaView *view, const BajaRoad
         uint32_t pixels;
         int16_t columns;
         if (item->s > far_edge) break;
+        /* The menus look down the course from the line; the start gantry
+         * would stand across the logo and the portraits, so it waits for the
+         * race. */
+        if (!with_actors && item->kind == BAJA_SCENERY_GANTRY_START) continue;
         /* Beyond the middle distance a prop is a few pixels: its far frame is
          * one column wide, so a busy horizon costs one sprite a prop. */
         if (item->s - near_edge > baja_fp_from_int(56)) def = &bajanew_scenery_far[item->kind];
@@ -662,7 +667,7 @@ static void draw_race(BajanewGame *game, uint8_t with_actors)
     if (level >= 2U) return;
     if (with_actors) draw_player(game, &view);
     STAGE(6);
-    draw_scenery(game, &view, bands);
+    draw_scenery(game, &view, bands, with_actors);
     STAGE(7);
     if (level >= 1U) return;
     if (with_actors) draw_rivals(game, &view, bands);
