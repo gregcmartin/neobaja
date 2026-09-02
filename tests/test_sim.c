@@ -522,6 +522,33 @@ static void test_roadside_props_are_hazards(void)
     ++checks;
 }
 
+/* A dropped rival comes back and the order keeps changing, so the leg stays
+ * a race all the way to the line. */
+static void test_rivals_keep_the_race_alive(void)
+{
+    BajaSim sim;
+    int i;
+    int order_changes = 0;
+    int behind_then_close = 0;
+    uint8_t previous;
+    uint8_t seen_behind = 0;
+
+    race_at_speed(&sim, 30);
+    previous = sim.position;
+    for (i = 0; i < 9000 && sim.phase == BAJA_PHASE_RACING; ++i) {
+        BajaFp gap;
+        drive_frames(&sim, 1);
+        if (sim.position != previous) ++order_changes;
+        previous = sim.position;
+        gap = sim.rivals[0].s - sim.player_s;
+        if (gap < -baja_fp_from_int(38)) seen_behind = 1;
+        else if (seen_behind && gap > -baja_fp_from_int(5)) behind_then_close = 1;
+    }
+    REQUIRE(order_changes >= 4);
+    REQUIRE(behind_then_close);
+    ++checks;
+}
+
 int main(void)
 {
     test_menus_wait_for_input();
@@ -540,6 +567,7 @@ int main(void)
     test_scenery_sits_off_the_racing_line();
     test_crests_launch_the_vehicle();
     test_roadside_props_are_hazards();
+    test_rivals_keep_the_race_alive();
     printf("PASS: %d deterministic gameplay and projection tests\n", checks);
     return 0;
 }

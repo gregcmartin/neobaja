@@ -719,6 +719,18 @@ static void update_rival(BajaSim *sim, BajaRival *rival)
     if (rival->profile == 1 && gap > 0 && gap < baja_fp_from_int(18)) {
         target_speed -= FP_RATIO(5, 100);
     }
+    /* The pack stays a race: a rival dropped far behind finds pace beyond the
+     * player's own cap and keeps it until it is back in front, and a rival
+     * run far ahead eases off until the player is close again, so who crosses
+     * the line first is settled in the last stretch, not the first. */
+    if (gap < -baja_fp_from_int(40)) rival->reserved = 1;
+    else if (gap > baja_fp_from_int(60)) rival->reserved = 2;
+    else if ((rival->reserved == 1U && gap > baja_fp_from_int(8)) ||
+             (rival->reserved == 2U && gap < baja_fp_from_int(24))) {
+        rival->reserved = 0;
+    }
+    if (rival->reserved == 1U) target_speed = ROAD_SPEED_CAP + FP_RATIO(3, 100);
+    else if (rival->reserved == 2U) target_speed -= FP_RATIO(6, 100);
     /* Rivals lose time in bends exactly like the player does. */
     baja_track_sample(&sim->track, rival->s, NULL, NULL, &curve);
     target_speed -= baja_fp_mul(fp_abs(curve), FP_RATIO(6, 100));

@@ -106,7 +106,7 @@ def strip_geometry() -> list[dict]:
         dy0, dy1 = dy[b], dy[b + 1]
         rows = dy1 - dy0
         width = int(round(2.0 * STRIP_U_SPAN * FUNNEL_K * dy1))
-        width = max(48, min(640, (width + 15) // 16 * 16))
+        width = max(32, min(640, (width + 15) // 16 * 16))
         # Author tall enough that a downhill stretch never opens a seam.
         height = max(16, (int(round(rows * 1.9)) + 15) // 16 * 16)
         depth_far = 480.0 / dy0
