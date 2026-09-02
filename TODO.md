@@ -52,6 +52,7 @@
   audio.  Audio direction is an open design decision.
 - [ ] Expose BAJANEW's game-specific state through the enhanced Forge68 MCP
   host; do not count the SDK demo host as game evidence.
-- [ ] Run Greg's five-minute unscripted MAME play gate before expanding scope.
-- [ ] Do not produce the remaining stages until Greg approves the vertical
-  slice.
+- [x] Greg's unscripted MAME play gate, 2026-09-02: "amazing finally for the
+  first time the game works looks good and actually plays properly."
+- [ ] Remaining stages (San Felipe, Valle de Trinidad, Bahia de los Angeles)
+  now unblocked by that verdict; confirm order and race structure with Greg.
