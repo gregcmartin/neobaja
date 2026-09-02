@@ -1328,21 +1328,21 @@
       ],
       "palette": 6,
       "palette_colors": [
-        "#121E18",
-        "#D9EFEC",
-        "#12D449",
-        "#727C7A",
-        "#363F3B",
-        "#88DABA",
-        "#545A57",
-        "#282B2D",
-        "#12902D",
-        "#63B890",
-        "#2F6142",
-        "#3E905E",
-        "#19241E",
-        "#2FEF97",
-        "#194D2D"
+        "#DE0810",
+        "#E6F7FF",
+        "#100810",
+        "#736384",
+        "#F7C519",
+        "#E69CA5",
+        "#DE424A",
+        "#312942",
+        "#FFFFB5",
+        "#EF7308",
+        "#8C94AD",
+        "#524263",
+        "#EF6B73",
+        "#C5CEDE",
+        "#A51021"
       ],
       "source": "source/rival_b0.png"
     },
@@ -1368,21 +1368,21 @@
       ],
       "palette": 6,
       "palette_colors": [
-        "#121E18",
-        "#D9EFEC",
-        "#12D449",
-        "#727C7A",
-        "#363F3B",
-        "#88DABA",
-        "#545A57",
-        "#282B2D",
-        "#12902D",
-        "#63B890",
-        "#2F6142",
-        "#3E905E",
-        "#19241E",
-        "#2FEF97",
-        "#194D2D"
+        "#DE0810",
+        "#E6F7FF",
+        "#100810",
+        "#736384",
+        "#F7C519",
+        "#E69CA5",
+        "#DE424A",
+        "#312942",
+        "#FFFFB5",
+        "#EF7308",
+        "#8C94AD",
+        "#524263",
+        "#EF6B73",
+        "#C5CEDE",
+        "#A51021"
       ],
       "source": "source/rival_b1.png"
     },
@@ -1408,21 +1408,21 @@
       ],
       "palette": 6,
       "palette_colors": [
-        "#121E18",
-        "#D9EFEC",
-        "#12D449",
-        "#727C7A",
-        "#363F3B",
-        "#88DABA",
-        "#545A57",
-        "#282B2D",
-        "#12902D",
-        "#63B890",
-        "#2F6142",
-        "#3E905E",
-        "#19241E",
-        "#2FEF97",
-        "#194D2D"
+        "#DE0810",
+        "#E6F7FF",
+        "#100810",
+        "#736384",
+        "#F7C519",
+        "#E69CA5",
+        "#DE424A",
+        "#312942",
+        "#FFFFB5",
+        "#EF7308",
+        "#8C94AD",
+        "#524263",
+        "#EF6B73",
+        "#C5CEDE",
+        "#A51021"
       ],
       "source": "source/rival_b2.png"
     },
@@ -1448,21 +1448,21 @@
       ],
       "palette": 6,
       "palette_colors": [
-        "#121E18",
-        "#D9EFEC",
-        "#12D449",
-        "#727C7A",
-        "#363F3B",
-        "#88DABA",
-        "#545A57",
-        "#282B2D",
-        "#12902D",
-        "#63B890",
-        "#2F6142",
-        "#3E905E",
-        "#19241E",
-        "#2FEF97",
-        "#194D2D"
+        "#DE0810",
+        "#E6F7FF",
+        "#100810",
+        "#736384",
+        "#F7C519",
+        "#E69CA5",
+        "#DE424A",
+        "#312942",
+        "#FFFFB5",
+        "#EF7308",
+        "#8C94AD",
+        "#524263",
+        "#EF6B73",
+        "#C5CEDE",
+        "#A51021"
       ],
       "source": "source/rival_b3.png"
     },
@@ -2199,30 +2199,30 @@
           "name": "still"
         }
       ],
-      "frame_height": 48,
-      "frame_width": 64,
+      "frame_height": 64,
+      "frame_width": 80,
       "name": "sign_ensenada",
       "origin": [
-        32,
-        47
+        40,
+        63
       ],
       "palette": 49,
       "palette_colors": [
         "#EFE6C5",
         "#101021",
-        "#4A2910",
-        "#D68C42",
-        "#735A4A",
-        "#945208",
-        "#293142",
-        "#DEAD73",
-        "#6B4221",
-        "#9C845A",
-        "#52423A",
-        "#635A08",
-        "#946329",
-        "#BD6B21",
-        "#FFD65A"
+        "#8C6B4A",
+        "#9C949C",
+        "#EFEFEF",
+        "#5A423A",
+        "#E6CEAD",
+        "#736B73",
+        "#735242",
+        "#3A2929",
+        "#BD9C73",
+        "#C5B5AD",
+        "#9C7B5A",
+        "#E6E6DE",
+        "#EFDEB5"
       ],
       "source": "source/sign_ensenada.png"
     },
@@ -2250,19 +2250,19 @@
       "palette_colors": [
         "#EFE6C5",
         "#101021",
-        "#4A2910",
-        "#D68C42",
-        "#735A4A",
-        "#945208",
-        "#293142",
-        "#DEAD73",
-        "#6B4221",
-        "#9C845A",
-        "#52423A",
-        "#635A08",
-        "#946329",
-        "#BD6B21",
-        "#FFD65A"
+        "#8C6B4A",
+        "#9C949C",
+        "#EFEFEF",
+        "#5A423A",
+        "#E6CEAD",
+        "#736B73",
+        "#735242",
+        "#3A2929",
+        "#BD9C73",
+        "#C5B5AD",
+        "#9C7B5A",
+        "#E6E6DE",
+        "#EFDEB5"
       ],
       "source": "source/sign_ensenada_far.png"
     },
@@ -2279,30 +2279,30 @@
           "name": "still"
         }
       ],
-      "frame_height": 48,
-      "frame_width": 64,
+      "frame_height": 64,
+      "frame_width": 80,
       "name": "sign_pacific",
       "origin": [
-        32,
-        47
+        40,
+        63
       ],
       "palette": 50,
       "palette_colors": [
         "#EFE6C5",
         "#101021",
-        "#4A3110",
-        "#D68C42",
-        "#735A4A",
-        "#9C5208",
-        "#293142",
-        "#DEAD73",
-        "#6B4221",
-        "#9C845A",
-        "#52423A",
-        "#6B5A08",
-        "#946329",
-        "#B57321",
-        "#FFD65A"
+        "#8C6B4A",
+        "#9C949C",
+        "#EFEFEF",
+        "#5A423A",
+        "#E6CEAD",
+        "#736B73",
+        "#735242",
+        "#3A2929",
+        "#BD9C73",
+        "#C5B5AD",
+        "#9C7B5A",
+        "#E6E6DE",
+        "#EFDEB5"
       ],
       "source": "source/sign_pacific.png"
     },
@@ -2330,19 +2330,19 @@
       "palette_colors": [
         "#EFE6C5",
         "#101021",
-        "#4A3110",
-        "#D68C42",
-        "#735A4A",
-        "#9C5208",
-        "#293142",
-        "#DEAD73",
-        "#6B4221",
-        "#9C845A",
-        "#52423A",
-        "#6B5A08",
-        "#946329",
-        "#B57321",
-        "#FFD65A"
+        "#8C6B4A",
+        "#9C949C",
+        "#EFEFEF",
+        "#5A423A",
+        "#E6CEAD",
+        "#736B73",
+        "#735242",
+        "#3A2929",
+        "#BD9C73",
+        "#C5B5AD",
+        "#9C7B5A",
+        "#E6E6DE",
+        "#EFDEB5"
       ],
       "source": "source/sign_pacific_far.png"
     },
@@ -2359,30 +2359,30 @@
           "name": "still"
         }
       ],
-      "frame_height": 48,
-      "frame_width": 64,
+      "frame_height": 64,
+      "frame_width": 80,
       "name": "sign_baja",
       "origin": [
-        32,
-        47
+        40,
+        63
       ],
       "palette": 51,
       "palette_colors": [
         "#EFE6C5",
         "#101021",
-        "#4A2910",
-        "#D68C42",
-        "#735A4A",
-        "#945208",
-        "#293142",
-        "#DEAD73",
-        "#6B4221",
-        "#9C845A",
-        "#52423A",
-        "#635A08",
-        "#946329",
-        "#BD6B21",
-        "#FFD65A"
+        "#8C6B4A",
+        "#9C949C",
+        "#EFEFEF",
+        "#5A423A",
+        "#E6CEAD",
+        "#736B73",
+        "#735242",
+        "#3A2929",
+        "#BD9C73",
+        "#C5B5AD",
+        "#9C7B5A",
+        "#EFDEB5",
+        "#E6E6DE"
       ],
       "source": "source/sign_baja.png"
     },
@@ -2410,19 +2410,19 @@
       "palette_colors": [
         "#EFE6C5",
         "#101021",
-        "#4A2910",
-        "#D68C42",
-        "#735A4A",
-        "#945208",
-        "#293142",
-        "#DEAD73",
-        "#6B4221",
-        "#9C845A",
-        "#52423A",
-        "#635A08",
-        "#946329",
-        "#BD6B21",
-        "#FFD65A"
+        "#8C6B4A",
+        "#9C949C",
+        "#EFEFEF",
+        "#5A423A",
+        "#E6CEAD",
+        "#736B73",
+        "#735242",
+        "#3A2929",
+        "#BD9C73",
+        "#C5B5AD",
+        "#9C7B5A",
+        "#EFDEB5",
+        "#E6E6DE"
       ],
       "source": "source/sign_baja_far.png"
     },
@@ -2439,30 +2439,30 @@
           "name": "still"
         }
       ],
-      "frame_height": 64,
+      "frame_height": 80,
       "frame_width": 144,
       "name": "gantry_start",
       "origin": [
         72,
-        63
+        79
       ],
       "palette": 52,
       "palette_colors": [
-        "#EFE6C5",
-        "#101021",
-        "#C52921",
-        "#4A2910",
-        "#FFCE10",
-        "#B55A10",
-        "#AD9473",
-        "#6B6308",
-        "#FFF763",
-        "#735242",
-        "#DE9C52",
-        "#A57B4A",
-        "#313A31",
-        "#7B4A19",
-        "#A56B29"
+        "#10295A",
+        "#EFF7EF",
+        "#F77B00",
+        "#0894EF",
+        "#847B7B",
+        "#943108",
+        "#080808",
+        "#0063C5",
+        "#BDBDBD",
+        "#084294",
+        "#191929",
+        "#52ADE6",
+        "#DEDED6",
+        "#007BE6",
+        "#002973"
       ],
       "source": "source/gantry_start.png"
     },
@@ -2488,21 +2488,21 @@
       ],
       "palette": 52,
       "palette_colors": [
-        "#EFE6C5",
-        "#101021",
-        "#C52921",
-        "#4A2910",
-        "#FFCE10",
-        "#B55A10",
-        "#AD9473",
-        "#6B6308",
-        "#FFF763",
-        "#735242",
-        "#DE9C52",
-        "#A57B4A",
-        "#313A31",
-        "#7B4A19",
-        "#A56B29"
+        "#10295A",
+        "#EFF7EF",
+        "#F77B00",
+        "#0894EF",
+        "#847B7B",
+        "#943108",
+        "#080808",
+        "#0063C5",
+        "#BDBDBD",
+        "#084294",
+        "#191929",
+        "#52ADE6",
+        "#DEDED6",
+        "#007BE6",
+        "#002973"
       ],
       "source": "source/gantry_start_far.png"
     },
@@ -2519,30 +2519,30 @@
           "name": "still"
         }
       ],
-      "frame_height": 64,
+      "frame_height": 80,
       "frame_width": 144,
       "name": "gantry_finish",
       "origin": [
         72,
-        63
+        79
       ],
       "palette": 53,
       "palette_colors": [
-        "#EFE6C5",
-        "#101021",
-        "#C52921",
-        "#4A2910",
-        "#FFCE10",
-        "#B55A10",
-        "#AD9473",
-        "#6B6308",
-        "#FFF763",
-        "#735242",
-        "#DE9C52",
-        "#A57B4A",
-        "#313A31",
-        "#7B4A19",
-        "#A56B29"
+        "#191929",
+        "#EFF7EF",
+        "#0894EF",
+        "#F77B00",
+        "#847B7B",
+        "#943108",
+        "#00297B",
+        "#0063CE",
+        "#BDBDBD",
+        "#52ADE6",
+        "#082163",
+        "#DEDED6",
+        "#080808",
+        "#084A9C",
+        "#0084E6"
       ],
       "source": "source/gantry_finish.png"
     },
@@ -2568,23 +2568,463 @@
       ],
       "palette": 53,
       "palette_colors": [
-        "#EFE6C5",
-        "#101021",
-        "#C52921",
-        "#4A2910",
-        "#FFCE10",
-        "#B55A10",
-        "#AD9473",
-        "#6B6308",
-        "#FFF763",
-        "#735242",
-        "#DE9C52",
-        "#A57B4A",
-        "#313A31",
-        "#7B4A19",
-        "#A56B29"
+        "#191929",
+        "#EFF7EF",
+        "#0894EF",
+        "#F77B00",
+        "#847B7B",
+        "#943108",
+        "#00297B",
+        "#0063CE",
+        "#BDBDBD",
+        "#52ADE6",
+        "#082163",
+        "#DEDED6",
+        "#080808",
+        "#084A9C",
+        "#0084E6"
       ],
       "source": "source/gantry_finish_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 48,
+      "name": "tyres",
+      "origin": [
+        24,
+        31
+      ],
+      "palette": 54,
+      "palette_colors": [
+        "#000000",
+        "#8C523A",
+        "#3A2931",
+        "#BD845A",
+        "#5A4A4A",
+        "#633A29",
+        "#A56B4A",
+        "#735A52",
+        "#4A3A42",
+        "#191010",
+        "#634A42",
+        "#3A2121",
+        "#734A31",
+        "#4A3131",
+        "#8C6B5A"
+      ],
+      "source": "source/tyres.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "tyres_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 54,
+      "palette_colors": [
+        "#000000",
+        "#8C523A",
+        "#3A2931",
+        "#BD845A",
+        "#5A4A4A",
+        "#633A29",
+        "#A56B4A",
+        "#735A52",
+        "#4A3A42",
+        "#191010",
+        "#634A42",
+        "#3A2121",
+        "#734A31",
+        "#4A3131",
+        "#8C6B5A"
+      ],
+      "source": "source/tyres_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 48,
+      "frame_width": 32,
+      "name": "drums",
+      "origin": [
+        16,
+        47
+      ],
+      "palette": 55,
+      "palette_colors": [
+        "#6B6B7B",
+        "#E66B21",
+        "#73D6F7",
+        "#6B3129",
+        "#F7F7F7",
+        "#191921",
+        "#CEB5A5",
+        "#B54A19",
+        "#3A313A",
+        "#DE9463",
+        "#946352",
+        "#8C9494",
+        "#525252",
+        "#DEDED6",
+        "#ADB5BD"
+      ],
+      "source": "source/drums.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 16,
+      "name": "drums_far",
+      "origin": [
+        8,
+        31
+      ],
+      "palette": 55,
+      "palette_colors": [
+        "#6B6B7B",
+        "#E66B21",
+        "#73D6F7",
+        "#6B3129",
+        "#F7F7F7",
+        "#191921",
+        "#CEB5A5",
+        "#B54A19",
+        "#3A313A",
+        "#DE9463",
+        "#946352",
+        "#8C9494",
+        "#525252",
+        "#DEDED6",
+        "#ADB5BD"
+      ],
+      "source": "source/drums_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 48,
+      "frame_width": 64,
+      "name": "boulders",
+      "origin": [
+        32,
+        47
+      ],
+      "palette": 56,
+      "palette_colors": [
+        "#EFC594",
+        "#4A3A3A",
+        "#947B84",
+        "#FFF7EF",
+        "#945A42",
+        "#C59C5A",
+        "#D6AD73",
+        "#FFF7B5",
+        "#734A3A",
+        "#6B525A",
+        "#A57B4A",
+        "#E6B57B",
+        "#BD9473",
+        "#212121",
+        "#846B6B"
+      ],
+      "source": "source/boulders.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "boulders_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 56,
+      "palette_colors": [
+        "#EFC594",
+        "#4A3A3A",
+        "#947B84",
+        "#FFF7EF",
+        "#945A42",
+        "#C59C5A",
+        "#D6AD73",
+        "#FFF7B5",
+        "#734A3A",
+        "#6B525A",
+        "#A57B4A",
+        "#E6B57B",
+        "#BD9473",
+        "#212121",
+        "#846B6B"
+      ],
+      "source": "source/boulders_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 80,
+      "frame_width": 96,
+      "name": "pit_tent",
+      "origin": [
+        48,
+        79
+      ],
+      "palette": 57,
+      "palette_colors": [
+        "#EFCE7B",
+        "#6B637B",
+        "#EFEFEF",
+        "#6B2129",
+        "#C53129",
+        "#313A52",
+        "#BDBDC5",
+        "#216BB5",
+        "#DEDEDE",
+        "#8C9494",
+        "#946342",
+        "#E6E6DE",
+        "#524A5A",
+        "#311929",
+        "#C59C63"
+      ],
+      "source": "source/pit_tent.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "pit_tent_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 57,
+      "palette_colors": [
+        "#EFCE7B",
+        "#6B637B",
+        "#EFEFEF",
+        "#6B2129",
+        "#C53129",
+        "#313A52",
+        "#BDBDC5",
+        "#216BB5",
+        "#DEDEDE",
+        "#8C9494",
+        "#946342",
+        "#E6E6DE",
+        "#524A5A",
+        "#311929",
+        "#C59C63"
+      ],
+      "source": "source/pit_tent_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 64,
+      "frame_width": 64,
+      "name": "crowd_big",
+      "origin": [
+        32,
+        63
+      ],
+      "palette": 58,
+      "palette_colors": [
+        "#8C5A9C",
+        "#E6BD08",
+        "#EFDEDE",
+        "#191919",
+        "#B56B42",
+        "#1994DE",
+        "#F7BD73",
+        "#318C42",
+        "#5A3129",
+        "#1063AD",
+        "#5A426B",
+        "#D684B5",
+        "#D64A19",
+        "#CE8463",
+        "#8C4A31"
+      ],
+      "source": "source/crowd_big.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "crowd_big_far",
+      "origin": [
+        8,
+        15
+      ],
+      "palette": 58,
+      "palette_colors": [
+        "#8C5A9C",
+        "#E6BD08",
+        "#EFDEDE",
+        "#191919",
+        "#B56B42",
+        "#1994DE",
+        "#F7BD73",
+        "#318C42",
+        "#5A3129",
+        "#1063AD",
+        "#5A426B",
+        "#D684B5",
+        "#D64A19",
+        "#CE8463",
+        "#8C4A31"
+      ],
+      "source": "source/crowd_big_far.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 64,
+      "name": "helicopter",
+      "origin": [
+        32,
+        16
+      ],
+      "palette": 24,
+      "palette_colors": [
+        "#3A3A63",
+        "#F7FFFF",
+        "#080808",
+        "#BD1019",
+        "#9CA5C5",
+        "#636B94",
+        "#B55A63",
+        "#212131",
+        "#5A527B",
+        "#F73129",
+        "#D6848C",
+        "#C5C5DE",
+        "#8484A5",
+        "#6B1921",
+        "#4A4273"
+      ],
+      "source": "source/helicopter.png"
     },
     {
       "clips": [
@@ -2643,25 +3083,30 @@
           "name": "still"
         }
       ],
-      "frame_height": 96,
-      "frame_width": 176,
+      "frame_height": 112,
+      "frame_width": 224,
       "name": "logo",
       "origin": [
-        88,
+        112,
         0
       ],
       "palette": 22,
       "palette_colors": [
-        "#190808",
-        "#291008",
-        "#F7F7E6",
-        "#EF7B21",
-        "#EFDEC5",
-        "#D64A21",
-        "#FFEFBD",
-        "#FFD663",
-        "#FFAD29",
-        "#AD2921"
+        "#000008",
+        "#F7CE19",
+        "#F7F7F7",
+        "#C5214A",
+        "#949CB5",
+        "#FF8421",
+        "#C5846B",
+        "#941073",
+        "#3A1942",
+        "#EF4229",
+        "#6B6B84",
+        "#DEAD8C",
+        "#843A42",
+        "#100821",
+        "#C5CEDE"
       ],
       "source": "source/logo.png"
     },

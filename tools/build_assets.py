@@ -18,6 +18,7 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import fixfont
+import grok_props
 import road_strips
 from bajaart import (ASSETS, FUNNEL_K, HORIZON_Y, RAW, ROOT, SOURCE, TEX_U_SPAN,
                      TEX_W, band_tables, box_resize, hard_alpha, hex_rgb, load_rgba,
@@ -76,16 +77,29 @@ SCENERY = [
     ("flag", (3, 2), (32, 64), 1.8),
     ("crowd", (0, 3), (64, 48), 4.2),
 ]
-# Signs are the chevron sign's posts and board with the board repainted and
-# lettered in the game's own typeface; gantries are the same board stretched
-# across the road on two of its posts.  name, lines, frame, world width.
+# Signs are the Grok Build billboard with its blank face lettered in the
+# game's own typeface; gantries are the Grok Build checkpoint arch with its
+# banner lettered.  name, lines, frame, world width.
 SIGNS = [
-    ("sign_ensenada", ("ENSENADA",), (64, 48), 3.6),
-    ("sign_pacific", ("PACIFIC", "RUN"), (64, 48), 3.6),
-    ("sign_baja", ("BAJA", "1000"), (64, 48), 3.6),
-    ("gantry_start", ("START",), (144, 64), 10.0),
-    ("gantry_finish", ("FINISH",), (144, 64), 10.0),
+    ("sign_ensenada", ("ENSENADA",), (80, 64), 4.0),
+    ("sign_pacific", ("PACIFIC", "RUN"), (80, 64), 4.0),
+    ("sign_baja", ("BAJA", "1000"), (80, 64), 4.0),
 ]
+GANTRIES = [
+    ("gantry_start", ("START",), (144, 80), 10.0),
+    ("gantry_finish", ("FINISH",), (144, 80), 10.0),
+]
+# Grok Build props: raw name, keying, frame, world width, in the order of
+# BajaSceneryKind after the gantries.
+GROK_PROPS = [
+    ("tyres", "test_tyres", "checker", "all", (48, 32), 2.4),
+    ("drums", "drums", "checker", "all", (32, 48), 1.5),
+    ("boulders", "boulders", "sky", "all", (64, 48), 4.5),
+    ("pit_tent", "pit_tent", "sky", "top", (96, 80), 6.0),
+    ("crowd_big", "spectators", "sky", "top", (64, 64), 3.6),
+]
+HELICOPTER_FRAME = (64, 32)
+HELICOPTER_PALETTE_INDEX = 24
 BOARD_FACE = (242, 230, 200)
 BOARD_EDGE = (70, 40, 20)
 BOARD_INK = (18, 20, 31)
@@ -372,37 +386,20 @@ def build_rivals(sprites: list[dict]) -> dict:
         lods.append(fit_sprite(cuts[min(index, len(cuts) - 1)], frame))
 
     base = pick_palette(np.concatenate([l.reshape(1, -1, 4) for l in lods], axis=1))
-    # The second entry is the same field car under a different livery, which is
-    # a palette swap on hardware and costs no extra tiles.
-    alternate = []
-    for colour in base:
-        r, g, b = (int(colour[i:i + 2], 16) for i in (1, 3, 5))
-        alternate.append("#%02X%02X%02X" % (
-            min(255, int(b * 0.90 + 18)), min(255, int(r * 0.82 + 30)),
-            min(255, int(g * 0.86 + 24))))
-    seen: list[str] = []
-    for colour in alternate:
-        if colour not in seen:
-            seen.append(colour)
-    while len(seen) < len(base):
-        seen.append("#%02X%02X%02X" % (len(seen), len(seen) * 2, len(seen) * 3))
-
     for index, (frame, art) in enumerate(zip(RIVAL_LODS, lods)):
         sprites.append(emit(f"rival_a{index}", art, frame,
                             (frame[0] // 2, frame[1] - 1), 5, base,
                             {"lod": index}))
-    for index, (frame, art) in enumerate(zip(RIVAL_LODS, lods)):
-        # Same pixels, second palette: the compiler dedups the tiles.
-        art_copy = quantise_to(hard_alpha(art), base)
-        remap = {c: seen[i] for i, c in enumerate(base)}
-        swapped = art_copy.copy()
-        for source_colour, target_colour in remap.items():
-            src = np.array([int(source_colour[i:i + 2], 16) for i in (1, 3, 5)])
-            dst = np.array([int(target_colour[i:i + 2], 16) for i in (1, 3, 5)])
-            mask = np.all(art_copy[..., :3] == src, axis=2) & (art_copy[..., 3] > 0)
-            swapped[mask, :3] = dst
-        sprites.append(emit(f"rival_b{index}", swapped, frame,
-                            (frame[0] // 2, frame[1] - 1), 6, seen, {"lod": index}))
+
+    # The second rival is a different machine: the Grok Build red-and-white
+    # buggy, cut once and shrunk to each level of detail.
+    maverick = grok_props.key_raw("rival_maverick", "checker", "all")
+    lods_b = [fit_sprite(maverick, frame) for frame in RIVAL_LODS]
+    base_b = pick_palette(np.concatenate([l.reshape(1, -1, 4) for l in lods_b], axis=1))
+    for index, (frame, art) in enumerate(zip(RIVAL_LODS, lods_b)):
+        sprites.append(emit(f"rival_b{index}", art, frame,
+                            (frame[0] // 2, frame[1] - 1), 6, base_b,
+                            {"lod": index, "source": "art/raw/grok/rival_maverick.jpg"}))
     return {"frame_world_metres": VEHICLE_FRAME_M,
             "lods": [list(f) for f in RIVAL_LODS]}
 
@@ -422,61 +419,44 @@ def letter(canvas: np.ndarray, text: str, x: int, y: int, scale: int,
                 canvas[y0:y0 + scale, x0:x0 + scale, 3] = 255
 
 
-def build_sign(props: np.ndarray, lines: tuple[str, ...], frame: tuple[int, int]) -> np.ndarray:
-    """A lettered sign from the approved chevron sign's posts and board.
+def bright_face(art: np.ndarray, top_fraction: float) -> tuple[int, int, int, int]:
+    """Bounding box of the pale face in the top part of a sprite: the blank
+    board of the billboard or the banner strip of the arch."""
+    solid = art[..., 3] >= 128
+    pale = solid & (art[..., :3].min(axis=2) >= 190)
+    limit = int(art.shape[0] * top_fraction)
+    pale[limit:] = False
+    ys, xs = np.where(pale)
+    if len(xs) == 0:
+        raise SystemExit("no pale face to letter")
+    # Trim to the dense core: rows and columns where the face dominates.
+    rows = np.where(pale.sum(axis=1) >= pale.sum(axis=1).max() * 0.6)[0]
+    cols = np.where(pale.sum(axis=0) >= pale.sum(axis=0).max() * 0.6)[0]
+    return cols.min(), rows.min(), cols.max(), rows.max()
 
-    The chevron's black board is found by its darkness, repainted as a cream
-    face with a wooden edge, and lettered.  A gantry keeps two copies of the
-    posts at the frame's edges and stretches the board between them.
-    """
-    x0, x1 = PROPS_COLUMNS[2]
-    y0, y1 = PROPS_ROWS[2]
-    chevron = props[y0:y1 + 1, x0:x1 + 1]
-    gantry = frame[0] > 96
-    base = fit_sprite(chevron, (64, 48) if not gantry else (48, 64))
-    solid = base[..., 3] >= 128
-    dark = solid & (base[..., :3].max(axis=2) < 70)
-    ys, xs = np.where(dark[: int(base.shape[0] * 0.62)])
-    by0, by1, bx0, bx1 = ys.min(), ys.max(), xs.min(), xs.max()
-    out = np.zeros((frame[1], frame[0], 4), dtype=np.int32)
-    if not gantry:
-        out[:] = base
-        # The board keeps the sign's outline and gains a face and an edge.
-        board = np.zeros_like(out[by0:by1 + 1, bx0:bx1 + 1])
-        board[..., :3] = BOARD_EDGE
-        board[..., 3] = 255
-        board[1:-1, 1:-1, :3] = BOARD_FACE
-        out[by0:by1 + 1, bx0:bx1 + 1] = board
-        face_w, face_h = bx1 - bx0 - 1, by1 - by0 - 1
-        scale = 1
-        text_h = len(lines) * 8 * scale + (len(lines) - 1) * scale
-        ty = by0 + 1 + max(0, (face_h - text_h) // 2)
-        for line in lines:
-            tx = bx0 + 1 + max(0, (face_w - len(line) * 7 * scale) // 2)
-            letter(out, line, tx, ty, scale, BOARD_INK)
-            ty += 9 * scale
-        return out
-    # Gantry: posts at each side, a banner across the top.
-    post = base[:, bx0:bx1 + 1].copy()
-    post[: by1 + 1] = 0  # keep the legs only
-    legs = post[by1 + 1:]
-    leg_h = legs.shape[0]
-    leg_w = legs.shape[1]
-    scale_h = (frame[1] - 22) / leg_h
-    legs = box_resize(legs, max(6, int(leg_w * scale_h * 0.35)), frame[1] - 22)
-    out[22:, 2:2 + legs.shape[1]] = legs
-    out[22:, frame[0] - 2 - legs.shape[1]:frame[0] - 2] = legs
-    banner = np.zeros((24, frame[0], 4), dtype=np.int32)
-    banner[..., :3] = BOARD_EDGE
-    banner[..., 3] = 255
-    banner[2:-2, 2:-2, :3] = BOARD_FACE
-    banner[2:4, 2:-2, :3] = BOARD_ACCENT
-    banner[-4:-2, 2:-2, :3] = BOARD_ACCENT
-    text = lines[0]
-    tx = (frame[0] - len(text) * 14) // 2
-    letter(banner, text, tx, 4, 2, BOARD_INK)
-    out[2:26] = banner
-    return out
+
+def letter_face(art: np.ndarray, lines: tuple[str, ...], face: tuple[int, int, int, int],
+                scale: int, ink: tuple[int, int, int]) -> None:
+    x0, y0, x1, y1 = face
+    face_w, face_h = x1 - x0 + 1, y1 - y0 + 1
+    text_h = len(lines) * 8 * scale + (len(lines) - 1) * scale
+    ty = y0 + max(0, (face_h - text_h) // 2)
+    for line in lines:
+        tx = x0 + max(0, (face_w - len(line) * 7 * scale) // 2)
+        letter(art, line, tx, ty, scale, ink)
+        ty += 9 * scale
+
+
+def build_sign(lines: tuple[str, ...], frame: tuple[int, int]) -> np.ndarray:
+    art = fit_sprite(grok_props.key_raw("billboard", "sky", "top"), frame)
+    letter_face(art, lines, bright_face(art, 0.75), 1, BOARD_INK)
+    return art
+
+
+def build_gantry(lines: tuple[str, ...], frame: tuple[int, int]) -> np.ndarray:
+    art = fit_sprite(grok_props.key_raw("arch", "checker", "all"), frame)
+    letter_face(art, lines, bright_face(art, 0.4), 1, BOARD_INK)
+    return art
 
 
 def far_frame(frame: tuple[int, int]) -> tuple[int, int]:
@@ -507,12 +487,29 @@ def build_scenery(sprites: list[dict]) -> dict:
         art = fit_sprite(props[y0:y1 + 1, x0:x1 + 1], frame)
         emit_prop(sprites, name, art, frame, SCENERY_PALETTE_BASE + index, world, {})
         out.append({"name": name, "frame": list(frame), "world_metres": world})
-    for index, (name, lines, frame, world) in enumerate(SIGNS):
-        art = build_sign(props, lines, frame)
-        emit_prop(sprites, name, art, frame, SCENERY_PALETTE_BASE + len(SCENERY) + index,
-                  world, {"text": list(lines)})
-        out.append({"name": name, "frame": list(frame), "world_metres": world,
-                    "text": list(lines)})
+    palette_index = SCENERY_PALETTE_BASE + len(SCENERY)
+    for name, lines, frame, world in SIGNS:
+        art = build_sign(lines, frame)
+        emit_prop(sprites, name, art, frame, palette_index, world,
+                  {"text": list(lines), "source": "art/raw/grok/billboard.jpg"})
+        out.append({"name": name, "frame": list(frame), "world_metres": world, "text": list(lines)})
+        palette_index += 1
+    for name, lines, frame, world in GANTRIES:
+        art = build_gantry(lines, frame)
+        emit_prop(sprites, name, art, frame, palette_index, world,
+                  {"text": list(lines), "source": "art/raw/grok/arch.jpg"})
+        out.append({"name": name, "frame": list(frame), "world_metres": world, "text": list(lines)})
+        palette_index += 1
+    for name, raw, background, seeds, frame, world in GROK_PROPS:
+        art = fit_sprite(grok_props.key_raw(raw, background, seeds), frame)
+        emit_prop(sprites, name, art, frame, palette_index, world,
+                  {"source": f"art/raw/grok/{raw}"})
+        out.append({"name": name, "frame": list(frame), "world_metres": world, "grok_raw": raw})
+        palette_index += 1
+    heli = fit_sprite(grok_props.key_raw("helicopter", "checker", "all"), HELICOPTER_FRAME)
+    sprites.append(emit("helicopter", heli, HELICOPTER_FRAME,
+                        (HELICOPTER_FRAME[0] // 2, HELICOPTER_FRAME[1] // 2),
+                        HELICOPTER_PALETTE_INDEX, pick_palette(heli)))
 
     dust_frames = []
     for col, row in DUST_CELLS:
@@ -545,7 +542,6 @@ def build_fix() -> dict:
 
 # ------------------------------------------------------------ title and map --
 
-LOGO_FRAME = (176, 96)
 LOGO_PALETTE_INDEX = 22
 MAP_FRAME = (64, 32)
 MAP_PALETTE_INDEX = 23
@@ -581,34 +577,16 @@ def dilate(mask: np.ndarray, radius: int) -> np.ndarray:
     return out
 
 
+LOGO_FRAME = (224, 112)
+
+
 def build_logo(sprites: list[dict]) -> dict:
-    """The title as hand-controlled bitmap type: BAJA in a sunset ramp with an
-    outline and a hard shadow, OUTRUN in cream beneath it."""
-    canvas = np.zeros((LOGO_FRAME[1], LOGO_FRAME[0], 4), dtype=np.int32)
-
-    def stamp(text: str, scale: int, y0: int, ramp: list[tuple[int, int, int]]) -> None:
-        face = glyph_mask(text, scale)
-        outline = dilate(face, 2)
-        x0 = (LOGO_FRAME[0] - face.shape[1]) // 2
-        h, w = outline.shape
-        # hard shadow, then outline, then the face in a vertical ramp
-        for dy, dx, colour in ((4, 4, (40, 20, 10)),):
-            region = canvas[y0 + dy:y0 + dy + h, x0 + dx:x0 + dx + w]
-            region[outline] = (*colour, 255)
-        region = canvas[y0:y0 + h, x0:x0 + w]
-        region[outline] = (24, 12, 8, 255)
-        for y in range(h):
-            colour = ramp[min(len(ramp) - 1, y * len(ramp) // h)]
-            row = region[y]
-            row[face[y]] = (*colour, 255)
-
-    stamp("BAJA", 5, 4, [(255, 242, 190), (255, 214, 96), (255, 170, 40),
-                         (240, 120, 30), (210, 70, 30), (170, 40, 30)])
-    stamp("OUTRUN", 3, 54, [(250, 245, 230), (236, 224, 196)])
-    palette = pick_palette(canvas)
-    sprites.append(emit("logo", canvas, LOGO_FRAME, (LOGO_FRAME[0] // 2, 0),
-                        LOGO_PALETTE_INDEX, palette))
-    return {"frame": list(LOGO_FRAME), "text": ["BAJA", "OUTRUN"]}
+    """The painted BAJA OUTRUN title from Grok Build, keyed and fitted."""
+    art = fit_sprite(grok_props.key_raw("logo", "checker", "all"), LOGO_FRAME, anchor="centre")
+    palette = pick_palette(art)
+    sprites.append(emit("logo", art, LOGO_FRAME, (LOGO_FRAME[0] // 2, 0),
+                        LOGO_PALETTE_INDEX, palette, {"source": "art/raw/grok/logo.jpg"}))
+    return {"frame": list(LOGO_FRAME), "source": "art/raw/grok/logo.jpg"}
 
 
 def course_points() -> list[tuple[float, float]]:
@@ -721,13 +699,17 @@ def emit_c_tables(road: dict, backdrop: dict, scenery: dict, course_map: dict, o
               "const BajanewSpriteDef bajanew_scenery[BAJA_SCENERY_KINDS] = {"]
     for name, _cell, _frame, world in SCENERY:
         lines.append(f"    {{&ng_asset_{c_identifier(name)}_frames[0], {int(round(world * 256))}}},")
-    for name, _text, _frame, world in SIGNS:
+    for name, _text, _frame, world in SIGNS + GANTRIES:
+        lines.append(f"    {{&ng_asset_{c_identifier(name)}_frames[0], {int(round(world * 256))}}},")
+    for name, _raw, _bg, _seeds, _frame, world in GROK_PROPS:
         lines.append(f"    {{&ng_asset_{c_identifier(name)}_frames[0], {int(round(world * 256))}}},")
     lines[-1] = lines[-1].rstrip(",")
     lines += ["};", "", "const BajanewSpriteDef bajanew_scenery_far[BAJA_SCENERY_KINDS] = {"]
     for name, _cell, _frame, world in SCENERY:
         lines.append(f"    {{&ng_asset_{c_identifier(name)}_far_frames[0], {int(round(world * 256))}}},")
-    for name, _text, _frame, world in SIGNS:
+    for name, _text, _frame, world in SIGNS + GANTRIES:
+        lines.append(f"    {{&ng_asset_{c_identifier(name)}_far_frames[0], {int(round(world * 256))}}},")
+    for name, _raw, _bg, _seeds, _frame, world in GROK_PROPS:
         lines.append(f"    {{&ng_asset_{c_identifier(name)}_far_frames[0], {int(round(world * 256))}}},")
     lines[-1] = lines[-1].rstrip(",")
     lines += ["};", "",

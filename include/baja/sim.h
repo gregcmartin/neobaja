@@ -79,6 +79,11 @@ typedef enum BajaSceneryKind {
     /* Gantries stand over the road itself and are never collided with. */
     BAJA_SCENERY_GANTRY_START,
     BAJA_SCENERY_GANTRY_FINISH,
+    BAJA_SCENERY_TYRES,
+    BAJA_SCENERY_DRUMS,
+    BAJA_SCENERY_BOULDERS,
+    BAJA_SCENERY_PIT_TENT,
+    BAJA_SCENERY_CROWD_BIG,
     BAJA_SCENERY_KINDS
 } BajaSceneryKind;
 

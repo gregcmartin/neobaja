@@ -40,3 +40,19 @@ aspect ratio preserved into a 320x224 matte presentation.
 
 The bitmap font source is public-domain Unscii from the official ngdevkit
 example package. Its local notice is in `third_party/unscii/README.md`.
+
+
+## Grok Build additions (2026-09-02)
+
+Greg widened the art boundary on 2026-09-02 to allow his Grok Build account.
+Ten raws under `art/raw/grok/` were generated headlessly (grok-4.6, Imagine
+`image_gen`) from the text prompts in `art/PROMPTS.md`; no reference image,
+mockup or screenshot was supplied to the generator.  They are kept exactly as
+the tool saved them and hashed in `art/raw/grok/SHA256SUMS`.
+
+Conversion (`tools/grok_props.py`, `tools/build_assets.py`): the generator's
+painted checkerboard or sky background is recovered by flood filling from the
+image edge through background-coloured pixels, the cut-out is area-averaged
+into its frame and quantised to a fifteen colour palette.  The billboard face
+and the arch banner are lettered with the game's own bitmap typeface.  The
+rival buggy is cut once and shrunk to four levels of detail.

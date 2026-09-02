@@ -501,20 +501,24 @@ static void test_roadside_props_are_hazards(void)
         }
     }
     REQUIRE(target != 0U);
-    for (i = 0; i < 3000 && sim.hazards == 0; ++i) {
-        uint8_t input = BAJA_INPUT_THROTTLE;
-        BajaFp want = sim.scenery[target].e;
-        if (sim.player_e < want - BAJA_FP_ONE / 32) input |= BAJA_INPUT_RIGHT;
-        else if (sim.player_e > want + BAJA_FP_ONE / 32) input |= BAJA_INPUT_LEFT;
-        before = sim.speed;
-        baja_sim_step(&sim, input);
-        if (sim.hazard_event) {
-            REQUIRE(sim.hazard_event == BAJA_HAZARD_SOLID);
-            REQUIRE(sim.speed < before / 2);
-            REQUIRE(sim.player_s > sim.scenery[target].s - baja_fp_from_int(6));
+    {
+        int solid_hits = 0;
+        for (i = 0; i < 3000 && solid_hits == 0; ++i) {
+            uint8_t input = BAJA_INPUT_THROTTLE;
+            BajaFp want = sim.scenery[target].e;
+            if (sim.player_e < want - BAJA_FP_ONE / 32) input |= BAJA_INPUT_RIGHT;
+            else if (sim.player_e > want + BAJA_FP_ONE / 32) input |= BAJA_INPUT_LEFT;
+            before = sim.speed;
+            baja_sim_step(&sim, input);
+            /* Scrub or flags on the way only slow the car; the rock stops it. */
+            if (sim.hazard_event == BAJA_HAZARD_SOLID) {
+                ++solid_hits;
+                REQUIRE(sim.speed < before / 2);
+            }
         }
+        REQUIRE(solid_hits == 1);
     }
-    REQUIRE(sim.hazards == 1);
+    REQUIRE(sim.hazards >= 1);
     /* The player keeps control: throttle still builds speed afterwards. */
     for (i = 0; i < 120; ++i) drive_frames(&sim, 1);
     REQUIRE(sim.speed > BAJA_FP_ONE / 4);

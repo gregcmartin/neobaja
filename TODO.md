@@ -41,9 +41,9 @@
 
 ## Open before Greg's five-minute play gate
 
-- [ ] New art wants Greg's Grok Build login (`grok login --device-auth`): a
-  painted title logo, billboards, tyre stacks and pit tents, and a distinct
-  Maverick rival sheet.
+- [x] Grok Build art: painted title logo, checkpoint arch, billboard, pit
+  awning, spectators, helicopter, boulders, drums, tyre stack and a distinct
+  red-and-white rival buggy, all keyed and converted with provenance.
 
 - [ ] 60 Hz needs about 35,000 more cycles a frame.  The general renderer's
   object path is the largest item; give objects fixed slot runs once the

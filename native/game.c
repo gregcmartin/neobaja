@@ -378,6 +378,22 @@ static void draw_backdrop(BajanewGame *game, const BajaView *view, const BajaRoa
     mark_layer(game, &game->ground, ground_y);
 }
 
+/* The support helicopter patrols the coast above the horizon: it drifts
+ * across the sky and back, bobbing a little, and pans with the sky.  It is
+ * the farthest thing in the scene, so it is queued at the far end. */
+static void draw_helicopter(BajanewGame *game)
+{
+    uint32_t t = game->frame;
+    int16_t sweep = (int16_t)((t >> 1) & 0x3ffU);           /* 0..1023 */
+    int16_t x;
+    int16_t y;
+    if (sweep >= 512) sweep = (int16_t)(1023 - sweep);       /* triangle */
+    x = (int16_t)(20 + ((sweep * 280) >> 9) + game->sky_pan);
+    y = (int16_t)(34 + (int16_t)(((t >> 4) & 7U) < 4U ? ((t >> 4) & 3U) : 3 - ((t >> 4) & 3U)));
+    queue_item(game, &ng_asset_helicopter_frames[0], x, y, 0xffffU, 0x0fU, 0xffU,
+               (uint8_t)((t & 0x400U) ? NG_RENDER_FLIP_X : 0U));
+}
+
 static void hide_layers(BajanewGame *game)
 {
     uint8_t b;
@@ -442,7 +458,8 @@ static uint8_t behind_crest(const BajaRoadBand *bands, const BajaObjectProjectio
  * pixel or two beyond a hundred metres and not worth a sprite; tall props and
  * signs read from the far end of the funnel. */
 static const uint8_t scenery_reach_q[BAJA_SCENERY_KINDS] = {
-    22, 22, 24, 20, 44, 36, 40, 28, 36, 44, 44, 44, 60, 60
+    22, 22, 24, 20, 44, 36, 40, 28, 36, 44, 44, 44, 60, 60,
+    22, 22, 36, 44, 40
 };
 
 static void draw_scenery(BajanewGame *game, const BajaView *view, const BajaRoadBand *bands,
@@ -667,6 +684,7 @@ static void draw_race(BajanewGame *game, uint8_t with_actors)
     if (level >= 2U) return;
     if (with_actors) draw_player(game, &view);
     STAGE(6);
+    draw_helicopter(game);
     draw_scenery(game, &view, bands, with_actors);
     STAGE(7);
     if (level >= 1U) return;
@@ -703,10 +721,10 @@ static void draw_frame(BajanewGame *game)
         break;
     case BAJA_PHASE_TITLE:
         /* The logo is the nearest thing on the title, so it goes in first. */
-        place(game, &ng_asset_logo_frames[0], BAJA_SCREEN_CENTER, 28, 0x0fU, 0xffU, 0U);
+        place(game, &ng_asset_logo_frames[0], BAJA_SCREEN_CENTER, 16, 0x0fU, 0xffU, 0U);
         draw_race(game, 0);
         if (level < 5U) {
-            put_text(game, 11, 17, SHADE_AMBER, "ENSENADA  PACIFIC RUN");
+            put_text(game, 11, 18, SHADE_AMBER, "ENSENADA  PACIFIC RUN");
             if (((sim->phase_frame >> 5) & 1U) == 0U) {
                 put_text(game, 14, 22, 0, "PRESS START");
             }

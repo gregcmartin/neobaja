@@ -73,3 +73,78 @@ Verbatim final prompt:
 > game. Crisp hand-authored pixel clusters, warm sun, saturated
 > cyan/ochre/green/navy palette, high detail but strong readability at 320x224.
 > Single full-frame environment, straight road, centered vanishing point.
+
+
+# Grok Build prompts (2026-09-02)
+
+Provider: Greg's Grok Build account, model grok-4.6, Imagine `image_gen` tool,
+run headlessly from this project with `grok -p`.  Raw outputs are saved
+byte-for-byte under `art/raw/grok/` (JPEG as the tool produced them; the test
+tyre stack was converted to PNG inside the Grok session).  Hashes are in
+`art/raw/grok/SHA256SUMS`.  Every prompt below ended with the shared style
+clause: "late-1990s Neo Geo arcade pixel art, crisp hard-edged pixels, limited
+palette, bright Baja daylight, isolated on a plain transparent background, no
+words, no logos, no brands".
+
+## Title logo (`logo.jpg`, 16:9)
+
+Original arcade racing game title logo that reads exactly BAJA on the first
+line and OUTRUN on the second line, chunky bevelled letters with a chrome and
+sunset-orange gradient, a thick dark outline and a hard drop shadow, a stylised
+sun and a dust trail flourish behind the letters, late-1990s Neo Geo arcade
+pixel art, isolated on a plain transparent background, no other words, no
+logos, no brands.
+
+## Checkpoint arch (`arch.jpg`, 16:9)
+
+A wide inflatable race checkpoint arch, blue with a blank white banner strip
+across the top and orange stripes on the pillars, seen straight on from the
+front.  The banner is lettered START / FINISH by the converter.
+
+## Billboard (`billboard.jpg`, 1:1)
+
+A rustic roadside billboard: two weathered wooden posts and a wooden frame
+holding a blank cream-coloured board face with a slight shadow along its top
+edge, seen straight on.  The face is lettered by the converter.
+
+## Pit awning (`pit_tent.jpg`, 1:1)
+
+A small off-road race pit awning: a white and blue canopy on four poles with a
+folding table, red tool boxes and two crew members in blue shirts standing
+beneath it, seen from the front slightly above.
+
+## Spectators (`spectators.jpg`, 1:1)
+
+A tight cluster of six cheering spectators at a desert race, hats, sunglasses,
+one waving a blue flag and one holding a striped umbrella, seen from the front
+at ground level.
+
+## Support helicopter (`helicopter.jpg`, 1:1)
+
+A small white and red support helicopter in side view flying to the right with
+a blurred main rotor and tail rotor, seen level from the side.
+
+## Rival buggy (`rival_maverick.jpg`, 1:1)
+
+Rear view only: an original red and white compact off-road side-by-side racing
+buggy seen from directly behind, perfectly symmetrical, tail lights and twin
+exhausts facing the viewer, a black roll cage, oversized knobby tyres, a
+rear-mounted spare wheel and a roof light bar, low rear chase camera angle as
+in a 1990s arcade racing game, no numbers.  (A first attempt came out at a
+three-quarter angle and was discarded.)
+
+## Boulders (`boulders.jpg`, 1:1)
+
+A cluster of three large weathered sandstone boulders with tufts of dry desert
+grass at their base, seen from the front at ground level.
+
+## Oil drums (`drums.jpg`, 1:1)
+
+Three dented steel oil drums painted orange and white, two standing and one
+lying across them, seen from the front at ground level.
+
+## Tyre stack (`test_tyres.png`, 1:1)
+
+A small original pixel-art icon of a wooden Baja race tyre stack, transparent
+background.  This was the first headless generation test and shipped as the
+tyre-stack prop.

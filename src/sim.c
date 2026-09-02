@@ -348,6 +348,11 @@ BajaHazard baja_scenery_hazard(uint8_t kind)
     case BAJA_SCENERY_SIGN_ENSENADA:
     case BAJA_SCENERY_SIGN_PACIFIC:
     case BAJA_SCENERY_SIGN_BAJA:
+    case BAJA_SCENERY_TYRES:
+    case BAJA_SCENERY_DRUMS:
+    case BAJA_SCENERY_BOULDERS:
+    case BAJA_SCENERY_PIT_TENT:
+    case BAJA_SCENERY_CROWD_BIG:
         return BAJA_HAZARD_SOLID;
     case BAJA_SCENERY_AGAVE:
     case BAJA_SCENERY_BUSH:
@@ -388,13 +393,17 @@ static void reset_scenery(BajaSim *sim)
 {
     static const uint8_t sea_kinds[8] = {
         BAJA_SCENERY_PALM, BAJA_SCENERY_ROCK_PALE, BAJA_SCENERY_AGAVE,
-        BAJA_SCENERY_BUSH, BAJA_SCENERY_ROCK_PALE, BAJA_SCENERY_FLAG,
-        BAJA_SCENERY_AGAVE, BAJA_SCENERY_ROCK_GREY
+        BAJA_SCENERY_TYRES, BAJA_SCENERY_BUSH, BAJA_SCENERY_FLAG,
+        BAJA_SCENERY_DRUMS, BAJA_SCENERY_ROCK_GREY
     };
     static const uint8_t hill_kinds[8] = {
-        BAJA_SCENERY_CACTUS, BAJA_SCENERY_ROCK_GREY, BAJA_SCENERY_AGAVE,
-        BAJA_SCENERY_BUSH, BAJA_SCENERY_CACTUS, BAJA_SCENERY_ROCK_PALE,
-        BAJA_SCENERY_BUSH, BAJA_SCENERY_ROCK_GREY
+        BAJA_SCENERY_CACTUS, BAJA_SCENERY_BOULDERS, BAJA_SCENERY_AGAVE,
+        BAJA_SCENERY_BUSH, BAJA_SCENERY_CACTUS, BAJA_SCENERY_ROCK_GREY,
+        BAJA_SCENERY_BUSH, BAJA_SCENERY_BOULDERS
+    };
+    /* Both ends of the course are busy: spectators, flags, a pit awning. */
+    static const uint8_t crowd_kinds[4] = {
+        BAJA_SCENERY_CROWD, BAJA_SCENERY_FLAG, BAJA_SCENERY_CROWD_BIG, BAJA_SCENERY_PIT_TENT
     };
     static const uint8_t sign_kinds[3] = {
         BAJA_SCENERY_SIGN_ENSENADA, BAJA_SCENERY_SIGN_PACIFIC, BAJA_SCENERY_SIGN_BAJA
@@ -429,8 +438,8 @@ static void reset_scenery(BajaSim *sim)
             }
         } else if (s < FP_RATIO(110, 1) || s > total - FP_RATIO(170, 1)) {
             /* Spectators and flags crowd both ends of the course. */
-            place_scenery(sim, &count, s, left ? -FP_RATIO(13, 10) : FP_RATIO(13, 10),
-                          ((slot >> 1) & 1U) ? BAJA_SCENERY_FLAG : BAJA_SCENERY_CROWD);
+            place_scenery(sim, &count, s, left ? -FP_RATIO(14, 10) : FP_RATIO(14, 10),
+                          crowd_kinds[(slot >> 1) & 3U]);
         } else if ((slot % 44U) == 20U) {
             place_scenery(sim, &count, s, left ? -FP_RATIO(15, 10) : FP_RATIO(15, 10),
                           sign_kinds[signs % 3U]);
