@@ -485,8 +485,8 @@ static uint8_t behind_crest(const BajaRoadBand *bands, const BajaObjectProjectio
  * pixel or two beyond a hundred metres and not worth a sprite; tall props and
  * signs read from the far end of the funnel. */
 static const uint8_t scenery_reach_q[BAJA_SCENERY_KINDS] = {
-    22, 22, 24, 20, 44, 36, 40, 28, 36, 44, 44, 44, 60, 60,
-    22, 22, 36, 44, 40
+    18, 18, 20, 16, 40, 32, 36, 24, 32, 40, 40, 40, 60, 60,
+    18, 18, 30, 40, 36
 };
 
 static void draw_scenery(BajanewGame *game, const BajaView *view, const BajaRoadBand *bands,
@@ -646,9 +646,6 @@ static void draw_hud(BajanewGame *game)
     uint16_t speed = (uint16_t)((sim->speed * 216) / BAJA_FP_ONE);
     uint16_t progress = (uint16_t)baja_fp_to_int(
         baja_fp_mul(sim->player_s, game->progress_scale));
-    uint32_t ratio_q8;
-    uint32_t within;
-    uint8_t needle;
     uint8_t cell;
 
     /* Top left: position and leg progress. */
@@ -676,25 +673,14 @@ static void draw_hud(BajanewGame *game)
 
     /* Bottom left: the tachometer with its needle, the LCD speed, the gear. */
     put_art(game, GAUGE_COLUMN, GAUGE_ROW, 6, 6, GAUGE_TILE_BASE);
-    ratio_q8 = (uint32_t)((sim->speed * 256) / (BAJA_FP_ONE * 3 / 4));
-    if (ratio_q8 > 256U) ratio_q8 = 256U;
-    within = (ratio_q8 * 5U) - (uint32_t)(sim->gear - 1U) * 256U;
-    if (within > 256U) within = 256U;
-    needle = (uint8_t)(3U + ((within * 19U) >> 8));
-    if (sim->speed < BAJA_FP_ONE / 40) needle = 1U;
-    if (sim->air_timer > 0U) needle = (uint8_t)(needle + 2U);
-    if (needle >= NEEDLE_FRAMES) needle = NEEDLE_FRAMES - 1U;
-    place(game, &ng_asset_needle_frames[needle],
-          (int16_t)(GAUGE_COLUMN * 8 + 24), (int16_t)((GAUGE_ROW - 2) * 8 + 24),
-          0x0fU, 0xffU, 0U);
     format_uint(text, speed, 3, 0);
     put_text(game, 1, 28, SHADE_GREEN, text);
     put_text(game, 4, 28, SHADE_GREEN, " KMH");
     put_text(game, 1, 29, 0, "AT");
     put_uint(game, 4, 29, SHADE_AMBER, sim->gear, 1, 1);
 
-    /* Bottom right: the route, the stage and the leg's progress. */
-    draw_minimap(game, progress);
+    /* Bottom right: the stage and the leg's progress; the route map sprite
+     * is placed with the pool's other HUD sprites. */
     put_text(game, 30, 27, 0, "STAGE");
     put_big(game, 36, 26, BIG_BLUE, "1");
     put_text(game, 28, 28, SHADE_AMBER, "PACIFIC RUN");
@@ -720,6 +706,30 @@ static void draw_hud(BajanewGame *game)
 
 /* ----------------------------------------------------------------- scene -- */
 
+/* The HUD's sprites - the needle, the route map and its dot - never change
+ * shape, so they go into the pool first and keep the same slots every frame,
+ * which makes them cache hits that cost three words each. */
+static void place_hud_sprites(BajanewGame *game)
+{
+    const BajaSim *sim = &game->sim;
+    uint16_t progress = (uint16_t)baja_fp_to_int(
+        baja_fp_mul(sim->player_s, game->progress_scale));
+    uint32_t ratio_q8 = (uint32_t)((sim->speed * 256) / (BAJA_FP_ONE * 3 / 4));
+    uint32_t within;
+    uint8_t needle;
+    if (ratio_q8 > 256U) ratio_q8 = 256U;
+    within = (ratio_q8 * 5U) - (uint32_t)(sim->gear - 1U) * 256U;
+    if (within > 256U) within = 256U;
+    needle = (uint8_t)(3U + ((within * 19U) >> 8));
+    if (sim->speed < BAJA_FP_ONE / 40) needle = 1U;
+    if (sim->air_timer > 0U) needle = (uint8_t)(needle + 2U);
+    if (needle >= NEEDLE_FRAMES) needle = NEEDLE_FRAMES - 1U;
+    place(game, &ng_asset_needle_frames[needle],
+          (int16_t)(GAUGE_COLUMN * 8 + 24), (int16_t)((GAUGE_ROW - 2) * 8 + 24),
+          0x0fU, 0xffU, 0U);
+    draw_minimap(game, progress);
+}
+
 static void draw_race(BajanewGame *game, uint8_t with_actors)
 {
     BajaRoadBand bands[BAJA_ROAD_BANDS];
@@ -736,7 +746,10 @@ static void draw_race(BajanewGame *game, uint8_t with_actors)
     draw_road(game, bands);
     STAGE(5);
     if (level >= 2U) return;
-    if (with_actors) draw_player(game, &view);
+    if (with_actors) {
+        place_hud_sprites(game);
+        draw_player(game, &view);
+    }
     STAGE(6);
     draw_helicopter(game);
     draw_scenery(game, &view, bands, with_actors);
