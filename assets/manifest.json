@@ -2629,6 +2629,99 @@
         "#FFA531"
       ],
       "source": "source/dust.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 96,
+      "frame_width": 176,
+      "name": "logo",
+      "origin": [
+        88,
+        0
+      ],
+      "palette": 22,
+      "palette_colors": [
+        "#190808",
+        "#291008",
+        "#F7F7E6",
+        "#EF7B21",
+        "#EFDEC5",
+        "#D64A21",
+        "#FFEFBD",
+        "#FFD663",
+        "#FFAD29",
+        "#AD2921"
+      ],
+      "source": "source/logo.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 64,
+      "name": "course_map",
+      "origin": [
+        0,
+        0
+      ],
+      "palette": 23,
+      "palette_colors": [
+        "#63DEEF",
+        "#101021",
+        "#7BDE84",
+        "#FF5A42"
+      ],
+      "source": "source/course_map.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 16,
+      "frame_width": 16,
+      "name": "map_dot",
+      "origin": [
+        8,
+        8
+      ],
+      "palette": 23,
+      "palette_colors": [
+        "#63DEEF",
+        "#101021",
+        "#7BDE84",
+        "#FF5A42"
+      ],
+      "source": "source/map_dot.png"
     }
   ]
 }

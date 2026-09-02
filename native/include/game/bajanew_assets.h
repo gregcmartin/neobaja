@@ -35,6 +35,8 @@ extern const uint16_t bajanew_road_palette[BAJA_ROAD_BANDS][BAJANEW_ROAD_PHASES]
  * and how far each may pan with a bend. */
 extern const int16_t bajanew_backdrop_origin_x;
 extern const int16_t bajanew_ground_y;
+#define BAJANEW_MAP_POINTS 64
+extern const uint8_t bajanew_map_points[BAJANEW_MAP_POINTS + 1][2];
 extern const int16_t bajanew_sky_pan;
 extern const int16_t bajanew_ground_pan;
 extern const BajanewSpriteDef bajanew_scenery[BAJA_SCENERY_KINDS];

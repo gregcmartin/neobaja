@@ -8,6 +8,7 @@ compiler performs an exact index lookup and the conversion is reproducible.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -542,13 +543,148 @@ def build_fix() -> dict:
             "sha256": sha256(path), "shades": ["ivory", "amber", "cyan"]}
 
 
+# ------------------------------------------------------------ title and map --
+
+LOGO_FRAME = (176, 96)
+LOGO_PALETTE_INDEX = 22
+MAP_FRAME = (64, 32)
+MAP_PALETTE_INDEX = 23
+MAP_POINTS = 64
+
+
+def glyph_mask(text: str, scale: int, pitch: int = 8) -> np.ndarray:
+    """Boolean mask of a string in the HUD typeface at an integer scale."""
+    width = len(text) * pitch * scale
+    mask = np.zeros((8 * scale, width), dtype=bool)
+    for index, ch in enumerate(text):
+        rows = fixfont.GLYPHS.get(ch, fixfont.GLYPHS[" "])
+        for gy, row in enumerate(rows):
+            for gx, cell in enumerate(row[:7]):
+                if cell == "#":
+                    x0 = (index * pitch + gx) * scale
+                    y0 = gy * scale
+                    mask[y0:y0 + scale, x0:x0 + scale] = True
+    return mask
+
+
+def dilate(mask: np.ndarray, radius: int) -> np.ndarray:
+    out = mask.copy()
+    for dy in range(-radius, radius + 1):
+        for dx in range(-radius, radius + 1):
+            shifted = np.zeros_like(mask)
+            ys = slice(max(0, dy), mask.shape[0] + min(0, dy))
+            xs = slice(max(0, dx), mask.shape[1] + min(0, dx))
+            ys_src = slice(max(0, -dy), mask.shape[0] + min(0, -dy))
+            xs_src = slice(max(0, -dx), mask.shape[1] + min(0, -dx))
+            shifted[ys, xs] = mask[ys_src, xs_src]
+            out |= shifted
+    return out
+
+
+def build_logo(sprites: list[dict]) -> dict:
+    """The title as hand-controlled bitmap type: BAJA in a sunset ramp with an
+    outline and a hard shadow, OUTRUN in cream beneath it."""
+    canvas = np.zeros((LOGO_FRAME[1], LOGO_FRAME[0], 4), dtype=np.int32)
+
+    def stamp(text: str, scale: int, y0: int, ramp: list[tuple[int, int, int]]) -> None:
+        face = glyph_mask(text, scale)
+        outline = dilate(face, 2)
+        x0 = (LOGO_FRAME[0] - face.shape[1]) // 2
+        h, w = outline.shape
+        # hard shadow, then outline, then the face in a vertical ramp
+        for dy, dx, colour in ((4, 4, (40, 20, 10)),):
+            region = canvas[y0 + dy:y0 + dy + h, x0 + dx:x0 + dx + w]
+            region[outline] = (*colour, 255)
+        region = canvas[y0:y0 + h, x0:x0 + w]
+        region[outline] = (24, 12, 8, 255)
+        for y in range(h):
+            colour = ramp[min(len(ramp) - 1, y * len(ramp) // h)]
+            row = region[y]
+            row[face[y]] = (*colour, 255)
+
+    stamp("BAJA", 5, 4, [(255, 242, 190), (255, 214, 96), (255, 170, 40),
+                         (240, 120, 30), (210, 70, 30), (170, 40, 30)])
+    stamp("OUTRUN", 3, 54, [(250, 245, 230), (236, 224, 196)])
+    palette = pick_palette(canvas)
+    sprites.append(emit("logo", canvas, LOGO_FRAME, (LOGO_FRAME[0] // 2, 0),
+                        LOGO_PALETTE_INDEX, palette))
+    return {"frame": list(LOGO_FRAME), "text": ["BAJA", "OUTRUN"]}
+
+
+def course_points() -> list[tuple[float, float]]:
+    """Top-down course line from the gameplay core's own piece table."""
+    text = (ROOT / "src/sim.c").read_text(encoding="utf-8")
+    match = re.search(r"static const TrackPiece pieces\[\] = \{(.*?)\};", text, re.S)
+    if not match:
+        raise SystemExit("cannot find the track pieces in src/sim.c")
+    pieces = [tuple(int(v) for v in item.split(","))
+              for item in re.findall(r"\{([^}]*)\}", match.group(1))]
+    heading = 0.0
+    curve = 0.0
+    x = 0.0
+    points = [(0.0, 0.0)]
+    for count, curve_milli, _grade in pieces:
+        start, target = curve, curve_milli / 1000.0
+        for i in range(count):
+            t = (i + 1) / count
+            curve = start + (target - start) * (t * t * (3.0 - 2.0 * t))
+            heading += curve
+            x += heading
+            points.append((x, len(points) * 8.0))
+    return points
+
+
+def build_map(sprites: list[dict]) -> dict:
+    """Course minimap: the leg from start (bottom) to finish (top), lateral
+    drift exaggerated so the bends read at sixty four pixels across."""
+    points = course_points()
+    xs = [p[0] for p in points]
+    length = points[-1][1]
+    w, h = MAP_FRAME
+    span = max(1.0, max(xs) - min(xs))
+    canvas = np.zeros((h, w, 4), dtype=np.int32)
+    line = np.zeros((h, w), dtype=bool)
+    mapped = []
+    for x, s in points:
+        px = int(round(4 + (x - min(xs)) / span * (w - 9)))
+        py = int(round(h - 4 - s / length * (h - 8)))
+        mapped.append((px, py))
+    for (x0, y0), (x1, y1) in zip(mapped, mapped[1:]):
+        steps = max(abs(x1 - x0), abs(y1 - y0), 1)
+        for i in range(steps + 1):
+            line[y0 + (y1 - y0) * i // steps, x0 + (x1 - x0) * i // steps] = True
+    line = dilate(line, 1)
+    shadow = dilate(line, 1)
+    canvas[shadow] = (18, 20, 31, 255)
+    canvas[line] = (99, 220, 239, 255)
+    # start and finish marks
+    sx, sy = mapped[0]
+    fx, fy = mapped[-1]
+    canvas[max(0, sy - 1):sy + 2, max(0, sx - 1):sx + 2] = (123, 223, 134, 255)
+    canvas[max(0, fy - 1):fy + 2, max(0, fx - 1):fx + 2] = (255, 91, 69, 255)
+    palette = pick_palette(canvas)
+    sprites.append(emit("course_map", canvas, MAP_FRAME, (0, 0), MAP_PALETTE_INDEX, palette))
+    dot = np.zeros((16, 16, 4), dtype=np.int32)
+    dot[6:10, 6:10] = (255, 193, 50, 255)
+    dot[7:9, 7:9] = (255, 240, 200, 255)
+    dot[10:11, 6:10] = (18, 20, 31, 255)
+    sprites.append(emit("map_dot", dot, (16, 16), (8, 8), MAP_PALETTE_INDEX, palette))
+    # one map point per slice of the course, for the runtime marker
+    table = []
+    for i in range(MAP_POINTS + 1):
+        s = length * i / MAP_POINTS
+        index = min(len(points) - 1, int(s / 8.0))
+        table.append(mapped[index])
+    return {"frame": list(MAP_FRAME), "points": table, "length_m": length}
+
+
 # -------------------------------------------------------------------- main --
 
 def c_identifier(name: str) -> str:
     return "".join(ch if ch.isalnum() else "_" for ch in name)
 
 
-def emit_c_tables(road: dict, backdrop: dict, scenery: dict, out_dir: Path) -> None:
+def emit_c_tables(road: dict, backdrop: dict, scenery: dict, course_map: dict, out_dir: Path) -> None:
     """Emit the frame tables the renderer indexes, so art and code cannot drift."""
     bands = road_strips.strip_geometry()
     lines = [
@@ -574,6 +710,11 @@ def emit_c_tables(road: dict, backdrop: dict, scenery: dict, out_dir: Path) -> N
     lines += ["};", "",
               f"const int16_t bajanew_backdrop_origin_x = {backdrop['origin_x']};",
               f"const int16_t bajanew_ground_y = {backdrop['ground_y']};",
+              "",
+              "/* Minimap pixel of each sixty-fourth of the course, x then y. */",
+              "const uint8_t bajanew_map_points[BAJANEW_MAP_POINTS + 1][2] = {",
+              "    " + ", ".join(f"{{{x}, {y}}}" for x, y in course_map["points"]),
+              "};",
               f"const int16_t bajanew_sky_pan = {backdrop['sky_pan']};",
               f"const int16_t bajanew_ground_pan = {backdrop['ground_pan']};",
               "",
@@ -629,6 +770,8 @@ def main() -> None:
     player = build_player(sprites)
     rivals = build_rivals(sprites)
     scenery = build_scenery(sprites)
+    logo = build_logo(sprites)
+    course_map = build_map(sprites)
     fix = build_fix()
 
     manifest = {
@@ -650,11 +793,11 @@ def main() -> None:
     write_json(ASSETS / "manifest.json", manifest)
     generated = ROOT / "build/assets/generated"
     generated.mkdir(parents=True, exist_ok=True)
-    emit_c_tables(road, backdrop, scenery, generated)
+    emit_c_tables(road, backdrop, scenery, course_map, generated)
     write_json(ROOT / "build/assets/CONVERSION.json", {
         "road": road, "backdrop": backdrop, "splash": splash, "drivers": drivers,
         "player": player, "rivals": rivals,
-        "scenery": scenery, "fix": fix,
+        "scenery": scenery, "logo": logo, "course_map": course_map, "fix": fix,
         "sources": record["sources"], "sheets": record["sheets"],
     })
     columns = road["on_screen_columns"]

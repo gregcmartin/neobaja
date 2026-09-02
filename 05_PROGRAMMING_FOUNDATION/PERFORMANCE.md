@@ -124,9 +124,41 @@ per-band glue: a placement that changes nothing still costs about 900 cycles,
 and the surrounding loop about as much again, because that is what 16-bit C
 costs on this machine.
 
+## Objects through the sprite pool (2026-09-02, later)
+
+With the roadside dressed, the general renderer's object path cost 143,000
+cycles to submit and 122,000 to flush.  Objects now go through the SDK's
+sprite pool: nearest first from the top of a fixed slot range, tile maps
+cached per slot, the three control words of each object written as contiguous
+blocks, and every frame's SCB1 words prebuilt by the asset compiler.  Object
+projection uses depth lookup tables instead of a divide and a band search.
+
+Racing with the full scene, in 68000 cycles:
+
+| Stage | Cycles |
+| --- | ---: |
+| simulation step (two steps) | 19,600 |
+| FIX clear and pool begin | 5,500 |
+| view and road band projection | 35,300 |
+| backdrop and road strips | 61,300 |
+| player and dust | 26,600 |
+| scenery projection and queue | 49,800 |
+| rivals projection and queue | 9,700 |
+| pool placement of the queue | 91,900 |
+| pool end and scanline stats | 13,400 |
+| FIX flush | 10,200 |
+| **total** | **~323,000** |
+
+The lesson of this round: at 12 MHz the 68000 runs roughly a million
+instructions a second, so a 30 Hz frame is about thirty thousand instructions
+and a cache-hit placement of one object that executes five hundred of them
+costs ten thousand cycles.  Hidden libgcc multiplies and divides were only
+part of it; the rest is ordinary 16-bit C.
+
 ## What would buy the next field
 
-60 Hz now needs about 35,000 cycles.  The general renderer's object path is
+60 Hz now needs the frame under about 180,000 cycles, roughly half of what it
+is.  The general renderer's object path is
 the largest remaining item at roughly 870 cycles per column; giving each
 object a fixed run of slots the way the road has would remove the sort and
 the run bookkeeping.  That is worth doing once the scene's object count is

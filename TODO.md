@@ -29,17 +29,25 @@
   player at sixty percent so the near bands' shear error stays under a few
   pixels, and a two layer parallax backdrop cut from one scaling of the plate.
 
+- [x] Roadside dressed: 380 props read from the course, chevrons through the
+  bends, crowds and gantries at both ends, lettered signs; objects placed
+  through the SDK's sprite pool, budgeted by hardware columns.
+- [x] HUD rebuilt: shadowed glyphs, 16x16 numerals for position, time and
+  speed, a route minimap with the car's dot, and the rows the hardware shows.
+- [x] Title with a typographic BAJA OUTRUN logo; a results panel at the
+  finish with position, time, contacts and crashes.
+- [x] Crests throw the vehicle at speed; roadside props are hazards off the
+  road.
+
 ## Open before Greg's five-minute play gate
+
+- [ ] New art wants Greg's Grok Build login (`grok login --device-auth`): a
+  painted title logo, billboards, tyre stacks and pit tents, and a distinct
+  Maverick rival sheet.
 
 - [ ] 60 Hz needs about 35,000 more cycles a frame.  The general renderer's
   object path is the largest item; give objects fixed slot runs once the
   scene's object count is settled.
-- [ ] The HUD's lower row overlaps the player vehicle; recompose once the play
-  area is settled.
-- [ ] Scenery still reads dark at 1x at long range; the chevron sign in
-  particular wants more contrast against the dirt.
-- [ ] Title and character-select screens are placeholder text over the race
-  backdrop.  `max-cruz-select-v2.png` is converted but not yet used.
 - [ ] Audio is still the Forge68 SDK's driver and V-ROM content, not BAJANEW
   audio.  Audio direction is an open design decision.
 - [ ] Expose BAJANEW's game-specific state through the enhanced Forge68 MCP

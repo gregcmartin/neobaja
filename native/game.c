@@ -22,7 +22,7 @@
 /* Hardware sprite columns the scenery may use in one frame.  The road claims
  * most of the table, so the field is budgeted nearest first rather than left
  * to drop columns at the worst possible moment. */
-#define SCENERY_COLUMN_BUDGET 32
+#define SCENERY_COLUMN_BUDGET 28
 /* Baseline the selection portraits stand on. */
 #define DRIVER_BASE_Y 190
 
@@ -284,8 +284,9 @@ static void draw_items(BajanewGame *game)
 
 /* 65536 / n for the tile counts a sprite frame can have, so sizing an object
  * costs multiplies instead of the 68000's software division. */
-static const uint16_t reciprocal_tiles[9] = {
-    0, 65535, 32768, 21845, 16384, 13107, 10923, 9362, 8192
+static const uint16_t reciprocal_tiles[17] = {
+    0, 65535, 32768, 21845, 16384, 13107, 10923, 9362, 8192,
+    7282, 6554, 5958, 5461, 5041, 4681, 4369, 4096
 };
 
 /* Size a world object from the shared projection scale and queue it standing
@@ -301,7 +302,7 @@ static void queue_world_sprite(BajanewGame *game, const BajanewSpriteDef *def,
 
     if (def->frame == 0) return;
     width_tiles = def->frame->width_tiles;
-    if (width_tiles == 0U || width_tiles > 8U) return;
+    if (width_tiles == 0U || width_tiles > 16U) return;
     /* Both products are 16 by 16: the hardware multiply, not libgcc's. */
     pixels = ((uint32_t)(uint16_t)def->world_width_q8 * (uint16_t)projection->scale_q8) >> 16;
     if (pixels == 0U) return;
@@ -542,6 +543,22 @@ static void draw_driver(BajanewGame *game, const NgSpriteFrame *frame,
 
 /* ------------------------------------------------------------------- HUD -- */
 
+#define MAP_X 250
+#define MAP_Y 170
+
+/* The route from start to finish with the car's dot on it, drawn as sprites
+ * over the scene: the pool draws nearest first, so the HUD art goes in before
+ * the player. */
+static void draw_minimap(BajanewGame *game, uint16_t progress)
+{
+    uint16_t slice = (uint16_t)(((uint32_t)progress * 64U + 50U) / 100U);
+    if (slice > BAJANEW_MAP_POINTS) slice = BAJANEW_MAP_POINTS;
+    place(game, &ng_asset_map_dot_frames[0],
+          (int16_t)(MAP_X + bajanew_map_points[slice][0]),
+          (int16_t)(MAP_Y + bajanew_map_points[slice][1]), 0x0fU, 0xffU, 0U);
+    place(game, &ng_asset_course_map_frames[0], MAP_X, MAP_Y, 0x0fU, 0xffU, 0U);
+}
+
 static void format_time(char *out, uint32_t frames)
 {
     /* Race time without a single division: the frame counter converts
@@ -602,11 +619,13 @@ static void draw_hud(BajanewGame *game)
 
     put_text(game, 31, 25, 0, "ENSENADA");
     put_text(game, 28, 26, SHADE_AMBER, "PACIFIC RUN");
-    /* Course progress: a line with the car's marker on it. */
+    /* Course progress: a line with the car's marker on it, and the route map
+     * above the stage name with the car's dot on it. */
     put_bar(game, 28, 27, 10, 80);
     cell = (uint8_t)divide_by_ten(progress);
     if (cell > 9U) cell = 9U;
     put_text(game, (int16_t)(28 + cell), 27, 0, "\x88");
+    draw_minimap(game, progress);
 
     if (sim->surface == BAJA_SURFACE_DIRT) put_text(game, 16, 18, SHADE_AMBER, "OFF ROAD");
     else if (sim->surface == BAJA_SURFACE_SHOULDER) put_text(game, 18, 18, 0, "EDGE");
@@ -678,13 +697,15 @@ static void draw_frame(BajanewGame *game)
         place(game, &ng_asset_splash_frames[0], 0, 0, 0x0fU, 0xffU, 0U);
         break;
     case BAJA_PHASE_TITLE:
+        /* The logo is the nearest thing on the title, so it goes in first. */
+        place(game, &ng_asset_logo_frames[0], BAJA_SCREEN_CENTER, 28, 0x0fU, 0xffU, 0U);
         draw_race(game, 0);
         if (level < 5U) {
-            put_text(game, 14, 9, SHADE_AMBER, "BAJA OUTRUN");
-            put_text(game, 12, 11, 0, "ENSENADA PACIFIC RUN");
+            put_text(game, 11, 17, SHADE_AMBER, "ENSENADA  PACIFIC RUN");
             if (((sim->phase_frame >> 5) & 1U) == 0U) {
-                put_text(game, 14, 24, 0, "PRESS START");
+                put_text(game, 14, 22, 0, "PRESS START");
             }
+            put_text(game, 10, 27, 0, "MAX CRUZ RACING TEAM");
         }
         break;
     case BAJA_PHASE_SELECT: {
@@ -710,9 +731,9 @@ static void draw_frame(BajanewGame *game)
             char text[2];
             text[0] = (char)('0' + remaining);
             text[1] = '\0';
-            put_big(game, 19, 12, 1, text);
+            put_big(game, 19, 14, 1, text);
         } else {
-            put_text(game, 18, 12, SHADE_AMBER, "GO!");
+            put_text(game, 18, 15, SHADE_AMBER, "GO!");
         }
         break;
     }
@@ -720,16 +741,29 @@ static void draw_frame(BajanewGame *game)
         draw_race(game, 1);
         draw_hud(game);
         break;
-    case BAJA_PHASE_FINISHED:
+    case BAJA_PHASE_FINISHED: {
+        char text[8];
         draw_race(game, 1);
         draw_hud(game);
-        put_text(game, 16, 11, SHADE_AMBER, "FINISH");
-        put_text(game, 14, 13, 0, "POSITION");
-        put_uint(game, 23, 13, SHADE_AMBER, sim->position, 1, 1);
-        if (((sim->phase_frame >> 5) & 1U) == 0U) {
-            put_text(game, 12, 16, 0, "PRESS START TO RACE");
+        /* Results: where the leg was finished, how long it took, and what it
+         * cost, held until the player asks for another run. */
+        put_text(game, 14, 8, SHADE_AMBER, "LEG COMPLETE");
+        put_text(game, 12, 10, 0, "POSITION");
+        format_uint(text, sim->position, 1, 1);
+        put_big(game, 22, 10, 1, text);
+        put_text(game, 24, 11, 0, "/4");
+        put_text(game, 12, 13, 0, "TIME");
+        format_time(text, sim->race_frames);
+        put_big(game, 16, 12, 0, text);
+        put_text(game, 12, 15, 0, "CONTACTS");
+        put_uint(game, 22, 15, SHADE_AMBER, (uint16_t)sim->collisions, 2, 0);
+        put_text(game, 12, 16, 0, "CRASHES");
+        put_uint(game, 22, 16, SHADE_AMBER, (uint16_t)sim->hazards, 2, 0);
+        if (((sim->phase_frame >> 5) & 1U) == 0U && sim->phase_frame > 60U) {
+            put_text(game, 11, 20, 0, "PRESS START TO RACE");
         }
         break;
+    }
     default:
         break;
     }
