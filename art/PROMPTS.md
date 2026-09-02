@@ -124,14 +124,27 @@ at ground level.
 A small white and red support helicopter in side view flying to the right with
 a blurred main rotor and tail rotor, seen level from the side.
 
+## Background repaints (`*_keyed.jpg`)
+
+`pit_tent_keyed.jpg`, `spectators_keyed.jpg`, `billboard_keyed.jpg` and
+`boulders_keyed.jpg` are `image_edit` passes over the raws above with this
+prompt: "Replace the entire background behind the subject, including any sky
+and any ground or sand patch the subject stands on, with one flat solid
+magenta colour, RGB 255 0 255, right up to the subject's outline.  Keep the
+subject itself exactly as it is, unchanged in colour, shape and detail."  The
+painted sky could not be keyed from the subjects' pale stripes and blue
+shirts; a flat magenta field can.  The converter reads the repaints.
+
 ## Rival buggy (`rival_maverick.jpg`, 1:1)
 
 Rear view only: an original red and white compact off-road side-by-side racing
 buggy seen from directly behind, perfectly symmetrical, tail lights and twin
 exhausts facing the viewer, a black roll cage, oversized knobby tyres, a
 rear-mounted spare wheel and a roof light bar, low rear chase camera angle as
-in a 1990s arcade racing game, no numbers.  (A first attempt came out at a
-three-quarter angle and was discarded.)
+in a 1990s arcade racing game, the buggy floats with no ground, no shadow and
+no dust beneath it, no numbers.  (A first attempt came out at a three-quarter
+angle and a second carried a painted ground shadow with the checkerboard
+showing through it; both were discarded.)
 
 ## Boulders (`boulders.jpg`, 1:1)
 

@@ -22,7 +22,7 @@
 /* Hardware sprite columns the scenery may use in one frame.  The road claims
  * most of the table, so the field is budgeted nearest first rather than left
  * to drop columns at the worst possible moment. */
-#define SCENERY_COLUMN_BUDGET 28
+#define SCENERY_COLUMN_BUDGET 26
 /* Baseline the selection portraits stand on. */
 #define DRIVER_BASE_Y 190
 

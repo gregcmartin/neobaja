@@ -94,11 +94,11 @@ GANTRIES = [
 GROK_PROPS = [
     ("tyres", "test_tyres", "checker", "all", (48, 32), 2.4),
     ("drums", "drums", "checker", "all", (32, 48), 1.5),
-    ("boulders", "boulders", "sky", "all", (64, 48), 4.5),
-    ("pit_tent", "pit_tent", "sky", "top", (96, 80), 6.0),
-    ("crowd_big", "spectators", "sky", "top", (64, 64), 3.6),
+    ("boulders", "boulders_keyed", "magenta", "all", (64, 48), 4.5),
+    ("pit_tent", "pit_tent_keyed", "magenta", "all", (96, 80), 6.0),
+    ("crowd_big", "spectators_keyed", "magenta", "all", (64, 64), 3.6),
 ]
-HELICOPTER_FRAME = (64, 32)
+HELICOPTER_FRAME = (48, 32)
 HELICOPTER_PALETTE_INDEX = 24
 BOARD_FACE = (242, 230, 200)
 BOARD_EDGE = (70, 40, 20)
@@ -448,7 +448,7 @@ def letter_face(art: np.ndarray, lines: tuple[str, ...], face: tuple[int, int, i
 
 
 def build_sign(lines: tuple[str, ...], frame: tuple[int, int]) -> np.ndarray:
-    art = fit_sprite(grok_props.key_raw("billboard", "sky", "top"), frame)
+    art = fit_sprite(grok_props.key_raw("billboard_keyed", "magenta", "all"), frame)
     letter_face(art, lines, bright_face(art, 0.75), 1, BOARD_INK)
     return art
 
@@ -491,7 +491,7 @@ def build_scenery(sprites: list[dict]) -> dict:
     for name, lines, frame, world in SIGNS:
         art = build_sign(lines, frame)
         emit_prop(sprites, name, art, frame, palette_index, world,
-                  {"text": list(lines), "source": "art/raw/grok/billboard.jpg"})
+                  {"text": list(lines), "source": "art/raw/grok/billboard_keyed.jpg"})
         out.append({"name": name, "frame": list(frame), "world_metres": world, "text": list(lines)})
         palette_index += 1
     for name, lines, frame, world in GANTRIES:
