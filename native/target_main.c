@@ -16,6 +16,7 @@ static NgProgramBanks ng_banks;
 static NgRasterSchedule ng_raster;
 
 extern volatile uint32_t ng_vblank_counter;
+extern volatile uint8_t bajanew_stage;
 
 static void clear_telemetry(void)
 {
@@ -127,6 +128,8 @@ void ng_target_main(void)
         ng_audio_update(&ng_audio);
         update_telemetry();
         update_game_telemetry(pad);
+        /* Frame, telemetry and sound all settled: probes key on this. */
+        bajanew_stage = 12;
         if (ng_system_state()->return_requested) {
             ng_audio_stop_all(&ng_audio);
             ng_audio_update(&ng_audio);

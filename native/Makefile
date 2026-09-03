@@ -27,7 +27,7 @@ DEPFLAGS := -MMD -MP
 HOST_CFLAGS := -std=c11 -O2 $(WARNINGS) $(INCLUDES) $(DEPFLAGS) -DNG_HOST
 M68K_CFLAGS := -m68000 -std=c11 -O2 -g3 -gdwarf-2 -ffreestanding -fno-builtin \
 	-ffunction-sections -fdata-sections -fomit-frame-pointer $(WARNINGS) $(INCLUDES) \
-	$(DEPFLAGS)
+	$(DEPFLAGS) -DNG_POOL_ASM
 M68K_LDFLAGS := -m68000 -nostdlib -Wl,-T,$(ROOT)/native/link.ld \
 	-Wl,-Map,$(BUILD)/m68k/bajanew.map -Wl,--gc-sections
 
@@ -43,7 +43,7 @@ HOST_BINARY := $(BUILD)/bajanew-host
 TARGET_ENGINE_OBJECTS := $(addprefix $(BUILD)/m68k/engine/,$(addsuffix .o,$(ENGINE_REL)))
 TARGET_OBJECTS := $(TARGET_ENGINE_OBJECTS) $(BUILD)/m68k/game/sim.o \
 	$(BUILD)/m68k/game/game.o $(BUILD)/m68k/target/platform.o \
-	$(BUILD)/m68k/target/memory.o $(BUILD)/m68k/game/target_main.o \
+	$(BUILD)/m68k/target/memory.o $(BUILD)/m68k/target/pool_m68k.o $(BUILD)/m68k/game/target_main.o \
 	$(BUILD)/m68k/generated/assets.o $(BUILD)/m68k/generated/bajanew_assets.o
 TARGET_CRT := $(BUILD)/m68k/crt0.o
 TARGET_ELF := $(BUILD)/m68k/bajanew.elf
@@ -181,6 +181,10 @@ $(BUILD)/m68k/game/target_main.o: $(ROOT)/native/target_main.c | assets
 $(BUILD)/m68k/target/platform.o: $(FORGE68)/target/neogeo/platform.c | assets
 	@mkdir -p $(dir $@)
 	$(M68K_CC) $(M68K_CFLAGS) -c $< -o $@
+
+$(BUILD)/m68k/target/pool_m68k.o: $(FORGE68)/target/neogeo/pool_m68k.S
+	@mkdir -p $(dir $@)
+	$(M68K_CC) -m68000 -c $< -o $@
 
 $(BUILD)/m68k/target/memory.o: $(FORGE68)/target/neogeo/memory.c | assets
 	@mkdir -p $(dir $@)
