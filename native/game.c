@@ -269,9 +269,9 @@ static void place(BajanewGame *game, const NgSpriteFrame *frame,
     if (columns != 0U) {
         int16_t shown_rows = (int16_t)((frame->height_tiles * (zoom_y + 1) + 255) >> 8);
         if (shown_rows < 1) shown_rows = 1;
-        ng_renderer_mark_span(&game->renderer,
-                              (int16_t)(y - (int16_t)((frame->origin_y * (zoom_y + 1)) >> 8)),
-                              (int16_t)(shown_rows * 16), columns);
+        ng_renderer_mark_span_inline(&game->renderer,
+                                     (int16_t)(y - (int16_t)((frame->origin_y * (zoom_y + 1)) >> 8)),
+                                     (int16_t)(shown_rows * 16), columns);
     }
 }
 
@@ -362,8 +362,8 @@ static const BajanewSpriteDef *rival_lod(uint8_t livery, uint16_t pixels)
 static void mark_layer(BajanewGame *game, const NgStripLayer *layer, int16_t y)
 {
     if (layer->head_y_control == 0U) return;
-    ng_renderer_mark_span(&game->renderer, y, (int16_t)(layer->height_rows * 16),
-                          layer->shown_columns);
+    ng_renderer_mark_span_inline(&game->renderer, y, (int16_t)(layer->height_rows * 16),
+                                 layer->shown_columns);
 }
 
 static int16_t approach_pan(int16_t pan, int16_t target, int16_t limit)
