@@ -11,6 +11,9 @@ M68K_CC ?= m68k-elf-gcc
 M68K_OBJCOPY ?= m68k-elf-objcopy
 M68K_SIZE ?= m68k-elf-size
 M68K_NM ?= m68k-elf-nm
+# 1 links the SDK's 68000 sprite pool routines; 0 keeps the C twins, for
+# proving the two agree with tools/mame_vram_digest.lua.
+POOL_ASM ?= 1
 Z80_AS ?= sdasz80
 Z80_LD ?= sdldz80
 Z80_BIN ?= makebin
@@ -27,7 +30,7 @@ DEPFLAGS := -MMD -MP
 HOST_CFLAGS := -std=c11 -O2 $(WARNINGS) $(INCLUDES) $(DEPFLAGS) -DNG_HOST
 M68K_CFLAGS := -m68000 -std=c11 -O2 -g3 -gdwarf-2 -ffreestanding -fno-builtin \
 	-ffunction-sections -fdata-sections -fomit-frame-pointer $(WARNINGS) $(INCLUDES) \
-	$(DEPFLAGS) -DNG_POOL_ASM
+	$(DEPFLAGS) $(if $(filter 1,$(POOL_ASM)),-DNG_POOL_ASM,)
 M68K_LDFLAGS := -m68000 -nostdlib -Wl,-T,$(ROOT)/native/link.ld \
 	-Wl,-Map,$(BUILD)/m68k/bajanew.map -Wl,--gc-sections
 
@@ -43,7 +46,7 @@ HOST_BINARY := $(BUILD)/bajanew-host
 TARGET_ENGINE_OBJECTS := $(addprefix $(BUILD)/m68k/engine/,$(addsuffix .o,$(ENGINE_REL)))
 TARGET_OBJECTS := $(TARGET_ENGINE_OBJECTS) $(BUILD)/m68k/game/sim.o \
 	$(BUILD)/m68k/game/game.o $(BUILD)/m68k/target/platform.o \
-	$(BUILD)/m68k/target/memory.o $(BUILD)/m68k/target/pool_m68k.o $(BUILD)/m68k/game/target_main.o \
+	$(BUILD)/m68k/target/memory.o $(if $(filter 1,$(POOL_ASM)),$(BUILD)/m68k/target/pool_m68k.o,) $(BUILD)/m68k/game/target_main.o \
 	$(BUILD)/m68k/generated/assets.o $(BUILD)/m68k/generated/bajanew_assets.o
 TARGET_CRT := $(BUILD)/m68k/crt0.o
 TARGET_ELF := $(BUILD)/m68k/bajanew.elf
