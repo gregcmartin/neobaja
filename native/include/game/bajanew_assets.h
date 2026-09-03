@@ -45,5 +45,7 @@ extern const BajanewSpriteDef bajanew_rival[2][BAJANEW_RIVAL_LODS];
 extern const uint8_t bajanew_rival_lod_width[BAJANEW_RIVAL_LODS];
 extern const BajanewSpriteDef bajanew_player_def;
 extern const BajanewSpriteDef bajanew_dust_def;
+/* The dust bank behind a truck at speed, three sizes as an animation. */
+extern const BajanewSpriteDef bajanew_dust_wide_def[3];
 
 #endif

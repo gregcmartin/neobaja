@@ -101,6 +101,12 @@ def _magenta(rgb: np.ndarray) -> np.ndarray:
     return (r >= 140) & (b >= 90) & (g <= 100) & (r > g + 80)
 
 
+def _magenta_soft(rgb: np.ndarray) -> np.ndarray:
+    """Magenta plus the pink fringe a glowing subject blends into it."""
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    return (r >= 150) & (b >= 80) & (g <= 140) & (r > g + 50) & (b > g)
+
+
 def _flood(mask: np.ndarray, seeds: list[tuple[int, int]]) -> np.ndarray:
     """Background pixels reachable from the seeds through background pixels."""
     height, width = mask.shape
@@ -137,6 +143,8 @@ def key_raw(name: str, background: str, seeds: str = "all") -> np.ndarray:
         candidate = _checker(rgb)
     elif background == "magenta":
         candidate = _magenta(rgb)
+    elif background == "magenta_soft":
+        candidate = _magenta_soft(rgb)
     else:
         candidate = _sky(rgb)
     points = [(0, x) for x in range(0, width, 8)]

@@ -46,7 +46,7 @@ HOST_BINARY := $(BUILD)/bajanew-host
 TARGET_ENGINE_OBJECTS := $(addprefix $(BUILD)/m68k/engine/,$(addsuffix .o,$(ENGINE_REL)))
 TARGET_OBJECTS := $(TARGET_ENGINE_OBJECTS) $(BUILD)/m68k/game/sim.o \
 	$(BUILD)/m68k/game/game.o $(BUILD)/m68k/target/platform.o \
-	$(BUILD)/m68k/target/memory.o $(if $(filter 1,$(POOL_ASM)),$(BUILD)/m68k/target/pool_m68k.o,) $(BUILD)/m68k/game/target_main.o \
+	$(BUILD)/m68k/target/memory.o $(if $(filter 1,$(POOL_ASM)),$(BUILD)/m68k/target/pool_m68k.o $(BUILD)/m68k/game/fix_m68k.o,) $(BUILD)/m68k/game/target_main.o \
 	$(BUILD)/m68k/generated/assets.o $(BUILD)/m68k/generated/bajanew_assets.o
 TARGET_CRT := $(BUILD)/m68k/crt0.o
 TARGET_ELF := $(BUILD)/m68k/bajanew.elf
@@ -186,6 +186,10 @@ $(BUILD)/m68k/target/platform.o: $(FORGE68)/target/neogeo/platform.c | assets
 	$(M68K_CC) $(M68K_CFLAGS) -c $< -o $@
 
 $(BUILD)/m68k/target/pool_m68k.o: $(FORGE68)/target/neogeo/pool_m68k.S
+	@mkdir -p $(dir $@)
+	$(M68K_CC) -m68000 -c $< -o $@
+
+$(BUILD)/m68k/game/fix_m68k.o: fix_m68k.S
 	@mkdir -p $(dir $@)
 	$(M68K_CC) -m68000 -c $< -o $@
 

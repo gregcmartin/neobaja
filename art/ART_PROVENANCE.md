@@ -65,3 +65,9 @@ environment plate since 2026-09-02; the environment plate remains the backdrop
 source.  The tachometer face is converted into FIX tiles on the fifteen colour
 HUD palette; its needle is drawn by `tools/build_assets.py` as a rotating
 pointer, a UI element rather than illustration.
+
+Two more Grok Build raws on 2026-09-03, generated the same headless way from
+the prompts in `art/PROMPTS.md` with no reference image: the sun over the
+coast (`sun.jpg`, a 32 by 32 sprite with its own palette so the sky keeps its
+colours) and the wide dust bank (`dust_wide.jpg`, three sizes as the dust
+behind the player and the near rivals).

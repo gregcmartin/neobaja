@@ -39,6 +39,13 @@
 - [x] Crests throw the vehicle at speed; roadside props are hazards off the
   road.
 
+- [x] Closing on the mockups, 2026-09-03: props every seven metres with
+  forty scenery columns and thirty-two draw items, dust banks either side of
+  the player and behind near rivals, a sun over the coast (both new Grok
+  Build raws), crest-thin bands merged, far props thinned past forty-eight
+  metres.  Frame ~351k cycles, 4 of 700 frames over two fields; the tick-locked
+  capture proves the C and assembly builds identical.
+
 ## Open before Greg's five-minute play gate
 
 - [x] Grok Build art: painted title logo, checkpoint arch, billboard, pit

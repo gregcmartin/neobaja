@@ -23,6 +23,8 @@
  * most of the table, so the field is budgeted nearest first rather than left
  * to drop columns at the worst possible moment. */
 #define SCENERY_COLUMN_BUDGET 40
+#define SUN_X 84
+#define SUN_Y 30
 /* Baseline the selection portraits stand on. */
 #define DRIVER_BASE_Y 190
 
@@ -226,6 +228,11 @@ static void put_art(BajanewGame *game, int16_t column, int16_t row,
 
 /* A flat walk with running row/column counters.  The nested version indexed a
  * two dimensional array 1280 times a frame and cost the 68000 a full frame. */
+#if defined(NG_POOL_ASM)
+/* native/fix_m68k.S: the row compare below in assembly. */
+uint16_t bajanew_fix_flush_row(uint16_t *shadow, const uint16_t *next, uint16_t address);
+#endif
+
 static void flush_fix(BajanewGame *game)
 {
     uint32_t dirty = game->fix_dirty | game->fix_written;
@@ -236,6 +243,11 @@ static void flush_fix(BajanewGame *game)
         const uint32_t *next_words;
         uint8_t word;
         if ((dirty & (1UL << row)) == 0UL) continue;
+#if defined(NG_POOL_ASM)
+        (void)bajanew_fix_flush_row(&game->fix_shadow[row][0], &game->fix_next[row][0],
+                                    (uint16_t)(NG_VRAM_FIX + row));
+        continue;
+#endif
         shadow_words = (uint32_t *)(void *)&game->fix_shadow[row][0];
         next_words = (const uint32_t *)(const void *)&game->fix_next[row][0];
         /* Two cells at a time: only a pair that actually changed is worth
@@ -399,26 +411,12 @@ static void draw_backdrop(BajanewGame *game, const BajaView *view, const BajaRoa
     }
     if (b == BAJA_ROAD_BANDS) needed = (int16_t)(BAJA_SCREEN_HEIGHT - ground_y);
     if (needed < 1) needed = 1;
-    {
-        /* A sprite counts its whole tile rows against the scanline limit even
-         * when shrunk, so the ground's last row would stack twenty columns on
-         * the busiest road lines for the few pixels that show.  Instead the
-         * ground shrinks to exactly the rows it needs: a scene compressing
-         * over a crest squeezes the coast a little with it. */
-        static const uint16_t recip16[8] = {0, 65535U, 32768U, 21845U, 16384U, 13107U, 10923U, 9362U};
-        uint8_t rows = (uint8_t)((needed + 15) >> 4);
-        uint16_t zoom_y = 0xffU;
-        if (rows > 7U) rows = 7U;
-        if (rows > 1U && (needed & 15) != 0) {
-            zoom_y = (uint16_t)(((uint32_t)needed * 16U * recip16[rows]) >> 16);
-            if (zoom_y > 0U) zoom_y -= 1U;
-            if (zoom_y > 0xffU) zoom_y = 0xffU;
-        }
-        ng_strip_set_height(&game->ground, rows);
-        game->strip_words = (uint16_t)(game->strip_words + ng_strip_place(
-            &game->ground, (int16_t)(game->ground_pan - bajanew_backdrop_origin_x),
-            ground_y, (uint8_t)zoom_y));
-    }
+    /* A sprite counts its whole tile rows against the scanline limit whatever
+     * the shrink shows, so the ground's last row is a full row either way. */
+    ng_strip_set_height(&game->ground, (uint8_t)((needed + 15) >> 4));
+    game->strip_words = (uint16_t)(game->strip_words + ng_strip_place(
+        &game->ground, (int16_t)(game->ground_pan - bajanew_backdrop_origin_x),
+        ground_y, 0xffU));
     mark_layer(game, &game->ground, ground_y);
 }
 
@@ -434,8 +432,16 @@ static void draw_helicopter(BajanewGame *game)
     if (sweep >= 512) sweep = (int16_t)(1023 - sweep);       /* triangle */
     x = (int16_t)(20 + ((sweep * 280) >> 9) + game->sky_pan);
     y = (int16_t)(34 + (int16_t)(((t >> 4) & 7U) < 4U ? ((t >> 4) & 3U) : 3 - ((t >> 4) & 3U)));
-    queue_item(game, &ng_asset_helicopter_frames[0], x, y, 0xffffU, 0x0fU, 0xffU,
+    queue_item(game, &ng_asset_helicopter_frames[0], x, y, 0xfffeU, 0x0fU, 0xffU,
                (uint8_t)((t & 0x400U) ? NG_RENDER_FLIP_X : 0U));
+}
+
+/* The sun hangs over the coast between the position and time readouts,
+ * pans with the sky and sits behind everything else in the scene. */
+static void draw_sun(BajanewGame *game)
+{
+    queue_item(game, &ng_asset_sun_frames[0], (int16_t)(SUN_X + game->sky_pan), SUN_Y,
+               0xffffU, 0x0fU, 0xffU, 0U);
 }
 
 static void hide_layers(BajanewGame *game)
@@ -562,10 +568,10 @@ static void draw_scenery(BajanewGame *game, const BajaView *view, const BajaRoad
          * one column wide, so a busy horizon costs one sprite a prop. */
         if (item->s - near_edge > baja_fp_from_int(56)) def = &bajanew_scenery_far[item->kind];
         if ((item->s - near_edge) >> 18 > (BajaFp)scenery_reach_q[item->kind]) continue;
-        /* Past sixty-four metres a prop is a dot a few pixels wide and the
-         * course lists one every seven metres; drawing every other one keeps
-         * the horizon busy for half the projections. */
-        if ((i & 1U) != 0U && item->s - near_edge > baja_fp_from_int(64)) continue;
+        /* Past forty-eight metres a prop is a few pixels wide and the course
+         * lists one every seven metres; drawing every other one keeps the
+         * horizon busy for half the projections. */
+        if ((i & 1U) != 0U && item->s - near_edge > baja_fp_from_int(48)) continue;
         if (columns_left <= 0) break;
         baja_project_object_in(&game->sim, view, item->s, item->e, &projection);
         if (!projection.visible || behind_crest(bands, &projection)) continue;
@@ -593,6 +599,14 @@ static void draw_rivals(BajanewGame *game, const BajaView *view, const BajaRoadB
         if (pixels > 255U) pixels = 255U;
         def = rival_lod((uint8_t)(rival->profile & 1U), (uint16_t)pixels);
         queue_world_sprite(game, def, &projection, 0U);
+        /* A rival close enough to read trails the same dust bank the player
+         * does, queued a metre behind it so the truck stays in front. */
+        if (pixels >= 48U) {
+            BajaObjectProjection behind = projection;
+            behind.depth = (uint16_t)(projection.depth + 1U);
+            queue_world_sprite(game, &bajanew_dust_wide_def[(game->frame >> 2) % 3U],
+                               &behind, (uint8_t)((i & 1U) ? NG_RENDER_FLIP_X : 0U));
+        }
     }
 }
 
@@ -604,6 +618,7 @@ static void draw_player(BajanewGame *game, const BajaView *view)
     int16_t x = (int16_t)(view->player_x + lean);
     int16_t y = (int16_t)(PLAYER_GROUND_Y - lift);
     uint8_t pose = POSE_NEUTRAL;
+    uint8_t banks = 0;
 
     if (sim->bounce < -(BAJA_FP_ONE / 5)) pose = POSE_AIR;
     else if (sim->bounce > BAJA_FP_ONE / 5) pose = POSE_SETTLED;
@@ -615,7 +630,22 @@ static void draw_player(BajanewGame *game, const BajaView *view)
      * takes the top of the pool; the dust plumes roll out behind its rear
      * wheels, bigger and lower the harder the tyres are working. */
     place(game, &ng_asset_player_frames[pose], x, y, 0x0fU, 0xffU, 0U);
-    if (sim->dust_event != 0U || sim->hazard_event != 0U || sim->bounce > BAJA_FP_ONE / 5) {
+    /* At speed a dust bank rolls out from behind each rear wheel, wider and
+     * livelier the faster it goes.  The banks stay on the ground when the
+     * truck lifts, which also keeps them off the busiest scanlines, and
+     * while they show the small plumes only join in on rough going. */
+    if (sim->speed > BAJA_FP_ONE / 4) {
+        uint8_t frame = (uint8_t)((game->frame >> 2) % 3U);
+        uint8_t zoom_x = (uint8_t)(sim->speed > BAJA_FP_ONE / 2 ? 0x0dU : 0x0aU);
+        uint8_t zoom_y = (uint8_t)(((zoom_x + 1U) << 4) - 1U);
+        place(game, &ng_asset_dustwide_frames[frame], (int16_t)(x - 70), PLAYER_GROUND_Y + 10,
+              zoom_x, zoom_y, 0U);
+        place(game, &ng_asset_dustwide_frames[(frame + 1U) % 3U], (int16_t)(x + 70),
+              PLAYER_GROUND_Y + 10, zoom_x, zoom_y, NG_RENDER_FLIP_X);
+        banks = 1;
+    }
+    if ((!banks && (sim->dust_event != 0U || sim->hazard_event != 0U)) ||
+        sim->surface != BAJA_SURFACE_ROAD || sim->bounce > BAJA_FP_ONE / 5) {
         uint8_t frame = (uint8_t)((game->frame >> 2) % 3U);
         uint8_t heavy = (uint8_t)(sim->surface != BAJA_SURFACE_ROAD || sim->bounce > BAJA_FP_ONE / 5);
         int16_t spread = heavy ? 66 : 58;
@@ -795,6 +825,7 @@ static void draw_race(BajanewGame *game, uint8_t with_actors)
         draw_player(game, &view);
     }
     STAGE(6);
+    draw_sun(game);
     draw_helicopter(game);
     draw_scenery(game, &view, bands, with_actors);
     STAGE(7);

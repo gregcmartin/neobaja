@@ -176,3 +176,63 @@ The flush is still the largest item at roughly 140,000, and about 50 of the
 scale, change level of detail, and reorder. Precomputing each frame's SCB1
 words at asset compile time would turn a tile map upload into a copy, and is
 the next thing worth measuring.
+
+## Round of 2026-09-03: density, dust, and two proofs
+
+The scene grew (props every seven metres, forty scenery columns, thirty-two
+draw items, dust banks behind the player and near rivals, a sun) and the frame
+was held at about 350,000 cycles with 4 of 700 frames over two fields.
+Measured on the cartridge with `make mame-profile`, which now also prints each
+stage's maximum, the worst frame and the count of frames over two fields:
+
+| stage | cycles |
+| --- | --- |
+| simulation step (two sim ticks) | 21,700 |
+| FIX clear and renderer begin | 13,800 |
+| view and band projection | 32,100 |
+| backdrop and road submit | 40,600 |
+| player, dust banks, HUD sprites | 45,200 |
+| scenery projection and queue | 64,800 |
+| rivals projection and queue | 13,000 |
+| pool placement of the queue | 90,200 |
+| pool end and scanline stats | 13,500 |
+| FIX flush | 15,800 |
+| **total** | **~350,800** |
+
+What paid and what did not:
+
+- The strip fast path in assembly (unchanged window, three head words) took
+  the road from 53k to 50k: the band loop is dominated by its three VRAM
+  writes a band, not by the C around them.
+- Strip tile maps are row-major and a window slide is one stride-64 run per
+  word row instead of a run per column; VRAM runs are unrolled four words a
+  loop.  The road's worst frame fell from 116k to 74k.
+- Bands thinner than half a tile merge into the next one over a crest.
+  Shrinking a sprite does **not** shrink its scanline footprint: the LSPC
+  counts SCB3's tile rows whatever the zoom shows, so a ground strip
+  squashed to its needed height saved nothing and was taken out again.
+- Slot persistence in the pool (objects keeping last frame's slots, holes
+  left dark) was slower, not faster: steady-state per-object cost is the
+  term, slot churn was never the main one.  Reverted.
+- The FIX flush compared all thirty-two rows every frame because the row
+  compare in assembly clobbered a2, which the m68k ABI keeps for the caller:
+  the dirty mask was then read and written through the LSPC register mirror.
+  Preserved, and with the column address computed only on a mismatch, the
+  flush is 15.8k for the fourteen HUD rows.
+
+Two proofs to keep using:
+
+- `BAJANEW_CAPTURE_TICKS=1 BAJANEW_CAPTURE_SCB=1 make`-style captures key the
+  input script and the shots on the cartridge's own frame counter and take
+  each shot from a write tap on the stage marker, when a frame's VRAM has
+  settled.  A C-twin ROM (`POOL_ASM=0`) and the assembly ROM then produce the
+  same fifteen sprite and FIX dumps although they run at different speeds.
+  The digest tool cannot do this: its inputs are keyed on machine frames, so
+  the two builds diverge at the first overrun.
+- `BAJANEW_PEAK_DUMP=<file> build/native/bajanew-host` writes the sprite
+  control blocks of the busiest frame; a short script over it says which
+  chains stack on the peak line.
+
+Interrupts: the vblank handler (BIOS SYSTEM_IO) costs about 4,100 cycles a
+field and the timer interrupt never fires in the race, so a stage that lands
+under a vblank reads about 4k high.

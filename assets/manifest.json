@@ -3007,6 +3007,90 @@
       "clips": [
         {
           "durations": [
+            8,
+            8,
+            8
+          ],
+          "frames": [
+            0,
+            1,
+            2
+          ],
+          "loop": true,
+          "name": "all"
+        }
+      ],
+      "frame_height": 64,
+      "frame_width": 128,
+      "name": "dustwide",
+      "origin": [
+        64,
+        62
+      ],
+      "palette": 27,
+      "palette_colors": [
+        "#AD845A",
+        "#EFBD8C",
+        "#CEA573",
+        "#FFFFF7",
+        "#BD946B",
+        "#EFBD9C",
+        "#DEB584",
+        "#FFE6CE",
+        "#D6AD7B",
+        "#DE9494",
+        "#B58C63",
+        "#C59C6B",
+        "#FFE69C",
+        "#EFBD94",
+        "#FFC5B5"
+      ],
+      "source": "source/dustwide.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
+            1
+          ],
+          "frames": [
+            0
+          ],
+          "loop": true,
+          "name": "still"
+        }
+      ],
+      "frame_height": 32,
+      "frame_width": 32,
+      "name": "sun",
+      "origin": [
+        16,
+        16
+      ],
+      "palette": 28,
+      "palette_colors": [
+        "#F7F7DE",
+        "#EF9C3A",
+        "#F7D63A",
+        "#F7E684",
+        "#FFA584",
+        "#EF7B5A",
+        "#F7EFBD",
+        "#F7B531",
+        "#F7DE63",
+        "#FFF79C",
+        "#EF8C4A",
+        "#FF8C6B",
+        "#FFB563",
+        "#FFC5A5",
+        "#F7DE4A"
+      ],
+      "source": "source/sun.png"
+    },
+    {
+      "clips": [
+        {
+          "durations": [
             1
           ],
           "frames": [

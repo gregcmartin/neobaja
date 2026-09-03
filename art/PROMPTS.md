@@ -188,3 +188,22 @@ rim, tick marks from 0 to 10 around the left and top, the last quarter of the
 arc painted red, no needle, plus a small rectangular LCD readout panel below it
 with a dark green screen and no digits.  The dial becomes six by six FIX tiles
 on the HUD palette; the panel is not used.
+
+## Sun (`sun.jpg`, 1:1)
+
+A bright late-1990s arcade pixel-art style sun: a white-yellow disc with a
+soft orange glare halo and a few thin light rays, centred, on a flat solid
+magenta background (#FF00FF) that fills the entire image edge to edge.  No
+sky, no clouds, no landscape, no text, no words, no watermark.  Keyed with the
+soft magenta mask (the glow blends into the field) into a 32 by 32 sprite.
+
+## Wide dust bank (`dust_wide.jpg`, 16:9)
+
+A wide, low, rolling cloud of tan desert dust kicked up behind an off-road
+racing truck, seen from directly behind at ground level: dense and opaque
+along the bottom, soft ragged billowing top edge, a few flying pebbles, the
+cloud spanning the full width of the image, painted in a late-1990s arcade
+pixel-art style, on a flat solid magenta background (#FF00FF) that fills
+everything that is not dust.  No vehicle, no tyre, no ground, no sky, no text,
+no words, no watermark.  Three sizes make the animation behind the player and
+any rival close enough to read.

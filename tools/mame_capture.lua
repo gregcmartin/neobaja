@@ -62,11 +62,84 @@ local captures = {300, 650, 750, 880, 1000, 1100, 1350, 1600, 2000, 2500, 3000, 
 
 emu.print_info(string.format("BAJANEW_CAPTURE_LOADED left=%d right=%d a=%d b=%d start=%d",
     #fields.left, #fields.right, #fields.a, #fields.b, #fields.start))
+-- BAJANEW_CAPTURE_TICKS=1: key the script and the shots on the cartridge's
+-- own frame counter (two machine frames a tick) instead of machine frames,
+-- so two builds that run at different speeds get the same inputs at the
+-- same ticks and must produce the same pictures.
+local tick_mode = os.getenv("BAJANEW_CAPTURE_TICKS") ~= nil
+-- In tick mode the shots are taken from a write tap on the cartridge's stage
+-- marker (BAJANEW_STAGE_ADDR), at the moment a frame's VRAM has settled, so
+-- two builds can be compared sprite for sprite.
+local next_shot = 1
+local function shoot(index)
+    local path = string.format("%s/frame%02d.png", out_dir, index)
+    local err = screen:snapshot(path)
+    shots = shots + 1
+    emu.print_info(string.format(
+        "CAPTURE %s mf=%d gframe=%d vbl=%d phase=%d speed=%d pos=%d cols=%d peak=%d drop=%d",
+        path, frames, space:read_u32(0x100044), space:read_u32(0x100008),
+        space:read_u8(0x100078), space:read_u32(0x100050),
+        space:read_u8(0x10007b), space:read_u16(0x10000c),
+        space:read_u16(0x100016), space:read_u16(0x100010)))
+    if err ~= nil then emu.print_error("snapshot failed: " .. tostring(err)) end
+    -- BAJANEW_CAPTURE_SCB=1: the sprite control blocks beside each
+    -- shot (one line per sprite: zoom, Y control, X control), so a
+    -- stray sprite in a capture can be traced to its slot.
+    if os.getenv("BAJANEW_CAPTURE_SCB") then
+        local scb = io.open(string.format("%s/frame%02d.scb", out_dir, index), "w")
+        if scb ~= nil then
+            for sprite = 1, 380 do
+                space:write_u16(0x3c0000, 0x8000 + sprite)
+                local z = space:read_u16(0x3c0002)
+                space:write_u16(0x3c0000, 0x8200 + sprite)
+                local y = space:read_u16(0x3c0002)
+                space:write_u16(0x3c0000, 0x8400 + sprite)
+                local x = space:read_u16(0x3c0002)
+                local words = {}
+                for row = 0, 15 do
+                    space:write_u16(0x3c0000, sprite * 64 + row)
+                    words[#words + 1] = string.format("%04x", space:read_u16(0x3c0002))
+                end
+                scb:write(string.format("%d z%04x y%04x x%04x %s\n", sprite, z, y, x,
+                                        table.concat(words, " ")))
+            end
+            -- FIX map: one line per row, forty tile words.
+            for row = 0, 31 do
+                local cells = {}
+                for column = 0, 39 do
+                    space:write_u16(0x3c0000, 0x7000 + column * 32 + row)
+                    cells[#cells + 1] = string.format("%04x", space:read_u16(0x3c0002))
+                end
+                scb:write(string.format("F%02d %s\n", row, table.concat(cells, " ")))
+            end
+            scb:close()
+        end
+    end
+end
+
+if tick_mode then
+    local stage_addr = tonumber(os.getenv("BAJANEW_STAGE_ADDR") or "0x100794")
+    stage_tap = space:install_write_tap(stage_addr, stage_addr + 1, "stage", function(offset, data, mask)
+        if (mask & 0xff00) == 0 or ((data >> 8) & 0xff) ~= 12 then return end
+        local clock = space:read_u32(0x100044) * 2
+        while next_shot <= #captures and clock >= captures[next_shot] do
+            shoot(next_shot)
+            next_shot = next_shot + 1
+        end
+    end)
+end
+
 capture_sub = emu.add_machine_frame_notifier(function()
     frames = frames + 1
+    local clock = frames
+    if tick_mode then
+        -- The counter is only meaningful once the cartridge has stamped its
+        -- telemetry magic; before that the RAM is whatever the BIOS left.
+        if space:read_u32(0x100040) == 0x42414a41 then clock = space:read_u32(0x100044) * 2 else clock = 0 end
+    end
     local mask = 0
     for _, entry in ipairs(script) do
-        if frames >= entry[1] and frames <= entry[2] then mask = mask | entry[3] end
+        if clock >= entry[1] and clock <= entry[2] then mask = mask | entry[3] end
     end
     if space:read_u8(0x100078) == 4 then mask = mask | centring_steer() end
     apply(mask)
@@ -75,58 +148,16 @@ capture_sub = emu.add_machine_frame_notifier(function()
     -- after bajanew_stage, address from BAJANEW_STAGE_ADDR) so a capture can
     -- peel layers off the scene.
     local level_env = os.getenv("BAJANEW_CAPTURE_LEVEL")
-    if level_env ~= nil and frames > 1100 then
+    if level_env ~= nil and clock > 1100 then
         local stage_addr = tonumber(os.getenv("BAJANEW_STAGE_ADDR") or "0x100794")
         space:write_u8(stage_addr + 1, tonumber(level_env))
     end
-    for index, at in ipairs(captures) do
-        if frames == at then
-            local path = string.format("%s/frame%02d.png", out_dir, index)
-            local err = screen:snapshot(path)
-            shots = shots + 1
-            emu.print_info(string.format(
-                "CAPTURE %s mf=%d gframe=%d vbl=%d phase=%d speed=%d pos=%d cols=%d peak=%d drop=%d",
-                path, frames, space:read_u32(0x100044), space:read_u32(0x100008),
-                space:read_u8(0x100078), space:read_u32(0x100050),
-                space:read_u8(0x10007b), space:read_u16(0x10000c),
-                space:read_u16(0x100016), space:read_u16(0x100010)))
-            if err ~= nil then emu.print_error("snapshot failed: " .. tostring(err)) end
-            -- BAJANEW_CAPTURE_SCB=1: the sprite control blocks beside each
-            -- shot (one line per sprite: zoom, Y control, X control), so a
-            -- stray sprite in a capture can be traced to its slot.
-            if os.getenv("BAJANEW_CAPTURE_SCB") then
-                local scb = io.open(string.format("%s/frame%02d.scb", out_dir, index), "w")
-                if scb ~= nil then
-                    for sprite = 1, 380 do
-                        space:write_u16(0x3c0000, 0x8000 + sprite)
-                        local z = space:read_u16(0x3c0002)
-                        space:write_u16(0x3c0000, 0x8200 + sprite)
-                        local y = space:read_u16(0x3c0002)
-                        space:write_u16(0x3c0000, 0x8400 + sprite)
-                        local x = space:read_u16(0x3c0002)
-                        local words = {}
-                        for row = 0, 15 do
-                            space:write_u16(0x3c0000, sprite * 64 + row)
-                            words[#words + 1] = string.format("%04x", space:read_u16(0x3c0002))
-                        end
-                        scb:write(string.format("%d z%04x y%04x x%04x %s\n", sprite, z, y, x,
-                                                table.concat(words, " ")))
-                    end
-                    -- FIX map: one line per row, forty tile words.
-                    for row = 0, 31 do
-                        local cells = {}
-                        for column = 0, 39 do
-                            space:write_u16(0x3c0000, 0x7000 + column * 32 + row)
-                            cells[#cells + 1] = string.format("%04x", space:read_u16(0x3c0002))
-                        end
-                        scb:write(string.format("F%02d %s\n", row, table.concat(cells, " ")))
-                    end
-                    scb:close()
-                end
-            end
+    if not tick_mode then
+        for index, at in ipairs(captures) do
+            if frames == at then shoot(index) end
         end
     end
-    if frames >= 7300 then
+    if clock >= 7300 then
         emu.print_info(string.format("BAJANEW_CAPTURE_DONE shots=%d", shots))
         manager.machine:exit()
     end

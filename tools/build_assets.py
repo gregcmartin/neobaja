@@ -112,6 +112,14 @@ DUST_WORLD_M = 3.6
 # clear of the tyre the generator added, in three sizes as an animation.
 PLUME_FRAME = (64, 64)
 PLUME_PALETTE_INDEX = 25
+# The dust bank rolling out behind a truck at speed: the Grok Build wide dust
+# cloud in three sizes as an animation, shared by the player and the rivals.
+DUSTWIDE_FRAME = (128, 64)
+DUSTWIDE_PALETTE_INDEX = 27
+DUSTWIDE_WORLD_M = 5.6
+# The sun over the coast: a sprite of its own so the sky keeps its colours.
+SUN_FRAME = (32, 32)
+SUN_PALETTE_INDEX = 28
 
 FIX_PALETTE = ["#%02X%02X%02X" % c for c in fixfont.FIX_PALETTE]
 GAUGE_TILES = (6, 6)       # tachometer face, 48x48
@@ -545,7 +553,21 @@ def build_scenery(sprites: list[dict]) -> dict:
     dust_palette = pick_palette(dust)
     sprites.append(emit("dust", dust, DUST_FRAME, (DUST_FRAME[0] // 2, DUST_FRAME[1] - 4),
                         DUST_PALETTE, dust_palette, {"world_metres": DUST_WORLD_M}))
-    return {"scenery": out, "dust_world_metres": DUST_WORLD_M}
+    wide_raw = grok_props.key_raw("dust_wide", "magenta_soft", "all")
+    wides = []
+    for scale, flip in ((1.0, False), (0.9, True), (0.8, False)):
+        wides.append(fit_sprite(wide_raw[:, ::-1] if flip else wide_raw, DUSTWIDE_FRAME, pad=scale))
+    wide = np.concatenate(wides, axis=1)
+    sprites.append(emit("dustwide", wide, DUSTWIDE_FRAME,
+                        (DUSTWIDE_FRAME[0] // 2, DUSTWIDE_FRAME[1] - 2),
+                        DUSTWIDE_PALETTE_INDEX, pick_palette(wide),
+                        {"source": "art/raw/grok/dust_wide.jpg", "world_metres": DUSTWIDE_WORLD_M}))
+    sun = fit_sprite(grok_props.key_raw("sun", "magenta_soft", "all"), SUN_FRAME, pad=1.0,
+                     anchor="middle")
+    sprites.append(emit("sun", sun, SUN_FRAME, (SUN_FRAME[0] // 2, SUN_FRAME[1] // 2),
+                        SUN_PALETTE_INDEX, pick_palette(sun), {"source": "art/raw/grok/sun.jpg"}))
+    return {"scenery": out, "dust_world_metres": DUST_WORLD_M,
+            "dustwide_world_metres": DUSTWIDE_WORLD_M}
 
 
 # --------------------------------------------------------------------- FIX --
@@ -785,6 +807,11 @@ def emit_c_tables(road: dict, backdrop: dict, scenery: dict, course_map: dict, o
               f"{{&ng_asset_player_frames[0], {int(round(VEHICLE_FRAME_M * 256))}}};",
               f"const BajanewSpriteDef bajanew_dust_def = "
               f"{{&ng_asset_dust_frames[0], {int(round(DUST_WORLD_M * 256))}}};",
+              "const BajanewSpriteDef bajanew_dust_wide_def[3] = {",
+              "    " + ", ".join(
+                  f"{{&ng_asset_dustwide_frames[{i}], {int(round(DUSTWIDE_WORLD_M * 256))}}}"
+                  for i in range(3)),
+              "};",
               ""]
     (out_dir / "bajanew_assets.c").write_text("\n".join(lines), encoding="utf-8")
     # RAM the strip layers need for their prebuilt tile map words.
