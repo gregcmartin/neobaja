@@ -830,7 +830,8 @@ static void draw_race(BajanewGame *game, uint8_t with_actors)
         draw_player(game, &view);
     }
     STAGE(6);
-    draw_sun(game);
+    /* The title's logo carries its own painted sunset; the sun is the race's. */
+    if (with_actors) draw_sun(game);
     draw_helicopter(game);
     draw_scenery(game, &view, bands, with_actors);
     STAGE(7);
