@@ -5,6 +5,7 @@
  * sees.  It proves nothing about how the game feels; that remains Greg's live
  * MAME session. */
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "game/bajanew.h"
 #include "ng/host_platform.h"
@@ -76,6 +77,25 @@ int main(void)
         if (stats->peak_scanline_columns > worst.peak_scanline_columns) {
             worst.peak_scanline_columns = stats->peak_scanline_columns;
             worst.peak_scanline = stats->peak_scanline;
+            /* BAJANEW_PEAK_DUMP=<file>: the sprite control blocks of the
+             * busiest frame so far, one line per sprite in the same layout as
+             * tools/mame_vram_digest.lua's dump, for reading which chains
+             * stack on the peak line. */
+            if (getenv("BAJANEW_PEAK_DUMP") != NULL) {
+                FILE *dump = fopen(getenv("BAJANEW_PEAK_DUMP"), "w");
+                if (dump != NULL) {
+                    uint16_t sprite;
+                    fprintf(dump, "# frame %lu peak %u on line %u\n", (unsigned long)frame,
+                            (unsigned)stats->peak_scanline_columns, (unsigned)stats->peak_scanline);
+                    for (sprite = 1; sprite <= NG_HW_SPRITE_CAPACITY; ++sprite) {
+                        fprintf(dump, "%u z%04x y%04x x%04x\n", (unsigned)sprite,
+                                (unsigned)ng_host_vram_read((uint16_t)(NG_VRAM_SCB2 + sprite)),
+                                (unsigned)ng_host_vram_read((uint16_t)(NG_VRAM_SCB3 + sprite)),
+                                (unsigned)ng_host_vram_read((uint16_t)(NG_VRAM_SCB4 + sprite)));
+                    }
+                    fclose(dump);
+                }
+            }
         }
         worst.dropped_columns = (uint16_t)(worst.dropped_columns + stats->dropped_columns);
         worst.dropped_commands = (uint16_t)(worst.dropped_commands + stats->dropped_commands);

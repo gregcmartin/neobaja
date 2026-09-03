@@ -22,7 +22,7 @@
 /* Hardware sprite columns the scenery may use in one frame.  The road claims
  * most of the table, so the field is budgeted nearest first rather than left
  * to drop columns at the worst possible moment. */
-#define SCENERY_COLUMN_BUDGET 26
+#define SCENERY_COLUMN_BUDGET 40
 /* Baseline the selection portraits stand on. */
 #define DRIVER_BASE_Y 190
 
@@ -398,10 +398,27 @@ static void draw_backdrop(BajanewGame *game, const BajaView *view, const BajaRoa
         }
     }
     if (b == BAJA_ROAD_BANDS) needed = (int16_t)(BAJA_SCREEN_HEIGHT - ground_y);
-    ng_strip_set_height(&game->ground, (uint8_t)((needed + 15) >> 4));
-    game->strip_words = (uint16_t)(game->strip_words + ng_strip_place(
-        &game->ground, (int16_t)(game->ground_pan - bajanew_backdrop_origin_x),
-        ground_y, 0xffU));
+    if (needed < 1) needed = 1;
+    {
+        /* A sprite counts its whole tile rows against the scanline limit even
+         * when shrunk, so the ground's last row would stack twenty columns on
+         * the busiest road lines for the few pixels that show.  Instead the
+         * ground shrinks to exactly the rows it needs: a scene compressing
+         * over a crest squeezes the coast a little with it. */
+        static const uint16_t recip16[8] = {0, 65535U, 32768U, 21845U, 16384U, 13107U, 10923U, 9362U};
+        uint8_t rows = (uint8_t)((needed + 15) >> 4);
+        uint16_t zoom_y = 0xffU;
+        if (rows > 7U) rows = 7U;
+        if (rows > 1U && (needed & 15) != 0) {
+            zoom_y = (uint16_t)(((uint32_t)needed * 16U * recip16[rows]) >> 16);
+            if (zoom_y > 0U) zoom_y -= 1U;
+            if (zoom_y > 0xffU) zoom_y = 0xffU;
+        }
+        ng_strip_set_height(&game->ground, rows);
+        game->strip_words = (uint16_t)(game->strip_words + ng_strip_place(
+            &game->ground, (int16_t)(game->ground_pan - bajanew_backdrop_origin_x),
+            ground_y, (uint8_t)zoom_y));
+    }
     mark_layer(game, &game->ground, ground_y);
 }
 
@@ -435,24 +452,47 @@ static void draw_road(BajanewGame *game, const BajaRoadBand *bands)
      * be measured against real hardware instead of guessed at. */
     uint8_t limit = bajanew_render_level >= 16U ?
                     (uint8_t)(bajanew_render_level - 16U) : BAJA_ROAD_BANDS;
+    int16_t merge_top = 0;
+    uint8_t merge_height = 0;
     uint8_t b;
     if (limit > BAJA_ROAD_BANDS) limit = BAJA_ROAD_BANDS;
     for (b = 0; b < BAJA_ROAD_BANDS; ++b) {
         const BajaRoadBand *band = &bands[b];
         const BajanewStripDef *def = &bajanew_road_strip[b];
         NgStripLayer *layer = &game->road[b];
+        int16_t top;
+        uint16_t height;
         int16_t zoom_y;
         if (b >= limit || !band->visible || band->height == 0U) {
             game->strip_words = (uint16_t)(game->strip_words + ng_strip_hide(layer));
+            merge_height = 0;
+            continue;
+        }
+        top = band->top_y;
+        height = band->height;
+        if (merge_height != 0U) {
+            top = merge_top;
+            height = (uint16_t)(height + merge_height);
+            merge_height = 0;
+        }
+        /* Over a crest the bands squeeze to a few rows each, yet every one
+         * still counts sixteen scanlines of sprite budget: a band thinner
+         * than half a tile hands its rows to the next one, which stretches a
+         * little to cover both. */
+        if (height < 8U && b + 1U < BAJA_ROAD_BANDS && b + 1U < limit &&
+            bands[b + 1U].visible && bands[b + 1U].height != 0U) {
+            game->strip_words = (uint16_t)(game->strip_words + ng_strip_hide(layer));
+            merge_top = top;
+            merge_height = (uint8_t)height;
             continue;
         }
         /* Shrink from the authored height.  A sprite shrunk below a sixteenth
          * of its tile rows would read past its tile map and draw a ghost of
          * itself further down, so the shrink is floored there; the nearer band
          * covers the few extra rows. */
-        if (def->rows == 1U) zoom_y = (int16_t)(band->height << 4);
-        else if (def->rows == 2U) zoom_y = (int16_t)(band->height << 3);
-        else zoom_y = (int16_t)divide_by_three((uint16_t)(band->height << 4));
+        if (def->rows == 1U) zoom_y = (int16_t)(height << 4);
+        else if (def->rows == 2U) zoom_y = (int16_t)(height << 3);
+        else zoom_y = (int16_t)divide_by_three((uint16_t)(height << 4));
         zoom_y -= 1;
         if (zoom_y < (int16_t)(def->rows * 8 - 1)) zoom_y = (int16_t)(def->rows * 8 - 1);
         if (zoom_y > 255) zoom_y = 255;
@@ -460,11 +500,11 @@ static void draw_road(BajanewGame *game, const BajaRoadBand *bands)
             ng_platform_palette_load(def->palette, bajanew_road_palette[b][band->phase]);
             game->road_phase[b] = band->phase;
         }
-        ng_strip_set_height(layer, (uint8_t)((band->height + 15U) >> 4));
+        ng_strip_set_height(layer, (uint8_t)((height + 15U) >> 4));
         game->strip_words = (uint16_t)(game->strip_words + ng_strip_place(
             layer, (int16_t)(band->center_x - (int16_t)(def->strip_columns * 8U)),
-            band->top_y, (uint8_t)zoom_y));
-        mark_layer(game, layer, band->top_y);
+            top, (uint8_t)zoom_y));
+        mark_layer(game, layer, top);
     }
 }
 
@@ -485,8 +525,8 @@ static uint8_t behind_crest(const BajaRoadBand *bands, const BajaObjectProjectio
  * pixel or two beyond a hundred metres and not worth a sprite; tall props and
  * signs read from the far end of the funnel. */
 static const uint8_t scenery_reach_q[BAJA_SCENERY_KINDS] = {
-    18, 18, 20, 16, 40, 32, 36, 24, 32, 40, 40, 40, 60, 60,
-    18, 18, 30, 40, 36
+    18, 18, 20, 16, 32, 30, 30, 24, 30, 34, 34, 34, 48, 48,
+    18, 18, 28, 34, 30
 };
 
 static void draw_scenery(BajanewGame *game, const BajaView *view, const BajaRoadBand *bands,
@@ -522,6 +562,10 @@ static void draw_scenery(BajanewGame *game, const BajaView *view, const BajaRoad
          * one column wide, so a busy horizon costs one sprite a prop. */
         if (item->s - near_edge > baja_fp_from_int(56)) def = &bajanew_scenery_far[item->kind];
         if ((item->s - near_edge) >> 18 > (BajaFp)scenery_reach_q[item->kind]) continue;
+        /* Past sixty-four metres a prop is a dot a few pixels wide and the
+         * course lists one every seven metres; drawing every other one keeps
+         * the horizon busy for half the projections. */
+        if ((i & 1U) != 0U && item->s - near_edge > baja_fp_from_int(64)) continue;
         if (columns_left <= 0) break;
         baja_project_object_in(&game->sim, view, item->s, item->e, &projection);
         if (!projection.visible || behind_crest(bands, &projection)) continue;
@@ -913,6 +957,7 @@ void bajanew_game_init(BajanewGame *game)
      * slot above the strips. */
     ng_renderer_set_first_slot(&game->renderer, NG_HW_SPRITE_CAPACITY);
     ng_pool_init(&game->pool, game->pool_cache, slot, (uint16_t)(NG_HW_SPRITE_CAPACITY - slot));
+
     game->item_count = 0;
     game->strip_words = 0;
     game->scenery_cursor = 0;

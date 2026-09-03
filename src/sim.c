@@ -389,7 +389,7 @@ static void place_scenery(BajaSim *sim, uint16_t *count, BajaFp s, BajaFp e, uin
  * and the finish, a sign passes every few hundred metres, and gantries stand
  * over the road at each end.  Everything is read from the course, so the
  * same course always dresses the same way. */
-static void reset_scenery(BajaSim *sim)
+static void reset_scenery(BajaSim *sim, BajaServiceHook service_hook)
 {
     static const uint8_t sea_kinds[8] = {
         BAJA_SCENERY_PALM, BAJA_SCENERY_ROCK_PALE, BAJA_SCENERY_AGAVE,
@@ -409,7 +409,7 @@ static void reset_scenery(BajaSim *sim)
         BAJA_SCENERY_SIGN_ENSENADA, BAJA_SCENERY_SIGN_PACIFIC, BAJA_SCENERY_SIGN_BAJA
     };
     const BajaFp total = sim->track.total_length;
-    const BajaFp step = FP_RATIO(11, 1);
+    const BajaFp step = FP_RATIO(7, 1);
     BajaFp s = FP_RATIO(6, 1);
     uint16_t count = 0;
     uint16_t slot = 0;
@@ -448,7 +448,7 @@ static void reset_scenery(BajaSim *sim)
             place_scenery(sim, &count, s, left ? -offset : offset,
                           left ? sea_kinds[pick & 7] : hill_kinds[pick & 7]);
             /* Now and then the other side gets something too. */
-            if ((pick & 0x70) == 0x70) {
+            if ((pick & 0x30) == 0x30) {
                 place_scenery(sim, &count, s + FP_RATIO(3, 1),
                               left ? offset + FP_RATIO(2, 10) : -offset - FP_RATIO(2, 10),
                               left ? hill_kinds[(pick >> 3) & 7] : sea_kinds[(pick >> 3) & 7]);
@@ -456,6 +456,9 @@ static void reset_scenery(BajaSim *sim)
         }
         s += step + (BajaFp)noise * 8;
         ++slot;
+        /* Several hundred props with two hashes each is longer than a
+         * hardware watchdog period on the 68000. */
+        if ((slot & 31U) == 0U && service_hook != NULL) service_hook();
     }
     place_scenery(sim, &count, total - FP_RATIO(14, 1), 0, BAJA_SCENERY_GANTRY_FINISH);
     while (count < BAJA_SCENERY_COUNT) {
@@ -504,7 +507,7 @@ void baja_sim_init_cooperative(BajaSim *sim, BajaServiceHook service_hook)
     zero_bytes(sim, (uint32_t)sizeof(*sim));
     build_depth_tables(service_hook);
     baja_track_init_cooperative(&sim->track, service_hook);
-    reset_scenery(sim);
+    reset_scenery(sim, service_hook);
     sim->phase = BAJA_PHASE_SPLASH;
     sim->driver = BAJA_DRIVER_MAX;
     sim->surface = BAJA_SURFACE_ROAD;

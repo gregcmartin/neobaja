@@ -10,7 +10,7 @@
  * never divides to locate a point on the track. */
 #define BAJA_SEGMENT_SHIFT 19
 #define BAJA_RIVAL_COUNT 3
-#define BAJA_SCENERY_COUNT 384
+#define BAJA_SCENERY_COUNT 640
 
 /* Screen contract for the projection.  The renderer may quantise these to
  * sprite tiles and zoom steps but never feeds them back into gameplay. */

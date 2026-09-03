@@ -71,6 +71,14 @@ capture_sub = emu.add_machine_frame_notifier(function()
     if space:read_u8(0x100078) == 4 then mask = mask | centring_steer() end
     apply(mask)
 
+    -- BAJANEW_CAPTURE_LEVEL=n: hold the cartridge's render level (the byte
+    -- after bajanew_stage, address from BAJANEW_STAGE_ADDR) so a capture can
+    -- peel layers off the scene.
+    local level_env = os.getenv("BAJANEW_CAPTURE_LEVEL")
+    if level_env ~= nil and frames > 1100 then
+        local stage_addr = tonumber(os.getenv("BAJANEW_STAGE_ADDR") or "0x100794")
+        space:write_u8(stage_addr + 1, tonumber(level_env))
+    end
     for index, at in ipairs(captures) do
         if frames == at then
             local path = string.format("%s/frame%02d.png", out_dir, index)
@@ -83,6 +91,39 @@ capture_sub = emu.add_machine_frame_notifier(function()
                 space:read_u8(0x10007b), space:read_u16(0x10000c),
                 space:read_u16(0x100016), space:read_u16(0x100010)))
             if err ~= nil then emu.print_error("snapshot failed: " .. tostring(err)) end
+            -- BAJANEW_CAPTURE_SCB=1: the sprite control blocks beside each
+            -- shot (one line per sprite: zoom, Y control, X control), so a
+            -- stray sprite in a capture can be traced to its slot.
+            if os.getenv("BAJANEW_CAPTURE_SCB") then
+                local scb = io.open(string.format("%s/frame%02d.scb", out_dir, index), "w")
+                if scb ~= nil then
+                    for sprite = 1, 380 do
+                        space:write_u16(0x3c0000, 0x8000 + sprite)
+                        local z = space:read_u16(0x3c0002)
+                        space:write_u16(0x3c0000, 0x8200 + sprite)
+                        local y = space:read_u16(0x3c0002)
+                        space:write_u16(0x3c0000, 0x8400 + sprite)
+                        local x = space:read_u16(0x3c0002)
+                        local words = {}
+                        for row = 0, 15 do
+                            space:write_u16(0x3c0000, sprite * 64 + row)
+                            words[#words + 1] = string.format("%04x", space:read_u16(0x3c0002))
+                        end
+                        scb:write(string.format("%d z%04x y%04x x%04x %s\n", sprite, z, y, x,
+                                                table.concat(words, " ")))
+                    end
+                    -- FIX map: one line per row, forty tile words.
+                    for row = 0, 31 do
+                        local cells = {}
+                        for column = 0, 39 do
+                            space:write_u16(0x3c0000, 0x7000 + column * 32 + row)
+                            cells[#cells + 1] = string.format("%04x", space:read_u16(0x3c0002))
+                        end
+                        scb:write(string.format("F%02d %s\n", row, table.concat(cells, " ")))
+                    end
+                    scb:close()
+                end
+            end
         end
     end
     if frames >= 7300 then

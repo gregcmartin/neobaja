@@ -60,10 +60,11 @@ local names = {
     [10] = "pool end + renderer flush",
     [11] = "FIX flush",
 }
-local totals, counts = {}, {}
+local totals, counts, maxima = {}, {}, {}
+local frame_acc, frame_max, overruns, frames_seen = 0, 0, 0, 0
 local last_time, last_stage = nil, nil
 local samples = 0
-function reset_stats() totals, counts = {}, {} end
+function reset_stats() totals, counts, maxima = {}, {}, {}; frame_max, overruns, frames_seen = 0, 0, 0 end
 function report(label)
     local flush = 0
     if counts[7] and counts[7] > 0 then flush = totals[7] / counts[7] * CLOCK end
@@ -88,7 +89,15 @@ stage_tap = manager.machine.devices[":maincpu"].spaces["program"]:install_write_
             local key = data
             totals[key] = (totals[key] or 0) + (now - last_time)
             counts[key] = (counts[key] or 0) + 1
+            if (now - last_time) > (maxima[key] or 0) then maxima[key] = now - last_time end
+            frame_acc = frame_acc + (now - last_time)
+            if data == 11 then
+                frames_seen = frames_seen + 1
+                if frame_acc > frame_max then frame_max = frame_acc end
+                if frame_acc * CLOCK > 400000 then overruns = overruns + 1 end
+            end
         end
+        if data == 2 then frame_acc = 0 end
         last_time, last_stage = now, data
         if data == 8 then samples = samples + 1 end
     end)
@@ -111,10 +120,13 @@ stages_sub = emu.add_machine_frame_notifier(function()
             if counts[stage] and counts[stage] > 0 then
                 local cycles = totals[stage] / counts[stage] * CLOCK
                 total = total + cycles
-                emu.print_info(string.format("STAGE %d %-34s %7.0f cycles", stage, names[stage], cycles))
+                emu.print_info(string.format("STAGE %d %-34s %7.0f cycles  max %7.0f", stage, names[stage], cycles,
+                    (maxima[stage] or 0) * CLOCK))
             end
         end
         emu.print_info(string.format("STAGE - %-36s %7.0f cycles (field = 200000)", "TOTAL measured", total))
+        emu.print_info(string.format("STAGE - %-36s %7.0f cycles", "WORST frame", frame_max * CLOCK))
+        emu.print_info(string.format("STAGE - %-36s %d of %d frames", "OVER two fields", overruns, frames_seen))
         manager.machine:exit()
     end
 end)

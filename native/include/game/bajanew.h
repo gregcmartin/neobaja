@@ -21,7 +21,7 @@
 
 #define BAJANEW_POOL_SLOTS (NG_HW_SPRITE_CAPACITY - BAJANEW_STRIP_SLOTS)
 /* World objects a frame can hold before the nearest ones win. */
-#define BAJANEW_DRAW_ITEMS 24
+#define BAJANEW_DRAW_ITEMS 32
 
 /* One object waiting to be placed, nearest first. */
 typedef struct BajanewDrawItem {
