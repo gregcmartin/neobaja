@@ -35,10 +35,14 @@
 #define BIG_IVORY 0U
 #define BIG_AMBER 1U
 #define BIG_BLUE 2U
+/* LCD green on the LCD's dark ground, in its own block of the FIX sheet. */
+#define BIG_GREEN 3U
+#define BIG_GREEN_BASE 0x300U
 /* The tachometer face tiles, six by six from this code. */
 #define GAUGE_TILE_BASE 0x1c0U
-#define GAUGE_COLUMN 1
-#define GAUGE_ROW 22
+#define GAUGE_COLUMN 0
+#define GAUGE_ROW 21
+#define GAUGE_SIZE 7
 #define NEEDLE_FRAMES 24
 
 enum {
@@ -143,7 +147,8 @@ static void put_big(BajanewGame *game, int16_t column, int16_t row,
     while (*text != '\0' && column + 1 < BAJANEW_FIX_COLUMNS) {
         uint16_t code = big_code(*text);
         if (code != 0U && column >= 0) {
-            code = (uint16_t)(code + (uint16_t)variant * BIG_VARIANT);
+            if (variant == BIG_GREEN) code = (uint16_t)(code - BIG_BASE + BIG_GREEN_BASE);
+            else code = (uint16_t)(code + (uint16_t)variant * BIG_VARIANT);
             top[column] = code;
             top[column + 1] = (uint16_t)(code + 1U);
             bottom[column] = (uint16_t)(code + 2U);
@@ -746,12 +751,12 @@ static void draw_hud(BajanewGame *game)
     }
 
     /* Bottom left: the tachometer with its needle, the LCD speed, the gear. */
-    put_art(game, GAUGE_COLUMN, GAUGE_ROW, 6, 6, GAUGE_TILE_BASE);
-    format_uint(text, speed, 3, 0);
-    put_text(game, 1, 28, SHADE_GREEN, text);
-    put_text(game, 4, 28, SHADE_GREEN, " KMH");
-    put_text(game, 1, 29, 0, "AT");
-    put_uint(game, 4, 29, SHADE_AMBER, sim->gear, 1, 1);
+    put_art(game, GAUGE_COLUMN, GAUGE_ROW, GAUGE_SIZE, GAUGE_SIZE, GAUGE_TILE_BASE);
+    format_uint(text, speed, 3, 1);
+    put_big(game, 1, 28, BIG_GREEN, text);
+    put_text(game, 7, 29, SHADE_GREEN, "KMH");
+    put_text(game, 8, 28, 0, "AT");
+    put_uint(game, 11, 28, SHADE_AMBER, sim->gear, 1, 1);
 
     /* Bottom right: the stage and the leg's progress; the route map sprite
      * is placed with the pool's other HUD sprites. */
@@ -799,7 +804,7 @@ static void place_hud_sprites(BajanewGame *game)
     if (sim->air_timer > 0U) needle = (uint8_t)(needle + 2U);
     if (needle >= NEEDLE_FRAMES) needle = NEEDLE_FRAMES - 1U;
     place(game, &ng_asset_needle_frames[needle],
-          (int16_t)(GAUGE_COLUMN * 8 + 24), (int16_t)((GAUGE_ROW - 2) * 8 + 24),
+          (int16_t)(GAUGE_COLUMN * 8 + GAUGE_SIZE * 4), (int16_t)((GAUGE_ROW - 2) * 8 + GAUGE_SIZE * 4),
           0x0fU, 0xffU, 0U);
     draw_minimap(game, progress);
 }

@@ -186,8 +186,11 @@ converter keeps the left 68 percent.
 An arcade racing game tachometer dial face: a round dark gauge with a white
 rim, tick marks from 0 to 10 around the left and top, the last quarter of the
 arc painted red, no needle, plus a small rectangular LCD readout panel below it
-with a dark green screen and no digits.  The dial becomes six by six FIX tiles
-on the HUD palette; the panel is not used.
+with a dark green screen and no digits.  Converted to six by six FIX tiles on
+the HUD palette on 2026-09-02; replaced on 2026-09-03 by a dial drawn by
+`tools/build_assets.py` (rim, ticks, red line, numerals from the game's
+typeface) because the painted face read as a smudge at fifty-six pixels.  The
+raw stays under `art/raw/grok/` unused.
 
 ## Sun (`sun.jpg`, 1:1)
 

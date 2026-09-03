@@ -46,6 +46,11 @@
   metres.  Frame ~351k cycles, 4 of 700 frames over two fields; the tick-locked
   capture proves the C and assembly builds identical.
 
+- [x] HUD to the mockup's standard, 2026-09-03: a drawn 56-pixel tachometer
+  with legible numerals and a longer needle, the speed as big LCD-green
+  numerals on the dark panel, the road surface warmed toward the mockup's
+  orange dirt, signs every 26 slots and spectators on the hill mid-course.
+
 ## Open before Greg's five-minute play gate
 
 - [x] Grok Build art: painted title logo, checkpoint arch, billboard, pit

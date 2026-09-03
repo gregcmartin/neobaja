@@ -122,8 +122,9 @@ SUN_FRAME = (32, 32)
 SUN_PALETTE_INDEX = 28
 
 FIX_PALETTE = ["#%02X%02X%02X" % c for c in fixfont.FIX_PALETTE]
-GAUGE_TILES = (6, 6)       # tachometer face, 48x48
-NEEDLE_FRAME = (32, 32)
+GAUGE_TILES = (7, 7)       # tachometer face, 56x56
+NEEDLE_FRAME = (48, 48)
+NEEDLE_DISC = 19.5         # the dial's clear centre, filled by the needle sprite
 NEEDLE_FRAMES = 24
 NEEDLE_PALETTE_INDEX = 26
 
@@ -573,13 +574,57 @@ def build_scenery(sprites: list[dict]) -> dict:
 # --------------------------------------------------------------------- FIX --
 
 def gauge_tiles() -> dict[int, np.ndarray]:
-    """The Grok Build tachometer face, keyed, shrunk to six by six tiles and
-    snapped to the FIX palette; the LCD panel under it is not used."""
-    raw = grok_props.key_raw("gauge_face", "checker_strict", "all")
-    # Keep the dial only: the panel hangs below the circle.
-    dial = raw[: int(raw.shape[0] * 0.73)]
-    art = fit_sprite(dial, (GAUGE_TILES[0] * 8, GAUGE_TILES[1] * 8), pad=1.0)
-    art = quantise_to(art, FIX_PALETTE)
+    """The tachometer face drawn as a UI element on the FIX palette: a dark
+    dial with a white rim, ticks, a red line from eight, and the numerals
+    0 to 10 from the game's own typeface, legible at the size the HUD has.
+    The Grok Build face read as a smudge at this size."""
+    size = GAUGE_TILES[0] * 8
+    cx = cy = size / 2.0 - 0.5
+    art = np.zeros((size, size, 4), dtype=np.int32)
+    pal = fixfont.MARKERS
+    navy, shadow, white, grey, red, ivory = (pal[9], pal[6], pal[7], pal[8], pal[4], pal[1])
+    yy, xx = np.mgrid[0:size, 0:size]
+    r = np.hypot(xx - cx, yy - cy)
+    angle = np.degrees(np.arctan2(cy - yy, xx - cx))      # 0 right, 90 up
+    sweep = (225.0 - angle) % 360.0                       # 0 at "0", 270 at "10"
+    on_arc = sweep <= 270.0
+    art[r <= 27.5] = (*shadow, 255)
+    art[r <= 25.5] = (*navy, 255)
+    art[(r >= 25.5) & (r <= 27.5)] = (*white, 255)
+    # The FIX layer draws over every sprite, so the centre the needle sweeps
+    # is left clear: the needle's own frames carry the dark face there.
+    art[r < NEEDLE_DISC] = (0, 0, 0, 0)
+    # Red line: the last fifth of the sweep, just inside the rim.
+    art[(r >= 21.0) & (r < 25.0) & on_arc & (sweep >= 216.0)] = (*red, 255)
+    # Ticks: a minor every tenth, a major every fifth.
+    for k in range(51):
+        t = k / 50.0
+        a = math.radians(225.0 - 270.0 * t)
+        major = k % 5 == 0
+        r0, r1 = (19.0, 25.0) if major else (22.0, 25.0)
+        colour = white if major else grey
+        for rr in np.arange(r0, r1, 0.5):
+            x = int(round(cx + math.cos(a) * rr))
+            y = int(round(cy - math.sin(a) * rr))
+            if 0 <= x < size and 0 <= y < size:
+                art[y, x] = (*colour, 255)
+    # Numerals 0 2 4 6 8 10 inside the ticks.
+    for k in range(6):
+        t = k / 5.0
+        a = math.radians(225.0 - 270.0 * t)
+        label = str(k * 2)
+        width = 6 * len(label) - 1
+        x0 = int(round(cx + math.cos(a) * 14.0 - width / 2.0))
+        y0 = int(round(cy - math.sin(a) * 14.0 - 3.5))
+        for i, ch in enumerate(label):
+            rows = fixfont.GLYPHS[ch]
+            for gy, row in enumerate(rows):
+                for gx, pixel in enumerate(row):
+                    if pixel == ".":
+                        continue
+                    px, py = x0 + i * 6 + gx, y0 + gy
+                    if 0 <= px < size and 0 <= py < size:
+                        art[py, px] = (*ivory, 255)
     tiles = {}
     for ty in range(GAUGE_TILES[1]):
         for tx in range(GAUGE_TILES[0]):
@@ -595,10 +640,12 @@ def build_needle(sprites: list[dict]) -> dict:
     for index in range(NEEDLE_FRAMES):
         angle = math.radians(225.0 - 270.0 * index / (NEEDLE_FRAMES - 1))
         frame = np.zeros((NEEDLE_FRAME[1], NEEDLE_FRAME[0], 4), dtype=np.int32)
-        for r in range(-3, 14):
+        yy, xx = np.mgrid[0:NEEDLE_FRAME[1], 0:NEEDLE_FRAME[0]]
+        frame[np.hypot(xx - cx, yy - cy) < NEEDLE_DISC] = (42, 36, 64, 255)
+        for r in range(-4, 20):
             x = int(round(cx + math.cos(angle) * r))
             y = int(round(cy - math.sin(angle) * r))
-            colour = (255, 91, 69) if r >= 10 else (255, 255, 255)
+            colour = (255, 91, 69) if r >= 15 else (255, 255, 255)
             for dx, dy in ((0, 0), (1, 0), (0, 1)):
                 if 0 <= x + dx < NEEDLE_FRAME[0] and 0 <= y + dy < NEEDLE_FRAME[1]:
                     frame[y + dy, x + dx] = (*colour, 255)

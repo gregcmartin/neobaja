@@ -103,6 +103,9 @@ BIG_BLUE_OFFSET = 0x80
 BIG_CHARS = "0123456789'\".:/"
 # Hand-placed HUD art tiles (the tachometer face) live from here.
 ART_BASE = 0x1c0
+# Big numerals in LCD green on the LCD's dark ground, for the speed readout,
+# above the small green set.
+BIG_GREEN_BASE = 0x300
 
 # Palette entries are written into the sheet as flat marker colours; the
 # compiler maps them to the declared FIX palette by exact index.
@@ -193,7 +196,7 @@ BIG: dict[str, tuple[str, ...]] = {
 }
 
 
-SHEET_TILES = 640
+SHEET_TILES = 1024
 
 
 def _paint(sheet: np.ndarray, x0: int, y0: int, rows: tuple[str, ...], shade: int,
@@ -249,10 +252,13 @@ def _blit(sheet: np.ndarray, code: int, rows: tuple[str, ...], shade: int,
 
 
 def _blit_big(sheet: np.ndarray, base: int, rows: tuple[str, ...], shade: int,
-              ramp: tuple[int, ...] | None = None) -> None:
+              ramp: tuple[int, ...] | None = None, ground: int | None = None) -> None:
     """A 16x16 glyph as four consecutive tiles: TL, TR, BL, BR."""
     cell = np.zeros((16, 16, 4), dtype=np.int32)
-    _paint(cell, 0, 0, rows, shade, True, ramp=ramp, outline=True)
+    if ground is not None:
+        g = MARKERS[ground]
+        cell[:, :] = (g[0], g[1], g[2], 255)
+    _paint(cell, 0, 0, rows, shade, True, ramp=ramp, outline=ground is None)
     for quadrant, (qy, qx) in enumerate([(0, 0), (0, 8), (8, 0), (8, 8)]):
         code = base + quadrant
         cell_x, cell_y = (code % 16) * 8, (code // 16) * 8
@@ -277,6 +283,8 @@ def build_sheet(art: dict[int, np.ndarray] | None = None) -> np.ndarray:
         _blit_big(sheet, BIG_BASE + BIG_AMBER_OFFSET + index * 4, BIG[character], SHADE_AMBER)
         _blit_big(sheet, BIG_BASE + BIG_BLUE_OFFSET + index * 4, BIG[character], SHADE_IVORY,
                   ramp=BLUE_RAMP)
+        _blit_big(sheet, BIG_GREEN_BASE + index * 4, BIG[character], SHADE_LIME,
+                  ground=SHADE_LCD)
     for code, tile in (art or {}).items():
         cell_x, cell_y = (code % 16) * 8, (code // 16) * 8
         sheet[cell_y:cell_y + 8, cell_x:cell_x + 8] = tile

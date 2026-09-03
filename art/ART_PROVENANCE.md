@@ -71,3 +71,9 @@ the prompts in `art/PROMPTS.md` with no reference image: the sun over the
 coast (`sun.jpg`, a 32 by 32 sprite with its own palette so the sky keeps its
 colours) and the wide dust bank (`dust_wide.jpg`, three sizes as the dust
 behind the player and the near rivals).
+
+The tachometer face is drawn by `tools/build_assets.py` since 2026-09-03 (a
+dial with rim, ticks, red line and numerals from the game's typeface, the
+needle sprite carrying the dark centre); the Grok Build gauge face is no
+longer converted.  The road surface takes a warm colour grade in
+`tools/road_strips.py` (`WARM_GAIN`, `WARM_GAMMA`) after rectification.

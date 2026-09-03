@@ -440,10 +440,14 @@ static void reset_scenery(BajaSim *sim, BajaServiceHook service_hook)
             /* Spectators and flags crowd both ends of the course. */
             place_scenery(sim, &count, s, left ? -FP_RATIO(14, 10) : FP_RATIO(14, 10),
                           crowd_kinds[(slot >> 1) & 3U]);
-        } else if ((slot % 44U) == 20U) {
+        } else if ((slot % 26U) == 20U) {
             place_scenery(sim, &count, s, left ? -FP_RATIO(15, 10) : FP_RATIO(15, 10),
                           sign_kinds[signs % 3U]);
             ++signs;
+        } else if ((slot % 40U) == 7U) {
+            /* A knot of spectators on the hill side now and then. */
+            place_scenery(sim, &count, s, FP_RATIO(16, 10),
+                          (slot & 0x40U) ? BAJA_SCENERY_CROWD_BIG : BAJA_SCENERY_CROWD);
         } else {
             place_scenery(sim, &count, s, left ? -offset : offset,
                           left ? sea_kinds[pick & 7] : hill_kinds[pick & 7]);

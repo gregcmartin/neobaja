@@ -37,6 +37,10 @@ WRAP_BLEND_M = 4.0
 # already flat black becomes dirt rather than being scaled up from nothing.
 SHADOW_FLOOR = 90.0
 SHADOW_TONE = (70.0, 46.0, 26.0)
+# The colour grade on the rectified surface: per-channel gain then a gamma
+# lift of the midtones.
+WARM_GAIN = (1.10, 1.02, 0.88)
+WARM_GAMMA = 0.92
 
 
 def _plate() -> np.ndarray:
@@ -91,6 +95,13 @@ def rectify_road_texture(rows: int = 384) -> tuple[np.ndarray, np.ndarray]:
     weight = np.clip((SHADOW_FLOOR - luminance) / SHADOW_FLOOR, 0.0, 1.0)[:, :, None]
     tone = np.array(SHADOW_TONE, dtype=np.float64)[None, None, :]
     texture = texture * (1.0 - weight) + tone * weight
+    np.clip(texture, 0, 255, out=texture)
+
+    # Warm the whole surface a little: sunlit Baja dirt reads orange-tan on
+    # screen, and the plate as painted leans cool and dark once the haze and
+    # the phase palettes have had their say.
+    texture *= np.array(WARM_GAIN, dtype=np.float64)[None, None, :]
+    texture = 255.0 * np.power(np.clip(texture / 255.0, 0.0, 1.0), WARM_GAMMA)
     np.clip(texture, 0, 255, out=texture)
 
     # Cross-fade the tail back over the head so v wraps cleanly.
@@ -208,6 +219,8 @@ def build_sheets() -> tuple[list[tuple[str, np.ndarray, np.ndarray, dict]], dict
         "edge_accent": {"berm_gain": 1.20, "verge_gain": 0.84},
         "shadow_floor": SHADOW_FLOOR,
         "shadow_tone": list(SHADOW_TONE),
+        "warm_gain": list(WARM_GAIN),
+        "warm_gamma": WARM_GAMMA,
         "bands": [dict(g) for g in strip_geometry()],
     }
     return sheets, report
